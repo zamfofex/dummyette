@@ -1,0 +1,214 @@
+let createController = type =>
+{
+	let past = []
+	let finished = false
+	let listeners = new Set()
+	let controllerFinished = false
+	
+	let push = (...values) =>
+	{
+		if (values.length === 0) return
+		
+		if (controllerFinished)
+		{
+			console.error("Tried pushing an element to a finished stream controller, finalizing process.")
+			Deno.exit(-1)
+		}
+		
+		if (finished) throw new Error()
+		
+		if (type === "rewind") past.push(...values)
+		
+		for (let value of values)
+		for (let accept of listeners)
+			accept(value)
+	}
+	
+	let finish = () => { finished = true }
+	
+	let pushFrom = async iterable => { for await (let value of iterable) await tryPush(value) }
+	
+	let tryPush = (...values) =>
+	{
+		if (controllerFinished) return new Promise(() => { })
+		push(...values)
+	}
+	
+	let isFinished = () => controllerFinished
+	
+	let getIterator = () =>
+	{
+		let queue = [...past]
+		let ref
+		
+		let accept = value =>
+		{
+			let resolve = ref?.deref()
+			ref = null
+			if (resolve) resolve(value)
+			else queue.push(value)
+		}
+		
+		listeners.add(accept)
+		
+		let iterate = async function * ()
+		{
+			while (true)
+			{
+				for (let value of queue) yield await value
+				if (finished) break
+				yield await new Promise(resolve => ref = new WeakRef(resolve))
+			}
+		}
+		
+		let iterator = iterate()
+		
+		let registry = new FinalizationRegistry(() => listeners.delete(accept))
+		registry.register(iterator, null)
+		
+		return iterator
+	}
+	
+	let map = (f, {parallel = false} = {}) =>
+	{
+		parallel = Boolean(parallel)
+		
+		let {stream: other, tryPush, finish} = createController(type)
+		
+		; (async () =>
+		{
+			if (parallel)
+				for await (let value of stream)
+					await tryPush(f(value, past.length, stream))
+			else
+				for await (let value of stream)
+					await tryPush(await f(value, past.length, stream))
+			finish()
+		})()
+		
+		return other
+	}
+	
+	let filter = (f, options = {}) =>
+	{
+		let {stream, tryPush, finish} = createController(type)
+		
+		let mapped = map(async (value, index, stream) => ({value, boolean: Boolean(await f(value, index, stream))}), options)
+		
+		; (async () =>
+		{
+			for await (let {value, boolean} of mapped)
+				if (boolean) await tryPush(value)
+			finish()
+		})()
+		
+		return stream
+	}
+	
+	let slice = (start = 0, length = Infinity) =>
+	{
+		start = Math.floor(start)
+		length = Math.floor(length)
+		
+		// Handle 'NaN'.
+		if (start !== start) return
+		if (length !== length) return
+		
+		let {stream, tryPush, finish} = createController(type)
+		
+		; (async () =>
+		{
+			let iterator = getIterator()
+			
+			for (let i = 0 ; i < start ; i++)
+				await iterator.next()
+			
+			for (let i = 0 ; i < length ; i++)
+			{
+				let {value, done} = await iterator.next()
+				if (done) break
+				await tryPush(value)
+			}
+			
+			finish()
+		})()
+		
+		return stream
+	}
+	
+	let forEach = async (f, options = {}) => { await map(f, options).last }
+	
+	let reset = () => slice(past.length)
+	
+	let getLast = memoize(async () =>
+	{
+		let last
+		for await (let value of stream) last = value
+		return last
+	})
+	
+	let getFirst = async () => { for await (let value of stream) return value }
+	
+	let at = index => slice(index).first
+	
+	let find = f => filter(f).first
+	
+	let flat = memoize(() => flatten(type, stream))
+	let flatMap = (f, options = {}) => map(f, options).flat()
+	
+	let stream =
+	{
+		[Symbol.asyncIterator]: getIterator,
+		flat, flatMap, map, filter, forEach,
+		at, slice, reset, find, type,
+		get first() { return getFirst() },
+		get last() { return getLast() },
+		get length() { return past.length },
+		get finished() { return finished },
+	}
+	
+	Object.freeze(stream)
+	
+	let registry = new FinalizationRegistry(() => controllerFinished = true)
+	registry.register(stream, null)
+	
+	let controller = {stream, push, pushFrom, tryPush, finish, isFinished, get finished() { return controllerFinished }, }
+	Object.freeze(controller)
+	return controller
+}
+
+export let LiveController = () => createController("live")
+export let RewindController = () => createController("rewind")
+
+let createStream = (type, iterables) =>
+{
+	let {stream, pushFrom, finish} = createController(type)
+	let promises = iterables.map(iterable => pushFrom(iterable))
+	Promise.all(iterables).then(finish)
+	return stream
+}
+
+export let LiveStream = (...iterables) => createStream("live", iterables)
+export let RewindStream = (...iterables) => createStream("rewind", iterables)
+
+let flatten = (type, iterables) =>
+{
+	let {stream, pushFrom, finish} = createController(type)
+	; (async () =>
+	{
+		for await (let iterable of iterables)
+			await pushFrom(iterable)
+		finish()
+	})()
+	return stream
+}
+
+export let LiveJoinStream = (...iterables) => flatten("live", iterables)
+export let RewindJoinStream = (...iterables) => flatten("rewind", iterables)
+
+let memoize = f =>
+{
+	let value
+	let g = () => { value = f() ; g = () => value ; return value }
+	return () => g()
+}
