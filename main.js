@@ -22,8 +22,11 @@ let play = async game =>
 		if (board.turn !== color) continue
 		let moves = analyse(board)
 		if (!await game.play(moves[0].name))
-			console.error(`Move ${moves[0].name} was not played successfully.`),
+		{
+			console.error(`Move ${moves[0].name} was not played successfully.`)
 			await game.resign()
+			break
+		}
 	}
 	
 	console.log("Game completed.")
@@ -140,6 +143,23 @@ else if (action === "wait")
 			play(game)
 		console.log("")
 	}
+	
+	console.log("Starting games against Stockfish...")
+	
+	; (async () =>
+	{
+		while (true)
+		{
+			let game = await lichess.StockfishGame(1, "black")
+			if (game)
+				console.log("Started game against Stockfish!"),
+				console.log(`> https://lichess.org/${game.id}/black`)
+			else
+				console.error("The game against Stockfish could not be started."),
+				Deno.exit(1)
+			await play(game)
+		}
+	})()
 	
 	console.log("Waiting for challenges...")
 	
