@@ -21,6 +21,8 @@ let play = async game =>
 	{
 		if (board.turn !== color) continue
 		let moves = analyse(board)
+		if (moves.length === 0) break
+		
 		if (!await game.play(moves[0].name))
 		{
 			console.error(`Move ${moves[0].name} was not played successfully.`)
