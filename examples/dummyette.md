@@ -12,7 +12,7 @@ import {analyse} from ".../dummyette/dummyette.js"
 We can pass it a board object, and it’ll return an array of what it judges to be the best position for the current side to play in that board. The array will be ordered from “best” to “worst”, such that the first element in the array will be the move judged best, and the last element will be the move it judges worst.
 
 ~~~ JavaScript
-let moves = analyse(boad)
+let moves = analyse(board)
 let bestMove = moves[0]
 let worstMove = moves[moves.length - 1]
 

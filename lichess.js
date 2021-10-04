@@ -90,6 +90,12 @@ let createGame = async (headers, id) =>
 	let gameEvents = await streamURL(headers, `https://lichess.org/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
 	
+	let resign = async () =>
+	{
+		let response = await fetch(`https://lichess.org/api/bot/game/${id}/resign`, {method: "POST", headers})
+		return response.ok
+	}
+	
 	let n = 0
 	let handle = async function * (names)
 	{
@@ -115,10 +121,6 @@ let createGame = async (headers, id) =>
 	let board = standardBoard
 	let status = "ongoing"
 	
-	let history = gameEvents
-		.filter(event => event.type === "gameState")
-		.flatMap(({moves}) => handle(moves))
-	
 	let full = await gameEvents.first
 	if (full.type !== "gameFull") return
 	
@@ -130,12 +132,20 @@ let createGame = async (headers, id) =>
 		return
 	}
 	
-	for await (let {} of handle(full.state.moves)) { }
+	let history = RewindJoinStream([full.state], gameEvents)
+		.filter(event => event.type === "gameState")
+		.flatMap(event => [{moves: event.moves}, {done: !["created", "started"].includes(event.status)}])
+		.takeWhile(({done}) => !done)
+		.map(({moves}) => moves)
+		.filter(Boolean)
+		.flatMap(moves => handle(moves))
 	
 	let moveNames = history.map(({moveName}) => moveName)
-	let boards = RewindJoinStream([board], history.map(({board}) => board))
+	let boards = RewindJoinStream([standardBoard], history.map(({board}) => board))
 	
-	history.last.then(({board}) =>
+	await boards.slice(full.state.moves.split(" ").length - 1).first
+	
+	boards.last.then(board =>
 	{
 		if (board.moves.length === 0)
 			if (board.checkmate)
@@ -158,12 +168,6 @@ let createGame = async (headers, id) =>
 			played++
 		}
 		return played
-	}
-	
-	let resign = async () =>
-	{
-		let response = await fetch(`https://lichess.org/api/bot/game/${id}/resign`, {method: "POST", headers})
-		return response.ok
 	}
 	
 	let game =

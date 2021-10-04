@@ -20,7 +20,7 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
 
 - [`main.js`](main.js) [[reference](documentation/main.md) | [tutorial](examples/main.md)]
   — The command line interface entrypoint of the bot.
-- [`dummyette.js`](dummyette.js) [[dummyette](documentation/dummyette.md) | [tutorial](examples/dummyette.md)]
+- [`dummyette.js`](dummyette.js) [[reference](documentation/dummyette.md) | [tutorial](examples/dummyette.md)]
   — The AI algorithm used to rate the quality of moves in a position.
 - [`chess.js`](chess.js) [[reference](documentation/chess.md) | [tutorial](examples/chess.md)]
   — Utilities for interacting with chess boards and finding valid moves.

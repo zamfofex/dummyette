@@ -22,8 +22,12 @@ let play = async game =>
 		if (board.turn !== color) continue
 		let moves = analyse(board)
 		if (!await game.play(moves[0].name))
-			console.error(`Move ${moves[0].name} was not played successfully.`)
+			console.error(`Move ${moves[0].name} was not played successfully.`),
+			await game.resign()
 	}
+	
+	console.log("Game completed.")
+	console.log(`< https://lichess.org/${game.id}/black`)
 }
 
 let token

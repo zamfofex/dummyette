@@ -226,13 +226,19 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 					
 					if (piece.color === "white")
 					{
-						if (x !== 0) return
+						if (y !== 0) return
 						queenRook = at(0, 0)
 						kingRook = at(width - 1, 0)
 					}
+					else
+					{
+						if (y !== height - 1) return
+						queenRook = at(0, height - 1)
+						kingRook = at(width - 1, height - 1)
+					}
 					
-					if (m === "queen side" && queenRook !== Rook(piece.color)) return
-					if (m === "king side" && kingRook !== Rook(piece.color)) return
+					if (m !== "king side" && queenRook !== Rook(piece.color)) return
+					if (m !== "queen side" && kingRook !== Rook(piece.color)) return
 				}
 			}
 			else if (option !== null)
@@ -241,24 +247,6 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 			}
 			
 			nextMeta[i] = m
-			
-			if (piece.type === "rook")
-			{
-				let other
-				if (x === 0) other = "king side"
-				if (x === board.width - 1) other = "queen side"
-				
-				if (other)
-				{
-					let position = getKingPosition()
-					if (position?.y === y)
-					{
-						let j = position.x + y * board.width
-						if (array[j] === "both") nextMeta[j] = other
-						else nextMeta[j] = "none"
-					}
-				}
-			}
 		}
 		
 		for (let x1 = 0 ; x1 < board.width ; x1++)
@@ -496,6 +484,28 @@ let createMove = (board, x, y, x1, y1) =>
 		if (checks(board, x, y, dx, dy)) return
 	}
 	
+	if (piece.type === "rook")
+	{
+		let other
+		if (x === 0) other = "king side"
+		if (x === board.width - 1) other = "queen side"
+		
+		if (other)
+		{
+			let position = board.getKingPosition()
+			if (position?.y === y)
+			{
+				let meta = board.get(position.x, y)
+				if (meta !== "none")
+				{
+					if (meta === "both") meta = other
+					else if (meta !== other) meta = "none"
+					extra = board => board.set(position.x, y, meta)
+				}
+			}
+		}
+	}
+	
 	let replacements = [piece]
 	if (piece.type === "pawn")
 	{
@@ -507,7 +517,7 @@ let createMove = (board, x, y, x1, y1) =>
 		if (Math.abs(y1 - y) === 2)
 			meta = "passing"
 		
-		if (x !== x1) extra = board => board.delete(x1, y)
+		if (x !== x1 && board.get(x1, y) === "passing") extra = board => board.delete(x1, y)
 	}
 	
 	let moves = []
@@ -540,12 +550,12 @@ let checks = (board, x, y, dx, dy) =>
 {
 	let piece = board.at(x, y)
 	
-	let king = King(piece.color)
-	let rook = Rook(piece.color)
-	let queen = Queen(piece.color)
-	let bishop = Bishop(piece.color)
-	
 	let color = other(piece.color)
+	
+	let king = King(piece.color)
+	let rook = Rook(color)
+	let queen = Queen(color)
+	let bishop = Bishop(color)
 	
 	let rookMoves = []
 	if (dx === 0) rookMoves.push([1, 0], [-1, 0])
@@ -584,17 +594,18 @@ let threatened = (board, x, y, all, color) =>
 	let bishop = Bishop(opponent)
 	let knight = Knight(opponent)
 	let pawn = Pawn(opponent)
+	let king = King(opponent)
 	
 	for (let [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]])
 	{
-		let rookPostion = find(board, rook, x, y, dx, dy)
-		if (rookPostion)
-			if (all) threats.push(rookPostion)
+		let rookPosition = find(board, rook, x, y, dx, dy)
+		if (rookPosition)
+			if (all) threats.push(rookPosition)
 			else return true
 		
-		let queenPostion = find(board, queen, x, y, dx, dy)
-		if (queenPostion)
-			if (all) threats.push(queenPostion)
+		let queenPosition = find(board, queen, x, y, dx, dy)
+		if (queenPosition)
+			if (all) threats.push(queenPosition)
 			else return true
 	}
 	for (let [dx, dy] of [[-1, 1], [1, -1], [1, 1], [-1, -1]])
@@ -622,7 +633,7 @@ let threatened = (board, x, y, all, color) =>
 			else return true
 	
 	for (let [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]])
-		if (board.at(x + dx, y + dy) === knight)
+		if (board.at(x + dx, y + dy) === king)
 			if (all) threats.push([x + dx, y + dy])
 			else return true
 	
@@ -770,9 +781,9 @@ let getValidMoves = board =>
 					moves.push(createMove(board, x, y, x, y1))
 				
 				let passing = Pawn(other(piece.color))
-				if (board.at(x - 1, y) === passing)
+				if (board.at(x - 1, y) === passing && board.get(x - 1, y) === "passing")
 					moves.push(createMove(board, x, y, x - 1, y1))
-				if (board.at(x + 1, y) === passing)
+				if (board.at(x + 1, y) === passing && board.get(x + 1, y) === "passing")
 					moves.push(createMove(board, x, y, x + 1, y1))
 				
 				break

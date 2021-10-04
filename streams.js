@@ -24,7 +24,10 @@ let createController = type =>
 			accept(value)
 	}
 	
-	let finish = () => { finished = true }
+	let finishedMarker = {}
+	let onFinished = new Set()
+	
+	let finish = () => { finished = true ; for (let f of onFinished) f(finishedMarker) ; onFinished.clear() }
 	
 	let pushFrom = async iterable => { for await (let value of iterable) await tryPush(value) }
 	
@@ -39,14 +42,15 @@ let createController = type =>
 	let getIterator = () =>
 	{
 		let queue = [...past]
-		let ref
+		let resolve
 		
 		let accept = value =>
 		{
-			let resolve = ref?.deref()
-			ref = null
-			if (resolve) resolve(value)
-			else queue.push(value)
+			if (resolve)
+				resolve(value),
+				resolve = null
+			else
+				queue.push(value)
 		}
 		
 		listeners.add(accept)
@@ -57,7 +61,9 @@ let createController = type =>
 			{
 				for (let value of queue) yield await value
 				if (finished) break
-				yield await new Promise(resolve => ref = new WeakRef(resolve))
+				let value = await new Promise(f => { resolve = f ; onFinished.add(f) })
+				if (value === finishedMarker) break
+				yield value
 			}
 		}
 		
@@ -103,6 +109,23 @@ let createController = type =>
 		})()
 		
 		return stream
+	}
+	
+	let takeWhile = f =>
+	{
+		let {stream: other, tryPush, finish} = createController(type)
+		
+		; (async () =>
+		{
+			for await (let value of stream)
+			{
+				if (!await f(value, past.length, stream)) break
+				await tryPush(value)
+			}
+			finish()
+		})()
+		
+		return other
 	}
 	
 	let slice = (start = 0, length = Infinity) =>
@@ -159,7 +182,7 @@ let createController = type =>
 	let stream =
 	{
 		[Symbol.asyncIterator]: getIterator,
-		flat, flatMap, map, filter, forEach,
+		flat, flatMap, map, filter, forEach, takeWhile,
 		at, slice, reset, find, type,
 		get first() { return getFirst() },
 		get last() { return getLast() },
