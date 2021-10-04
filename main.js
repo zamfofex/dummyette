@@ -131,7 +131,7 @@ else if (action === "wait")
 {
 	endArgs()
 	
-	let game = await lichess.getGames()
+	let games = await lichess.getGames()
 	if (games.length !== 0)
 	{
 		console.log("Continuing ongoing games...")
