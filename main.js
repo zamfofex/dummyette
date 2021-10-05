@@ -152,14 +152,14 @@ else if (action === "wait")
 		{
 			let game = await lichess.StockfishGame(1, "black")
 			if (game)
-				console.log("Started game against Stockfish!"),
+				console.log("Started a game against Stockfish!"),
 				console.log(`> https://lichess.org/${game.id}/black`)
 			else
-				console.error("The game against Stockfish could not be started."),
+				console.error("A game against Stockfish could not be started."),
 				Deno.exit(1)
 			await play(game)
 		}
-	})()
+	})().catch(() => Deno.exit(1))
 	
 	console.log("Waiting for challenges...")
 	
