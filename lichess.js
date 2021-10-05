@@ -143,7 +143,7 @@ let createGame = async (headers, id) =>
 	let moveNames = history.map(({moveName}) => moveName)
 	let boards = RewindJoinStream([standardBoard], history.map(({board}) => board))
 	
-	await boards.slice(full.state.moves.split(" ").length - 1).first
+	await boards.at(full.state.moves.split(" ").length)
 	
 	boards.last.then(board =>
 	{
