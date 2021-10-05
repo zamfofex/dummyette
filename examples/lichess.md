@@ -49,7 +49,7 @@ for await (let board of game.boards)
 
 This works well if the game has just started (e.g. we just accepted a challenge or just created the game against Stockfish like above). But if we actually picked up an ongoing game, the `game.boards` stream is already going to have boards for the past moves in it (since it is a `RewindStream`).
 
-That that means is that our bot is going to spend time finding random moves for past board positions. In this case, this is not too problematic, since trying to make moves that are curently invalid won’t do anything, but when actually analysing the game, it can waste a lot of time on positions that are not current. In addition, if the name for a move it finds for a past positon forms a valid move for the *current* position, it’ll be played in the current position, which is probably not wj
+What that means is that our bot is going to spend time finding random moves for past board positions. In this case, this is not too problematic, since trying to make moves that are curently invalid won’t do anything, but when actually analysing the game, it can waste a lot of time on positions that are not current. In addition, if the name for a move it finds for a past positon forms a valid move for the *current* position, it’ll be played in the current position, which is probably not what is intended.
 
 We can move ahead to the current position by using the `stream.slice(...)` function to skip the past moves.
 

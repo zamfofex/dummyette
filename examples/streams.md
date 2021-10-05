@@ -30,6 +30,8 @@ Another way of using streams is with the `stream.forEach(consume)` function. We 
 
 Transforming streams looks very similar to tranforming arrays. We can use functions like `stream.map(transform)`, `stream.filter(keep)` to derive new streams. Note that this will not affect the existing stream, just like for arrays. The resulting stream will be of the same type as the originating stream.
 
+Note: The word “type” here refers to the stream being either a rewind stream or a live stream.
+
 The `stream.first` property is a promise that resolves to the first value of the stream once it arrives. It is a getter, so for live streams, this will actually be a promise that resolves to the very next value that arrives on the stream.
 
 The `stream.last` property is a promise that’ll resolve to the last value that arrives once the stream finishes.

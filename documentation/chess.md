@@ -105,7 +105,7 @@ Returns the name of a piece color that the argument `color` represents. `color` 
 `Piece({color, type})`
 ---
 
-If `color` and `type` are valid (see `Type(type)` and `Color(color)` above), this will return an object representing the piece of that color and type, otherwsise returns `undefined`. This will return always the same object (referentially equal) if it is given `color` and `type` arguments that represent the same color and type.
+If `color` and `type` are valid (see `Type(type)` and `Color(color)` above), this will return an object representing the piece of that color and type, otherwsise returns `undefined`. This will always return the same object (referentially equal) if its given `color` and `type` arguments represent the same color and type.
 
 `Pawn(color)`, `Knight(color)`, `Bishop(color)`, `Rook(color)`, `Queen(color)`, `King(color)`
 ---
@@ -144,7 +144,7 @@ This is an array containing all the pieces that can be returned by `Piece`.
 `pieces`
 ---
 
-This is an object associating piece names with piece objects. It can be indexed by either the piece name (returned by `getPieceName(piece)`), or it’s camel cased variant. E.g. `pieces["white pawn"] === pieces.whitePawn`.
+This is an object associating piece names with piece objects. It can be indexed by either the piece name (returned by `getPieceName(piece)`), or its camel case variant. E.g. `pieces["white pawn"] === pieces.whitePawn`.
 
 `standardBoard`
 ---
@@ -186,7 +186,7 @@ This will return the piece at the given coordinates in the board. If the square 
 
 Similar to `board.at(x, y)`, but this will accept a single string representing the name of the square.
 
-`board.at(0, 0) === board.atName("a1")` and `board.at(7, 7) === `board.atName("h8")`
+`board.at(0, 0) === board.atName("a1")` and `board.at(7, 7) === board.atName("h8")`
 
 `board.contains(x, y)`
 ---
@@ -198,7 +198,7 @@ Determines if the given coordinates are part of this board, returning `true` or 
 
 This will return the metadata for a piece in that position in the board. The metadata is a string, but only pawns and kings can have metadata, and what it means will depend on which it is. For other pieces, this will return `null`. If the coordinates do not represent a square in the board (because they are out of bounds), this will return `undefined`.
 
-For pawns, the metadata can be either `"initial"`, `"normal", or `"passing"`. `"normal"` means the pawn can only move one square forwards, `"initial"` means the pawn might be able to move two squares forward, and `"passing"` means that pawn is subject to be captured via *en passant*.
+For pawns, the metadata can be either `"initial"`, `"normal"`, or `"passing"`. `"normal"` means the pawn can only move one square forwards, `"initial"` means the pawn might be able to move two squares forward, and `"passing"` means that pawn is subject to be captured via *en passant*.
 
 For kings, the metadata can be either `"none"`, `"queen side"`, `"king side"` or `"both"`, and it represents the castling rights of the king.
 
@@ -214,7 +214,7 @@ If the change could not be performed, these functions will return `undefined`.
 `board.flip(color)`
 ---
 
-Returns a new board with the given side as the current to play. If `color` is not given, it’ll be the opposite color of the current side to play. Like the two functions above (`board.set(...)` and `board.put(...)`), this might behave strangely if not used carefuly.
+Returns a new board with the given side as the current to play. If `color` is not given, it’ll be the opposite color of the current side to play. Like the two functions above (`board.set(...)` and `board.put(...)`), this might behave strangely if not used carefully.
 
 If `color` does not represent a valid color, this function will return `undefined`.
 
@@ -226,7 +226,7 @@ Shortcut for `board.set(x, y, null)`. If the coordinates do not represent a squa
 `board.check`
 ---
 
-This will be `true` if the king of the side to play is in check, and `false` otherwise. Checkmates are considered checks for the purposes of this function.
+This will be `true` if the king of the side to play is in check, and `false` otherwise. Checkmates are considered checks for the purposes of this property.
 
 `board.checkmate`
 ---

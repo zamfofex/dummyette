@@ -18,6 +18,7 @@ table of contents
   - `stream.finished`
   - `stream.map(transform, {parallel})`
   - `stream.filter(keep, {parallel})`
+  - `stream.takeWhile(finished)`
   - `await stream.forEach(consume, {parallel})`
   - `stream.flat()`
   - `stream.flatMap(transform, {parallel})`
@@ -96,7 +97,12 @@ In any case, the transformed values retain their position in the resultant strea
 `stream.filter(keep, {parallel})`
 ---
 
-Filters some values out from the stream, returning a new stream without those values. `keep` should be a function that decides whether a value should be kept. If it returns a promise, the value it resolves to will be used instead. See the documentation for ``stream.map(...)` for what `parallel` means.
+Filters some values out from the stream, returning a new stream without those values. `keep` should be a function that decides whether a value should be kept. If it returns a promise, the value it resolves to will be used instead. See the documentation for `stream.map(...)` for what `parallel` means.
+
+`stream.takeWhile(finished)`
+---
+
+Finishes a stream preemptively. `finished` should be a function that decided whether the stream should end. The first value `finished` decides should end the stream will not be a on the resulting stream, and the resulting stream will be finished. If `finished` returns a promise, the value it resolves to will be used instead.
 
 `await stream.forEach(consume, {parallel})`
 ---
@@ -158,7 +164,7 @@ Returns an interator for the stream so that it is an iterable and can be used wi
 
 Creates a new stream from multiple iterables or async iterables.
 
-If the iterables are async, the values in the resulting stream wil appear in the stream as soon as they are produced by the iterables.
+If the iterables are async, the values in the resulting stream will appear in the stream as soon as they are produced by the iterables.
 
 `LiveJoinStream(...iterables)`, `RewindJoinStream(...iterables)`
 ---

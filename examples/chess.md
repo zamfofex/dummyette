@@ -94,7 +94,7 @@ console.log(board.toASCII())
 
 As we saw earlier, pieces are objects containing `piece.color` and `piece.type` properties. But an interesting thing to note is that all pieces on the board of the same type and color will be referrentially equal. That is to say, we can effectively compare pieces using `==` or `===`, and it’ll work as you would expect.
 
-If we have a `color` and `type`, we can use them to find a piece with those as properties using the `Piece` function. If you pass it something that doesn’t represent a piece, it’ll return `undefined`.
+If we have a `color` and `type`, we can use them to find a piece with those properties using the `Piece` function. If you pass it something that doesn’t represent a piece, it’ll return `undefined`.
 
 ~~~ JavaScript
 import {Piece} from ".../dummyette/chess.js"
@@ -111,7 +111,7 @@ console.log(king === piece) // true
 console.log(Piece("hello")) // undefined
 ~~~
 
-If you want a specific piece you want, you can use the `pieces` object to access it directly.
+If there is a specific piece you want, you can use the `pieces` object to access it directly.
 
 ~~~ JavaScript
 import {pieces} from ".../dummyette/chess.js"

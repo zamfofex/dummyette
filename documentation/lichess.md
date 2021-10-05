@@ -134,9 +134,9 @@ This will be the id of the game, it is what appears on the URL of the game.
 `game.moveNames`, `game.moves`
 ---
 
-These will be a `RewindStream` of the names of all the moves that have occured in the game insofar.
+These will be a `RewindStream` of the names of all the moves that have occured in the game insofar, in UCI format.
 
-These two properties are aliases.
+These two properties are aliases, `game.moveNames` is the same as `game.moves`.
 
 `game.turn`
 ---
@@ -171,7 +171,7 @@ This is a `RewindStream` containing information about the occurences of the game
 `historyEntry.moveName`, `historyEntry.move`
 ---
 
-These two properties are aliases. They are the name of the move that was played in this history entry.
+These two properties are aliases, they do the same. They are the name of the move that was played in this history entry.
 
 `historyEntry.moveNumber`
 ---
