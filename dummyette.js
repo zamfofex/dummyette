@@ -12,7 +12,8 @@ export let analyse = board =>
 		
 		if (board.checkmate)
 		{
-			if (board.turn === color) 
+			state.ends++
+			if (board.turn === color)
 				state.losses++
 			else
 				state.wins++
@@ -65,7 +66,10 @@ export let analyse = board =>
 		state.score = state.total / state.count + bias
 		
 		if (state.score !== state.score)
-			state.score = -Infinity
+			if (bias > 0)
+				state.score = Infinity
+			else
+				state.score = -Infinity
 	}
 	
 	candidates.sort((a, b) => (b.score - a.score) || 0)
