@@ -486,11 +486,11 @@ let createMove = (board, x, y, x1, y1) =>
 	
 	if (piece.type === "rook")
 	{
-		let other
-		if (x === 0) other = "king side"
-		if (x === board.width - 1) other = "queen side"
+		let newMeta
+		if (x === 0) newMeta = "king side"
+		if (x === board.width - 1) newMeta = "queen side"
 		
-		if (other)
+		if (newMeta)
 		{
 			let position = board.getKingPosition()
 			if (position?.y === y)
@@ -498,8 +498,8 @@ let createMove = (board, x, y, x1, y1) =>
 				let meta = board.get(position.x, y)
 				if (meta !== "none")
 				{
-					if (meta === "both") meta = other
-					else if (meta !== other) meta = "none"
+					if (meta === "both") meta = newMeta
+					else if (meta !== newMeta) meta = "none"
 					extra = board => board.set(position.x, y, meta)
 				}
 			}
@@ -518,6 +518,36 @@ let createMove = (board, x, y, x1, y1) =>
 			meta = "passing"
 		
 		if (x !== x1 && board.get(x1, y) === "passing") extra = board => board.delete(x1, y)
+	}
+	
+	if (x1 === 0 || x1 === board.width - 1)
+	{
+		let y2 = 0
+		if (piece.color === "white")
+			y2 = board.height - 1
+		
+		if (y1 === y2)
+		{
+			let newMeta
+			if (x1 === 0) newMeta = "king side"
+			if (x1 === board.width - 1) newMeta = "queen side"
+			
+			if (newMeta)
+			{
+				let position = board.getKingPosition(other(piece.color))
+				if (position?.y === y1)
+				{
+					let meta = board.get(position.x, y1)
+					if (meta !== "none")
+					{
+						if (meta === "both") meta = newMeta
+						else if (meta !== newMeta) meta = "none"
+						let prevExtra = extra
+						extra = board => prevExtra(board).set(position.x, y1, meta)
+					}
+				}
+			}
+		}
 	}
 	
 	let moves = []
