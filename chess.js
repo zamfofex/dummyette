@@ -665,7 +665,7 @@ let uncheck = (board, x, y) =>
 			if (piece.type === "king") continue
 			
 			// Pawns can only block the check diagonally if there is actually a piece that can be captured there.
-			if (piece.type === "pawn" && !board.at(x, y)) continue
+			if (piece.type === "pawn" && board.at(x, y)?.color !== color) continue
 			
 			moves.push(createMove(board, x1, y1, x, y))
 		}

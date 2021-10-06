@@ -59,7 +59,12 @@ let createController = type =>
 		{
 			while (true)
 			{
-				for (let value of queue) yield await value
+				while (queue.length !== 0)
+				{
+					let queue2 = [...queue]
+					queue = []
+					for (let value of queue2) yield await value
+				}
 				if (finished) break
 				let value = await new Promise(f => { resolve = f ; onFinished.add(f) })
 				if (value === finishedMarker) break

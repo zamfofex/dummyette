@@ -89,6 +89,7 @@ let createGame = async (headers, id) =>
 {
 	let gameEvents = await streamURL(headers, `https://lichess.org/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
+	gameEvents = RewindJoinStream(gameEvents)
 	
 	let resign = async () =>
 	{
@@ -143,7 +144,7 @@ let createGame = async (headers, id) =>
 	let moveNames = history.map(({moveName}) => moveName)
 	let boards = RewindJoinStream([standardBoard], history.map(({board}) => board))
 	
-	await boards.at(full.state.moves.split(" ").length)
+	if (full.state.moves) await boards.at(full.state.moves.split(" ").length)
 	
 	boards.last.then(board =>
 	{
