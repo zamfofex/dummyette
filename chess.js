@@ -418,7 +418,10 @@ let createMoves = (board, moves, x, y, x1, y1, extra = board => board) =>
 		
 		let name = getPositionName(x, y) + getPositionName(x1, y1)
 		if (replacements.length > 1) name += shortNames[piece.type]
-		moves.push({play, name})
+		
+		let move = {play, name}
+		Object.freeze(move)
+		moves.push(move)
 	}
 }
 
