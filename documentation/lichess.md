@@ -28,6 +28,7 @@ table of contents
   - `game.moveNames`, `game.moves`
   - `game.turn`
   - `game.status`, `game.ongoing`, `game.finished`
+  - `game.color`
   - `await game.play(...names)`
   - `await game.resign()`
   - `game.boards`
@@ -147,6 +148,11 @@ This is the side to play in the game. Either `"white"` or `"black"`.
 ---
 
 These represent the current status of the game. `game.status` will be either `"ongoing"`, `"checkmate"`, `"draw"` or `"aborted"`.
+
+`game.color`
+---
+
+This is the color that the user account of the connection used to create this game has in the game. If the account does not take part in the game, this will be `null`.
 
 `await game.play(...names)`
 ---

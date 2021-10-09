@@ -36,14 +36,14 @@ export let Lichess = async token =>
 		if (!response.ok) return
 		
 		let {id} = await response.json()
-		return createGame(headers, id)
+		return createGame(headers, username, id)
 	}
 	
 	let challenges = events
 		.filter(event => event.type === "challenge")
 		.map(event => event.challenge)
 		.filter(challenge => validateChallenge(headers, challenge))
-		.map(challenge => createChallenge(headers, events, challenge))
+		.map(challenge => createChallenge(headers, username, events, challenge))
 	
 	let getGameIDs = async () =>
 	{
@@ -58,7 +58,7 @@ export let Lichess = async token =>
 	let getGames = async () =>
 	{
 		let ids = await getGameIDs()
-		let promises = ids.map(id => createGame(headers, id)).filter(Boolean)
+		let promises = ids.map(id => createGame(headers, username, id)).filter(Boolean)
 		let games = await Promise.all(promises)
 		Object.freeze(games)
 		return games
@@ -68,7 +68,7 @@ export let Lichess = async token =>
 	{
 		id = String(id)
 		if (!/^[a-z0-9]{8}$/i.test(id)) return
-		return createGame(headers, id)
+		return createGame(headers, username, id)
 	}
 	
 	let declineChallenges = reason => { challenges.forEach(challenge => { challenge.decline(reason) }) }
@@ -85,7 +85,7 @@ export let Lichess = async token =>
 	return lichess
 }
 
-let createGame = async (headers, id) =>
+let createGame = async (headers, username, id) =>
 {
 	let gameEvents = await streamURL(headers, `https://lichess.org/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
@@ -171,6 +171,10 @@ let createGame = async (headers, id) =>
 		return played
 	}
 	
+	let color = null
+	if (whiteUsername === username) color = "white"
+	if (blackUsername === username) color = "black"
+	
 	let game =
 	{
 		id,
@@ -178,6 +182,7 @@ let createGame = async (headers, id) =>
 		history, boards,
 		play, resign,
 		blackUsername, whiteUsername,
+		color,
 		get board() { return board },
 		get status() { return status },
 		get turn() { return board.turn },
@@ -189,7 +194,7 @@ let createGame = async (headers, id) =>
 	return game
 }
 
-let createChallenge = async (headers, events, {id, rated, color, variant: {key: variant}, timeControl: {type: timeControl}}) =>
+let createChallenge = async (headers, username, events, {id, rated, color, variant: {key: variant}, timeControl: {type: timeControl}}) =>
 {
 	let accept = async () =>
 	{
@@ -198,7 +203,7 @@ let createChallenge = async (headers, events, {id, rated, color, variant: {key: 
 		let response = await fetch(`https://lichess.org/api/challenge/${id}/accept`, {method: "POST", headers})
 		if (!response.ok) return
 		await gamePromise
-		return createGame(headers, id)
+		return createGame(headers, username, id)
 	}
 	
 	let decline = async reason =>

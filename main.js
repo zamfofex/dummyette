@@ -12,10 +12,10 @@ let endArgs = () =>
 
 let play = async game =>
 {
-	let color
-	if (game.whiteUsername === lichess.username) color = "white"
-	else if (game.blackUsername === lichess.username) color = "black"
-	else console.error("The game could not be played because the bot is not partaking in it."), Deno.exit(1)
+	let color = game.color
+	if (color === null)
+		console.error("The game could not be played because the bot is not partaking in it."),
+		Deno.exit(1)
 	
 	for await (let board of game.boards.slice(game.boards.length - 1))
 	{
@@ -159,7 +159,7 @@ else if (action === "wait")
 				Deno.exit(1)
 			await play(game)
 		}
-	})().catch(() => Deno.exit(1))
+	})().catch(() => Deno.exit(-1))
 	
 	console.log("Waiting for challenges...")
 	

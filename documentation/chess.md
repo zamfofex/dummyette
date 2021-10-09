@@ -196,11 +196,11 @@ Determines if the given coordinates are part of this board, returning `true` or 
 `board.get(x, y)`
 ---
 
-This will return the metadata for a piece in that position in the board. The metadata is a string, but only pawns and kings can have metadata, and what it means will depend on which it is. For other pieces, this will return `null`. If the coordinates do not represent a square in the board (because they are out of bounds), this will return `undefined`.
+This will return the metadata for a piece in that position in the board. The metadata is a string, but only pawns, kings and rooks can have metadata, and what it means will depend on which it is. For other pieces, this will return `null`. If the coordinates do not represent a square in the board (because they are out of bounds), this will return `undefined`.
 
-For pawns, the metadata can be either `"initial"`, `"normal"`, or `"passing"`. `"normal"` means the pawn can only move one square forwards, `"initial"` means the pawn might be able to move two squares forward, and `"passing"` means that pawn is subject to be captured via *en passant*.
+For pawns, the metadata can be either `"initial"`, `"passing"` or `null`. `null` means the pawn can only move one square forwards, `"initial"` means the pawn might be able to move two squares forward, and `"passing"` means that pawn is subject to be captured via *en passant*.
 
-For kings, the metadata can be either `"none"`, `"queen side"`, `"king side"` or `"both"`, and it represents the castling rights of the king.
+For kings and rooks, the metadata can be either `"initial"`, or `null`, and together they represent the castling rights of the king.
 
 `board.set(x, y, meta)`, `board.put(x, y, piece, meta)`
 ---
