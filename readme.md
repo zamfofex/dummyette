@@ -24,6 +24,8 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
   The AI algorithm used to rate the quality of moves in a position.
 - [`chess.js`](chess.js) [[reference](documentation/chess.md) | [tutorial](examples/chess.md)] <br>
   Utilities for interacting with chess boards and finding valid moves.
+- [`fast-chess.js`](fast-chess.js) [[reference](documentation/fast-chess.md) | [tutorial](examples/fast-chess.md) (incomplete)] <br>
+  Limited utilities for interacting with mutable chess boards (for performance).
 - [`lichess.js`](lichess.js) [[reference](documentation/lichess.md) | [tutorial](examples/lichess.md)] <br>
   Interface for interacting with lichess through its bot API.
 - [`streams.js`](streams.js) [[reference](documentation/streams.md) | [tutorial](examples/streams.md) (slightly incomplete)] <br>

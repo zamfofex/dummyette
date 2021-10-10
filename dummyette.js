@@ -1,6 +1,8 @@
+import {MutableBoard} from "./fast-chess.js"
+
 export let analyse = board =>
 {
-	let color = board.turn
+	let turn = board.turn
 	
 	let traverse = (board, state, i) =>
 	{
@@ -10,38 +12,49 @@ export let analyse = board =>
 			return
 		}
 		
-		if (board.checkmate)
+		let moves = board.getMoves()
+		
+		if (moves.length === 0)
 		{
 			state.ends++
-			if (board.turn === color)
-				state.losses++
+			if (board.isCheck())
+			{
+				if (i % 2 === 0)
+					state.wins++
+				else
+					state.losses++
+			}
 			else
-				state.wins++
+			{
+				state.draws++
+			}
 			return
 		}
 		
-		if (board.draw)
-		{
-			state.ends++
-			state.draws++
-			return
-		}
+		let score = board.getScore() + Math.random() - 0.5
+		if (turn === "black") score *= -1
 		
 		state.count++
-		state.total += board.getScore(color) + Math.random() - 0.5
+		state.total += score
 		
 		let next = []
-		for (let move of board.moves)
+		for (let move of moves)
 		{
-			let board = move.play()
+			move.play()
 			let score = board.getScore() + Math.random() - 0.5
-			next.push({board, score})
+			if ((i % 2 === 0) !== (turn === "black")) score *= -1
+			next.push({move, score})
+			move.unplay()
 		}
 		
 		next.sort((a, b) => b.score - a.score)
 		next.length = Math.min(next.length, 4)
-		for (let {board, score} of next)
+		for (let {move} of next)
+		{
+			move.play()
 			traverse(board, state, i + 1)
+			move.unplay()
+		}
 	}
 	
 	let candidates = []
@@ -53,7 +66,7 @@ export let analyse = board =>
 		
 		candidates.push(state)
 		
-		traverse(board, state, 0)
+		traverse(MutableBoard(board), state, 0)
 	}
 	
 	for (let state of candidates)
