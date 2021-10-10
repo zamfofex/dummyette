@@ -9,6 +9,7 @@
 !/main.js
 !/dummyette.js
 !/chess.js
+!/fast-chess.js
 !/lichess.js
 !/streams.js
 !/streams-browser.js
@@ -16,6 +17,7 @@
 !/documentation/main.md
 !/documentation/dummyette.md
 !/documentation/chess.md
+!/documentation/fast-chess.md
 !/documentation/lichess.md
 !/documentation/streams.md
 !/documentation/streams-browser.md
@@ -23,6 +25,7 @@
 !/examples/main.md
 !/examples/dummyette.md
 !/examples/chess.md
+!/examples/fast-chess.md
 !/examples/lichess.md
 !/examples/streams.md
 !/examples/streams-browser.md
