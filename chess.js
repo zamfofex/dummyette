@@ -236,12 +236,7 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 	let isCheckmate = memoize(() => isCheck() && getMoves().length === 0)
 	let isStalemate = memoize(() => !isCheck() && getMoves().length === 0)
 	
-	let getMoves = memoize(() =>
-	{
-		let moves = getValidMoves(board)
-		Object.freeze(moves)
-		return moves
-	})
+	let getMoves = memoize(() => getValidMoves(board))
 	
 	let getScore = (color = turn) =>
 	{
@@ -587,7 +582,9 @@ let getValidMoves = board =>
 		}
 	}
 	
-	return moves.filter(move => isValid(move.play()))
+	moves = moves.filter(move => isValid(move.play()))
+	Object.freeze(moves)
+	return moves
 }
 
 let isValid = board =>
