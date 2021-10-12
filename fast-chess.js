@@ -18,6 +18,9 @@ let values = [1, 3, 3, 5, 9, 0]
 let colors = {white: White, black: Black}
 let types = {pawn: Pawn, knight: Knight, bishop: Bishop, rook: Rook, queen: Queen, king: King}
 
+let QueenSideCastle = 1
+let KingSideCastle = 2
+
 export let MutableBoard = board =>
 {
 	if (board.width !== 8) return
@@ -34,11 +37,25 @@ export let MutableBoard = board =>
 		array[x + y * 8] = colors[color] | types[type]
 	}
 	
+	let whiteCastling = 0
+	if (board.get(4, 0) === "initial")
+	{
+		if (board.get(0, 0) === "initial") whiteCastling |= QueenSideCastle
+		if (board.get(7, 0) === "initial") whiteCastling |= KingSideCastle
+	}
+	let blackCastling = 0
+	if (board.get(4, 7) === "initial")
+	{
+		if (board.get(0, 7) === "initial") blackCastling |= QueenSideCastle
+		if (board.get(7, 7) === "initial") blackCastling |= KingSideCastle
+	}
+	
 	let state =
 	{
 		whiteKingPosition: board.getKingPosition("white"),
 		blackKingPosition: board.getKingPosition("black"),
 		turn: board.turn === "white" ? White : Black,
+		whiteCastling, blackCastling,
 	}
 	
 	let result =
@@ -213,11 +230,24 @@ let createMove = (moves, state, array, x, y, x1, y1) =>
 	let turn = state.turn
 	let other = turn === White ? Black : White
 	
+	let castlingName = turn === White ? "whiteCastling" : "blackCastling"
+	let castling = state[castlingName]
+	let newCastling = castling
+	
+	let first = turn === White ? 0 : 7
+	
+	if (y === first)
+	{
+		if (x === 0) newCastling &= KingSideCastle
+		if (x === 7) newCastling &= QueenSideCastle
+	}
+	
 	let play = () =>
 	{
 		array[from] = None
 		array[to] = beforeFrom
 		state.turn = other
+		state[castlingName] = newCastling
 	}
 	
 	let unplay = () =>
@@ -225,6 +255,7 @@ let createMove = (moves, state, array, x, y, x1, y1) =>
 		array[from] = beforeFrom
 		array[to] = beforeTo
 		state.turn = turn
+		state[castlingName] = castling
 	}
 	
 	play()
@@ -290,16 +321,20 @@ let createKingMove = (moves, state, array, x, y, x1, y1) =>
 	let turn = state.turn
 	let other = turn === White ? Black : White
 	
-	let name = turn === White ? "whiteKingPosition" : "blackKingPosition"
-	let position = state[name]
+	let positionName = turn === White ? "whiteKingPosition" : "blackKingPosition"
+	let position = state[positionName]
 	let newPosition = {x: x1, y: y1}
+	
+	let castlingName = turn === White ? "whiteCastling" : "blackCastling"
+	let castling = state[castlingName]
 	
 	let play = () =>
 	{
 		array[from] = None
 		array[to] = beforeFrom
 		state.turn = other
-		state[name] = newPosition
+		state[positionName] = newPosition
+		state[castlingName] = 0
 	}
 	
 	let unplay = () =>
@@ -307,12 +342,80 @@ let createKingMove = (moves, state, array, x, y, x1, y1) =>
 		array[from] = beforeFrom
 		array[to] = beforeTo
 		state.turn = turn
-		state[name] = position
+		state[positionName] = position
+		state[castlingName] = castling
 	}
 	
 	play()
 	let check = isCheck(state, array, turn)
 	unplay()
+	if (check) return
+	
+	let move = {play, unplay}
+	Object.freeze(move)
+	
+	moves.push(move)
+}
+
+let createCastling = (moves, state, array, x, y, rookX, dx) =>
+{
+	let x1 = x + dx + dx
+	let from = x + y * 8
+	let to = x1 + y * 8
+	
+	let rookIndex = rookX + y * 8
+	
+	let beforeFrom = array[from]
+	let beforeTo = array[to]
+	
+	let rook = array[rookIndex]
+	
+	let turn = state.turn
+	let other = turn === White ? Black : White
+	
+	let positionName = turn === White ? "whiteKingPosition" : "blackKingPosition"
+	let position = state[positionName]
+	let newPosition = {x: x1, y}
+	
+	let castlingName = turn === White ? "whiteCastling" : "blackCastling"
+	let castling = state[castlingName]
+	
+	let play = () =>
+	{
+		array[from] = None
+		array[to] = beforeFrom
+		array[rookIndex] = None
+		array[x + dx] = rook
+		state.turn = other
+		state[positionName] = newPosition
+		state[castlingName] = 0
+	}
+	
+	let unplay = () =>
+	{
+		array[from] = beforeFrom
+		array[to] = beforeTo
+		array[rookIndex] = rook
+		array[x + dx] = None
+		state.turn = turn
+		state[positionName] = position
+		state[castlingName] = castling
+	}
+	
+	let check = isCheck(state, array, turn)
+	
+	if (!check)
+	{
+		play()
+		check = isCheck(state, array, turn)
+		if (!check)
+		{
+			state[positionName] = {x: x + dx, y}
+			check = isCheck(state, array, turn)
+		}
+		unplay()
+	}
+	
 	if (check) return
 	
 	let move = {play, unplay}
@@ -457,6 +560,20 @@ let getValidMoves = (state, array) =>
 				break
 			
 			case King:
+			{
+				let castling = color === White ? state.whiteCastling : state.blackCastling
+				
+				if (castling & QueenSideCastle)
+				if (array[3 + y * 8] === None)
+				if (array[2 + y * 8] === None)
+				if (array[1 + y * 8] === None)
+					createCastling(moves, state, array, x, y, 0, -1)
+				
+				if (castling & KingSideCastle)
+				if (array[5 + y * 8] === None)
+				if (array[6 + y * 8] === None)
+					createCastling(moves, state, array, x, y, 7, 1)
+				
 				if (y > 0 && (array[(x + 0) + (y - 1) * 8] & Color) !== color) createKingMove(moves, state, array, x, y, x + 0, y - 1)
 				if (y < 7 && (array[(x + 0) + (y + 1) * 8] & Color) !== color) createKingMove(moves, state, array, x, y, x + 0, y + 1)
 				
@@ -475,6 +592,7 @@ let getValidMoves = (state, array) =>
 				}
 				
 				break
+			}
 		}
 	}
 	
