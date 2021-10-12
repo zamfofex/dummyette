@@ -9,6 +9,7 @@ table of contents
   - `MutableBoard(board)`
   - `board.getScore()`
   - `board.getMoves()`
+  - `board.isCheck()`
 - moves
   - `move.play()`
   - `move.unplay()`
@@ -34,6 +35,11 @@ This function will return the score of white for the current position in the boa
 ---
 
 This will return the valid moves in the given position.
+
+`board.isCheck()`
+---
+
+Returns `true` if either the side to play is in check, or has lost due to a checkmate and `false` otherwise.
 
 `move.play()`
 ---
