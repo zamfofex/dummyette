@@ -134,11 +134,13 @@ else if (action === "continue")
 }
 else if (action === "wait")
 {
+	let levels
+	
 	if (args[0] === "play")
 	{
 		args.shift()
 		
-		let levels = args.splice(0, Infinity)
+		levels = args.splice(0, Infinity)
 		
 		for (let level of levels)
 		{
@@ -150,25 +152,6 @@ else if (action === "wait")
 		}
 		
 		if (levels.length === 0) levels.push(1)
-		
-		console.log("Starting games against Stockfish...")
-		
-		; (async () =>
-		{
-			while (true)
-			{
-				let level = levels[Math.floor(Math.random() * levels.length)]
-				
-				let game = await lichess.StockfishGame(level, "black")
-				if (game)
-					console.log("Started a game against Stockfish!"),
-					console.log(`> https://lichess.org/${game.id}/black`)
-				else
-					console.error("A game against Stockfish could not be started."),
-					Deno.exit(1)
-				await play(game)
-			}
-		})()
 	}
 	
 	endArgs()
@@ -182,6 +165,28 @@ else if (action === "wait")
 			console.log(`> https://lichess.org/${game.id}/black`),
 			play(game)
 	}
+	
+	; (async () =>
+	{
+		if (!levels) return
+		
+		await Promise.all(games.map(({history}) => history.last))
+		
+		console.log("Starting games against Stockfish...")
+		while (true)
+		{
+			let level = levels[Math.floor(Math.random() * levels.length)]
+			
+			let game = await lichess.StockfishGame(level, "black")
+			if (game)
+				console.log("Started a game against Stockfish!"),
+				console.log(`> https://lichess.org/${game.id}/black`)
+			else
+				console.error("A game against Stockfish could not be started."),
+				Deno.exit(1)
+			await play(game)
+		}
+	})()
 	
 	console.log("Waiting for challenges...")
 	
