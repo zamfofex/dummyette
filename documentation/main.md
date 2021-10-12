@@ -10,6 +10,7 @@ table of contents
 - the `start` action
 - the `continue` action
 - the `wait` action
+- the `wait play` action
 - specifying the access token
 - required Deno permissions
 
@@ -67,6 +68,17 @@ Pick all ongoing games back up, and keep accepting all incoming challenges that 
 - The opponent plays as the white pieces.
 - The game is not a variant.
 - The time control is “unlimited”.
+
+the `wait play` action
+---
+
+~~~
+deno run -A .../dummyette/main.js wait play "${levels[@]}"
+~~~
+
+Similar to the `wait` action, but this will additionally begin games against Stockfish sequentially. The Stockfish level of each game will be randomly chosen between the given levels.
+
+If no levels are specified, the level chosen will always be 1.
 
 specifying the access token
 ---

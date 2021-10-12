@@ -134,6 +134,43 @@ else if (action === "continue")
 }
 else if (action === "wait")
 {
+	if (args[0] === "play")
+	{
+		args.shift()
+		
+		let levels = args.splice(0, Infinity)
+		
+		for (let level of levels)
+		{
+			if (!"12345678".split("").includes(level))
+			{
+				console.error(`Invalid Stockfish level: '${level}'.`)
+				Deno.exit(1)
+			}
+		}
+		
+		if (levels.length === 0) levels.push(1)
+		
+		console.log("Starting games against Stockfish...")
+		
+		; (async () =>
+		{
+			while (true)
+			{
+				let level = levels[Math.floor(Math.random() * levels.length)]
+				
+				let game = await lichess.StockfishGame(level, "black")
+				if (game)
+					console.log("Started a game against Stockfish!"),
+					console.log(`> https://lichess.org/${game.id}/black`)
+				else
+					console.error("A game against Stockfish could not be started."),
+					Deno.exit(1)
+				await play(game)
+			}
+		})()
+	}
+	
 	endArgs()
 	
 	let games = await lichess.getGames()
@@ -141,27 +178,10 @@ else if (action === "wait")
 	{
 		console.log("Continuing ongoing games...")
 		for (let game of games)
+			console.log("The game is continuing!"),
 			console.log(`> https://lichess.org/${game.id}/black`),
 			play(game)
-		console.log("")
 	}
-	
-	console.log("Starting games against Stockfish...")
-	
-	; (async () =>
-	{
-		while (true)
-		{
-			let game = await lichess.StockfishGame(1, "black")
-			if (game)
-				console.log("Started a game against Stockfish!"),
-				console.log(`> https://lichess.org/${game.id}/black`)
-			else
-				console.error("A game against Stockfish could not be started."),
-				Deno.exit(1)
-			await play(game)
-		}
-	})().catch(() => Deno.exit(-1))
 	
 	console.log("Waiting for challenges...")
 	
@@ -238,7 +258,7 @@ else if (action === "idle")
 else
 {
 	if (action) console.error(`Unknown action '${action}'.`)
-	else console.error("You need to specify an action: 'wait', 'start', 'continue', 'resign', 'idle'")
+	else console.error("You need to specify an action: 'wait', 'wait play', 'start', 'continue', 'resign', or 'idle'")
 	Deno.exit(1)
 }
 
