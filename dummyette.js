@@ -1,12 +1,15 @@
 import {MutableBoard} from "./fast-chess.js"
 
+let depth = 6
+let spread = 8
+
 export let analyse = board =>
 {
 	let turn = board.turn
 	
 	let traverse = (board, state, i) =>
 	{
-		if (i === 4)
+		if (i === depth)
 		{
 			state.ends++
 			return
@@ -48,7 +51,7 @@ export let analyse = board =>
 		}
 		
 		next.sort((a, b) => b.score - a.score)
-		next.length = Math.min(next.length, 4)
+		next.length = Math.min(next.length, Math.round(spread * (depth - i) / depth))
 		for (let {move} of next)
 		{
 			move.play()
