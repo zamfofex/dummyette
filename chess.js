@@ -561,7 +561,7 @@ let getValidMoves = board =>
 				
 				let meta = board.get(x, y)
 				let rook = Rook(piece.color)
-				if (meta === "initial")
+				if (meta === "initial" && !board.check)
 				{
 					rooksLoop:
 					for (let [dx, rookX] of [[1, board.width - 1], [-1, 0]])
