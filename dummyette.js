@@ -23,16 +23,19 @@ export let analyse = board =>
 			if (board.isCheck())
 			{
 				if (i % 2 === 0)
-					state.wins++
+					state.wins += state.chance
 				else
-					state.losses++
+					state.losses += state.chance0
 			}
 			else
 			{
-				state.draws++
+				state.draws += state.chance
 			}
 			return
 		}
+		
+		state.chance0 = state.chance
+		state.chance /= moves.length
 		
 		let score = board.getScore() + Math.random() - 0.5
 		if (turn === "black") score *= -1
@@ -64,7 +67,7 @@ export let analyse = board =>
 	
 	for (let move of board.moves)
 	{
-		let state = {move, total: 0, count: 0, ends: 0, wins: 0, losses: 0, draws: 0}
+		let state = {move, total: 0, count: 0, chance: 1, wins: 0, losses: 0, draws: 0}
 		let board = move.play()
 		
 		candidates.push(state)
@@ -75,9 +78,9 @@ export let analyse = board =>
 	for (let state of candidates)
 	{
 		let bias =
-			+ 100 / (state.ends - state.wins) - (100 / state.ends)
-			- 100 / (state.ends - state.losses) + (100 / state.ends)
-			- state.draws * 50 / state.ends
+			+ 15 / (1 - state.wins) - 15
+			- 15 / (1 - state.losses) + 15
+			- state.draws * 15
 		
 		state.score = state.total / state.count + bias
 		
