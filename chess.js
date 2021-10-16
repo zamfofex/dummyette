@@ -21,10 +21,10 @@ export let pieces = {}
 for (let color of colors)
 for (let type of types)
 {
-	let piece = {color, type}
+	let name = `${color} ${type}`
+	let piece = {color, type, name}
 	Object.freeze(piece)
 	
-	let name = `${color} ${type}`
 	let titleName = color + type[0].toUpperCase() + type.slice(1)
 	pieceList.push(piece)
 	pieceNames.push(name)
@@ -38,18 +38,14 @@ Object.freeze(pieces)
 
 export let getPieceName = piece =>
 {
+	piece = Piece(piece)
 	if (!piece) return
-	let {color, type} = piece
-	color = Color(color)
-	type = Type(type)
-	if (!color) return
-	if (!type) return
-	return `${color} ${type}`
+	return piece.name
 }
 
-let Piece = piece =>
+export let Piece = ({color, type}) =>
 {
-	let name = getPieceName(piece)
+	let name = `${color} ${type}`
 	if (!name) return
 	return pieces[name]
 }
@@ -121,31 +117,22 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 	Object.freeze(array)
 	Object.freeze(meta)
 	
-	let contains = (x, y) =>
+	let createPosition = (x, y) =>
 	{
-		x = Number(x)
-		y = Number(y)
-		if (!range(x, 0, width - 1)) return false
-		if (!range(y, 0, height - 1)) return false
-		
-		return true
+		let position = Position(x, y)
+		if (!position) return
+		if (!range(position.x, 0, width - 1)) return
+		if (!range(position.y, 0, height - 1)) return
+		return position
 	}
 	
-	let atName = name =>
-	{
-		name = String(name)
-		let position = getPosition(name)
-		if (!position) return
-		let {x, y} = position
-		return at(x, y)
-	}
+	let contains = (x, y) => Boolean(createPosition(x, y))
 	
 	let at = (x, y) =>
 	{
-		x = Number(x)
-		y = Number(y)
-		if (!contains(x, y)) return
-		return array[x + y * width]
+		let position = createPosition(x, y)
+		if (!position) return
+		return array[position.x + position.y * width]
 	}
 	
 	let play = (...names) =>
@@ -168,9 +155,21 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 	
 	let put = (x, y, piece, metaValue) =>
 	{
-		x = Number(x)
-		y = Number(y)
-		if (!contains(x, y)) return
+		let position = createPosition(x)
+		if (position)
+		{
+			metaValue = piece
+			piece = y
+		}
+		else
+		{
+			position = createPosition(x, y)
+			if (!position) return
+		}
+		
+		x = position.x
+		y = position.y
+		
 		if (metaValue === undefined) metaValue = null
 		if (metaValue !== null) metaValue = String(metaValue)
 		
@@ -210,10 +209,9 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 	
 	let get = (x, y) =>
 	{
-		x = Number(x)
-		y = Number(y)
-		if (!contains(x, y)) return
-		return meta[x + y * width]
+		let position = createPosition(x, y)
+		if (!position) return
+		return meta[position.x + position.y * width]
 	}
 	
 	let getKingPosition = (color = turn) =>
@@ -222,7 +220,7 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 		if (!king) return
 		for (let x = 0 ; x < width ; x++)
 		for (let y = 0 ; y < height ; y++)
-			if (at(x, y) === king) return Object.freeze({x, y})
+			if (at(x, y) === king) return Position(x, y)
 	}
 	
 	let isCheck = memoize(() =>
@@ -311,7 +309,8 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 		width, height,
 		turn, flip,
 		contains,
-		at, atName,
+		Position: createPosition,
+		at, atName: at,
 		play,
 		Move,
 		put, delete: del,
@@ -329,6 +328,33 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 	
 	Object.freeze(board)
 	return board
+}
+
+export let Position = (value, other) =>
+{
+	if (other !== undefined) return Position({x: value, y: other})
+	if (typeof value === "string") value = getPosition(value)
+	if (typeof value !== "object") return
+	
+	let {x, y} = value
+	
+	x = Number(x)
+	y = Number(y)
+	
+	if (!range(x, 0)) return
+	if (!range(y, 0)) return
+	
+	let file = ""
+	let rank = String(y + 1)
+	
+	let x1 = x + 1
+	while (x1 !== 0)
+		file += (x1 % 26 + 9).toString(36),
+		x1 = Math.floor(x1 / 26)
+	
+	let position = {x, y, file, rank, name: file + rank}
+	Object.freeze(position)
+	return position
 }
 
 let memoize = f =>
@@ -375,19 +401,6 @@ let getPosition = name =>
 	return {x, y}
 }
 
-let getPositionName = (x, y) =>
-{
-	let file = ""
-	let rank = y + 1
-	
-	x++
-	while (x !== 0)
-		file += (x % 26 + 9).toString(36),
-		x = Math.floor(x / 26)
-	
-	return file + rank
-}
-
 let shortNames = {pawn: "p", knight: "n", bishop: "b", rook: "r", queen: "q", king: "k"}
 
 let createMoves = (board, moves, x, y, x1, y1, extra = board => board) =>
@@ -411,10 +424,13 @@ let createMoves = (board, moves, x, y, x1, y1, extra = board => board) =>
 	{
 		let play = () => extra(board.delete(x, y).put(x1, y1, piece, meta)).flip()
 		
-		let name = getPositionName(x, y) + getPositionName(x1, y1)
+		let from = Position(x, y)
+		let to = Position(x1, y1)
+		
+		let name = from.name + to.name
 		if (replacements.length > 1) name += shortNames[piece.type]
 		
-		let move = {play, name}
+		let move = {play, name, from, to}
 		Object.freeze(move)
 		moves.push(move)
 	}

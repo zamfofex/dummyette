@@ -17,11 +17,17 @@ table of contents
   - `Piece({color, type})`
   - `Pawn(color)`, `Knight(color)`, `Bishop(color)`, `Rook(color)`, `Queen(color)`, `King(color)`
   - `WhitePiece(type)`, `BlackPiece(type)`
-  - `getPieceName(piece)`
   - `piece.color`
   - `piece.type`
+  - `piece.name`
+  - `getPieceName(piece)`
   - `pieceList`
   - `pieces`
+- positions
+  - `Position(x, y)`, `Position(name)`, `Position({x, y})`
+  - `position.file`, `position.rank`
+  - `position.x`, `position.y`
+  - `position.name`
 - boards
   - `standardBoard`
   - `emptyBoard`
@@ -29,13 +35,14 @@ table of contents
   - `board.width`
   - `board.height`
   - `board.turn`
-  - `board.at(x, y)`
-  - `board.atName(name)`
-  - `board.contains(x, y)`
-  - `board.get(x, y)`
-  - `board.set(x, y, meta)`, `board.put(x, y, piece, meta)`
+  - `board.at(x, y)`, `board.at(position)`
+  - `board.atName(x, y)`, `board.atName(position)`
+  - `board.contains(x, y)`, `board.contains(position)`
+  - `board.Position(x, y)`, `board.Position(position)`
+  - `board.get(x, y)`, `board.get(position)`
+  - `board.set(x, y, meta)`, `board.put(x, y, piece, meta)`, `board.set(position, meta)`, `board.put(position, piece, meta)`
   - `board.flip(color)`
-  - `board.delete(x, y)`
+  - `board.delete(x, y)`, `board.delete(position)`
   - `board.check`
   - `board.checkmate`
   - `board.stalemate`, `board.draw`
@@ -47,6 +54,7 @@ table of contents
   - `board.Move(name)`
   - `move.play()`
   - `move.name`
+  - `move.from`, `move.to`
   - `board.play(...names)`
   - `board.moves`
 
@@ -121,11 +129,6 @@ These are convenience functions for getting the object that represent the piece 
 
 E.g. `WhitePiece("pawn") === Piece({type: "pawn", color: "white"})`
 
-`getPieceName(piece)`
----
-
-Returns the name of the given `piece` argument. E.g. `"white pawn"`, `"black pawn"`, etc. If the given argument does not represent a piece, this will return `undefined`.
-
 `piece.color`
 ---
 
@@ -136,6 +139,16 @@ This will be the color of the `piece` object. (Either `"white"` or `"black"`.)
 
 This will be the type of the `piece` object. (E.g. `"pawn"`, `"king"`, etc.)
 
+`piece.name`
+---
+
+This property will be the piece’s name, e.g. `"white pawn"`, `"black pawn"`, etc. `piece.name === piece.color + " " + piece.type`
+
+`getPieceName(piece)`
+---
+
+Deprecated alias for `piece.name`. If the given argument does not represent a piece, this will return `undefined`.
+
 `pieceList`
 ---
 
@@ -144,7 +157,31 @@ This is an array containing all the pieces that can be returned by `Piece`.
 `pieces`
 ---
 
-This is an object associating piece names with piece objects. It can be indexed by either the piece name (returned by `getPieceName(piece)`), or its camel case variant. E.g. `pieces["white pawn"] === pieces.whitePawn`.
+This is an object associating piece names with piece objects. It can be indexed by either `piece.name`, or its camel case variant. E.g. `pieces["white pawn"] === pieces.whitePawn`.
+
+`Position(x, y)`, `Position(name)`, `Position({x, y})`
+---
+
+This function creates a position in the board from its given arguments. If two values are given, they are assumed to be coordinates. If only one value is given, it should be either a string representing the position’s name, or an object containing `x` and `y` attributes representing the coordinates of the position.
+
+Note: This function will not necessarily return the same object (referentially equal) to represent the same given position.
+
+`position.x`, `position.y`
+---
+
+These represent the coordinates of the position as integers. E.g. for a1, `position.x === 0 && position.y === 8`.
+
+`position.x` represents the file, and `position.y` represents the row.
+
+`position.file`, `position.rank`
+---
+
+These represent the coordinates of the position as strings. `position.file` will be be composed of lowercase letters, whereas `position.rank` will be composed of digits.
+
+`position.name`
+---
+
+This property represent the name of the position. `position.name === position.file + position.rank`
 
 `standardBoard`
 ---
@@ -176,33 +213,40 @@ This will be the height of the board in squares (the number of ranks the board h
 
 Which side (color) is to play. This will be either `"white"` or `"black"`.
 
-`board.at(x, y)`
+`board.at(x, y)`, `board.at(position)`
 ---
 
-This will return the piece at the given coordinates in the board. If the square does not contain a piece, this will return `null`. If the coordinates do not represent a square in the board (because they are out of bounds), this will return `undefined`.
+This will return the piece at the given coordinates in the board. If the square does not contain a piece, this will return `null`. If the position does not represent a square in the board (because it is out of bounds), this will return `undefined`.
 
-`board.atName(name)`
+`board.at(0, 0) === board.at("a1")` and `board.at(7, 7) === board.at("h8")`
+
+Likewise, e.g. `board.at({x: 2, y: 3}) === board.at("c4")`
+
+`board.atName(x, y)`, `board.atName(position)`
 ---
 
-Similar to `board.at(x, y)`, but this will accept a single string representing the name of the square.
+Deprecated alias to `board.at(...)`.
 
-`board.at(0, 0) === board.atName("a1")` and `board.at(7, 7) === board.atName("h8")`
-
-`board.contains(x, y)`
+`board.contains(x, y)`, `board.contains(position)`
 ---
 
-Determines if the given coordinates are part of this board, returning `true` or `false` as appropriate.
+Determines if the given position is part of this board (i.e. it is in bounds), returning `true` or `false` as appropriate.
 
-`board.get(x, y)`
+`board.Position(x, y)`, `board.Position(position)`
 ---
 
-This will return the metadata for a piece in that position in the board. The metadata is a string, but only pawns, kings and rooks can have metadata, and what it means will depend on which it is. For other pieces, this will return `null`. If the coordinates do not represent a square in the board (because they are out of bounds), this will return `undefined`.
+Similar to `Position(...)`, but this will return `undefined` if the board does not contain the given position (i.e. it is out of bounds).
+
+`board.get(x, y)`, `board.get(position)`
+---
+
+This will return the metadata for a piece in that position in the board. The metadata is a string, but only pawns, kings and rooks can have metadata, and what it means will depend on which it is. For other pieces, this will return `null`. If the position does not represent a square in the board (because it is out of bounds), this will return `undefined`.
 
 For pawns, the metadata can be either `"initial"`, `"passing"` or `null`. `null` means the pawn can only move one square forwards, `"initial"` means the pawn might be able to move two squares forward, and `"passing"` means that pawn is subject to be captured via *en passant*.
 
 For kings and rooks, the metadata can be either `"initial"`, or `null`, and together they represent the castling rights of the king.
 
-`board.set(x, y, meta)`, `board.put(x, y, piece, meta)`
+`board.set(x, y, meta)`, `board.put(x, y, piece, meta)`, `board.set(position, meta)`, `board.put(position, piece, meta)`
 ---
 
 These functions will return a new (immutable) board with the squares at the given coodinates having their pieces or metadata changed. For `board.put(...)`, the metadata given is optional. If `piece` is `null`, it’ll be removed from the board.
@@ -221,7 +265,7 @@ If `color` does not represent a valid color, this function will return `undefine
 `board.delete(x, y)`
 ---
 
-Shortcut for `board.set(x, y, null)`. If the coordinates do not represent a square in the board (because they are out of bounds), this will return `undefined`.
+Shortcut for `board.set(x, y, null)`. If the position does not represent a square in the board (because it is out of bounds), this will return `undefined`.
 
 `board.check`
 ---
@@ -251,7 +295,7 @@ This is the material points of white.
 `board.getKingPosition(color)`
 ---
 
-This will return the position of the king of the given color. If no color is specified, it’ll be the color of the current side to play. The returned value will be an object containing `x` and `y` properties representing the coordinates.
+This will return the position of the king of the given color. If no color is specified, it’ll be the color of the current side to play.
 
 If `color` does not represent a color, this will return `undefined`.
 
@@ -276,6 +320,11 @@ Returns a new board object representing the position after this move having been
 ---
 
 This will be the name of the move in UCI format.
+
+`move.from`, `move.to`
+---
+
+These will be the starting and ending positions of the moving piece respectively.
 
 `board.play(...names)`
 ---
