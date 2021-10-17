@@ -144,8 +144,6 @@ let createGame = async (headers, username, id) =>
 	let moveNames = history.map(({moveName}) => moveName)
 	let boards = RewindJoinStream([standardBoard], history.map(({board}) => board))
 	
-	if (full.state.moves) await boards.at(full.state.moves.split(" ").length)
-	
 	boards.last.then(board =>
 	{
 		if (board.moves.length === 0)
@@ -156,6 +154,8 @@ let createGame = async (headers, username, id) =>
 		else
 			status = "aborted"
 	})
+	
+	if (full.state.moves) await boards.at(full.state.moves.split(" ").length)
 	
 	let play = async (...names) =>
 	{
