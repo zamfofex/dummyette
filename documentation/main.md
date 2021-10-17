@@ -12,6 +12,7 @@ table of contents
 - the `wait` action
 - the `wait play` action
 - specifying the access token
+- opening book
 - required Deno permissions
 
 introduction
@@ -89,10 +90,24 @@ By default, the lichess access token is identified through the `lichess_token` e
 - `deno run -A .../dummyette/main.js token given "$token" ...` — uses the given argument as the token.
 - `deno run -A .../dummyette/main.js token prompt ...` — prompts for the token on stdin.
 
+opening book
+---
+
+By default, no opening book is used. One can be specified using the `openings` specifier. An opening book is a JSON file containing information about openings that the bot will use.
+
+Note that is the `token` specifier is given, the `openings` specifier must come after it.
+
+- `deno run -A .../dummyette/main.js openings openings.json ...`
+- `deno run -A .../dummyette/main.js openings /home/user/openings.json ...`
+
+TODO: Explain the opening book format more thoroughly.
+
 required Deno permissions
 ---
 
 The only permission that is always required to run the bot is `--allow-net=lichess.org`. However, note that `--allow-env=lichess_token` might also be required if a different means of identifying the token is not provided.
+
+It is also necessary to provide the `--allow-read` permission to the opening book file if it is specified.
 
 ~~~
 deno run --allow-net=lichess.org .../dummyette/main.js token prompt wait

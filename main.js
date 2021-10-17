@@ -17,6 +17,45 @@ let play = async game =>
 		console.error("The game could not be played because the bot is not partaking in it."),
 		Deno.exit(1)
 	
+	if (game.finished)
+	{
+		console.warn("The game could not be played because it is already finished.")
+		console.log(`< https://lichess.org/${game.id}/black`)
+		return
+	}
+	
+	let opening = openings
+	
+	for await (let move of game.moves.slice(0, game.moves.length - 1))
+	{
+		if (!opening[move]) break
+		opening = opening[move].steps
+	}
+	
+	for await (let {move, turn} of game.history.slice(game.history.length - 1))
+	{
+		if (turn === color) continue
+		
+		if (!opening[move]) break
+		opening = opening[move].steps
+		
+		let steps = Object.entries(opening).filter(([{}, a]) => a.count > 4)
+		if (steps.length === 0) break
+		
+		steps.sort(([{}, a], [{}, b]) => b.wins - a.wins)
+		steps.length = Math.min(steps.length, 4)
+		
+		let step = steps[Math.floor(Math.random() * steps.length)]
+		opening = step[1].steps
+		
+		if (!await game.play(step[0]))
+		{
+			console.error(`Opening move ${step[0]} was not played successfully.`)
+			await game.resign()
+			break
+		}
+	}
+	
 	for await (let board of game.boards.slice(game.boards.length - 1))
 	{
 		if (board.turn !== color) continue
@@ -35,11 +74,10 @@ let play = async game =>
 	console.log(`< https://lichess.org/${game.id}/black`)
 }
 
-let token
-
 let args = Deno.args.slice()
-
 let action = args.shift()
+
+let token
 
 if (action === "token")
 {
@@ -75,6 +113,20 @@ if (action === "token")
 else
 {
 	token = Deno.env.get("lichess_token")
+}
+
+let openings = {}
+
+if (action === "openings")
+{
+	let path = args.shift()
+	if (path === undefined)
+		console.error("No given opening book path."),
+		Deno.exit(1)
+	
+	openings = JSON.parse(await Deno.readTextFile(path))
+	
+	action = args.shift()
 }
 
 let lichess = await Lichess(token)
