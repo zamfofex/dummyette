@@ -92,11 +92,11 @@ let createController = type =>
 		; (async () =>
 		{
 			if (parallel)
-				for await (let value of stream)
-					await tryPush(f(value, past.length, stream))
+				for await (let value of getIterator())
+					await tryPush(f(value, past.length))
 			else
-				for await (let value of stream)
-					await tryPush(await f(value, past.length, stream))
+				for await (let value of getIterator())
+					await tryPush(await f(value, past.length))
 			finish()
 		})()
 		
@@ -105,9 +105,9 @@ let createController = type =>
 	
 	let filter = (f, options = {}) =>
 	{
-		let {stream, tryPush, finish} = createController(type)
+		let {stream: other, tryPush, finish} = createController(type)
 		
-		let mapped = map(async (value, index, stream) => ({value, boolean: Boolean(await f(value, index, stream))}), options)
+		let mapped = map(async (value, index) => ({value, boolean: Boolean(await f(value, index))}), options)
 		
 		; (async () =>
 		{
@@ -116,7 +116,7 @@ let createController = type =>
 			finish()
 		})()
 		
-		return stream
+		return other
 	}
 	
 	let takeWhile = f =>
@@ -125,9 +125,9 @@ let createController = type =>
 		
 		; (async () =>
 		{
-			for await (let value of stream)
+			for await (let value of getIterator())
 			{
-				if (!await f(value, past.length, stream)) break
+				if (!await f(value, past.length)) break
 				await tryPush(value)
 			}
 			finish()
@@ -174,17 +174,17 @@ let createController = type =>
 	let getLast = memoize(async () =>
 	{
 		let last
-		for await (let value of stream) last = value
+		for await (let value of getIterator()) last = value
 		return last
 	})
 	
-	let getFirst = async () => { for await (let value of stream) return value }
+	let getFirst = async () => { for await (let value of getIterator()) return value }
 	
 	let at = index => slice(index).first
 	
 	let find = f => filter(f).first
 	
-	let flat = memoize(() => flatten(type, stream))
+	let flat = memoize(() => flatten(type, getIterator()))
 	let flatMap = (f, options = {}) => map(f, options).flat()
 	
 	// note: the declaration of ‘stream’ needs to be in its own scope.
