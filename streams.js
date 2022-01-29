@@ -1,3 +1,5 @@
+let registry = new FinalizationRegistry(f => f())
+
 let createController = type =>
 {
 	let past = []
@@ -72,12 +74,13 @@ let createController = type =>
 			}
 		}
 		
-		let iterator = iterate()
-		
-		let registry = new FinalizationRegistry(() => listeners.delete(accept))
-		registry.register(iterator, null)
-		
-		return iterator
+		// note: the declaration of ‘iterator’ needs to be in its own scope.
+		// note: this is to avoid it being added to the closures of the previous functions.
+		{
+			let iterator = iterate()
+			registry.register(iterator, () => listeners.delete(accept))
+			return iterator
+		}
 	}
 	
 	let map = (f, {parallel = false} = {}) =>
@@ -184,25 +187,28 @@ let createController = type =>
 	let flat = memoize(() => flatten(type, stream))
 	let flatMap = (f, options = {}) => map(f, options).flat()
 	
-	let stream =
+	// note: the declaration of ‘stream’ needs to be in its own scope.
+	// note: this is to avoid it being added to the closures of the previous functions.
 	{
-		[Symbol.asyncIterator]: getIterator,
-		flat, flatMap, map, filter, forEach, takeWhile,
-		at, slice, reset, find, type,
-		get first() { return getFirst() },
-		get last() { return getLast() },
-		get length() { return past.length },
-		get finished() { return finished },
+		let stream =
+		{
+			[Symbol.asyncIterator]: getIterator,
+			flat, flatMap, map, filter, forEach, takeWhile,
+			at, slice, reset, find, type,
+			get first() { return getFirst() },
+			get last() { return getLast() },
+			get length() { return past.length },
+			get finished() { return finished },
+		}
+		
+		Object.freeze(stream)
+		
+		registry.register(stream, () => controllerFinished = true)
+		
+		let controller = {stream, push, pushFrom, tryPush, finish, isFinished, get finished() { return controllerFinished }, }
+		Object.freeze(controller)
+		return controller
 	}
-	
-	Object.freeze(stream)
-	
-	let registry = new FinalizationRegistry(() => controllerFinished = true)
-	registry.register(stream, null)
-	
-	let controller = {stream, push, pushFrom, tryPush, finish, isFinished, get finished() { return controllerFinished }, }
-	Object.freeze(controller)
-	return controller
 }
 
 export let LiveController = () => createController("live")

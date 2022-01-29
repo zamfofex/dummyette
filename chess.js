@@ -46,7 +46,6 @@ export let getPieceName = piece =>
 export let Piece = ({color, type}) =>
 {
 	let name = `${color} ${type}`
-	if (!name) return
 	return pieces[name]
 }
 
