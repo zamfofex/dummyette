@@ -11,7 +11,7 @@ let createController = type =>
 	{
 		if (values.length === 0) return
 		
-		if (controllerFinished)
+		if (isFinished())
 		{
 			console.error("Tried pushing an element to a finished stream controller, finalizing process.")
 			Deno.exit(-1)
@@ -35,11 +35,11 @@ let createController = type =>
 	
 	let tryPush = (...values) =>
 	{
-		if (controllerFinished) return new Promise(() => { })
+		if (isFinished()) return new Promise(() => { })
 		push(...values)
 	}
 	
-	let isFinished = () => controllerFinished
+	let isFinished = () => controllerFinished && listeners.size === 0
 	
 	let getIterator = () =>
 	{
@@ -205,7 +205,7 @@ let createController = type =>
 		
 		registry.register(stream, () => controllerFinished = true)
 		
-		let controller = {stream, push, pushFrom, tryPush, finish, isFinished, get finished() { return controllerFinished }, }
+		let controller = {stream, push, pushFrom, tryPush, finish, isFinished, get finished() { return isFinished() }, }
 		Object.freeze(controller)
 		return controller
 	}
