@@ -1,7 +1,7 @@
 import {MutableBoard} from "./fast-chess.js"
 
-let depth = 6
-let spread = 8
+let depth = 4
+let spread = 16
 
 export let analyse = board =>
 {
@@ -33,13 +33,13 @@ export let analyse = board =>
 		state.count++
 		state.total += score
 		
-		let next = []
-		for (let move of moves)
+		let next = Array(moves.length).fill()
+		for (let [j, move] of moves.entries())
 		{
 			move.play()
 			let score = board.getScore() + Math.random() - 0.5
 			if ((i % 2 === 0) !== (turn === "black")) score *= -1
-			next.push({move, score})
+			next[j] = {move, score}
 			move.unplay()
 		}
 		
@@ -47,15 +47,30 @@ export let analyse = board =>
 		next.length = Math.min(next.length, Math.round(spread * (depth - i) / depth))
 		for (let {move} of next)
 		{
+			let {win, loss} = state
+			state.win = 0
+			state.loss = 0
+			
 			move.play()
 			traverse(board, state, i + 1)
 			move.unplay()
+			
+			if (i % 2 === 0)
+			{
+				state.win /= moves.length
+				state.win += win
+				
+				state.loss = 1 - (1 - state.loss) * (1 - loss)
+			}
+			else
+			{
+				state.loss /= moves.length
+				state.loss += loss
+				
+				state.win = 1 - (1 - state.win) * (1 - win)
+			}
 		}
 		
-		if (i % 2 === 0)
-			state.loss /= moves.length
-		else
-			state.win /= moves.length
 		state.draw /= moves.length
 	}
 	
