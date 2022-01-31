@@ -25,7 +25,7 @@ export let splitBrowserStream = (browserStream, [...separator]) =>
 			let buffer = new Uint8Array(value)
 			for (let i = 0 ; i < buffer.length ; i++)
 			{
-				if (buffer[i] !== 0xA) continue
+				if (buffer[i] !== separator) continue
 				
 				buffers.push(buffer.subarray(0, i))
 				buffer = buffer.subarray(i + 1)
