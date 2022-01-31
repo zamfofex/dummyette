@@ -169,7 +169,7 @@ Note: This function will not necessarily return the same object (referentially e
 `position.x`, `position.y`
 ---
 
-These represent the coordinates of the position as integers. E.g. for a1, `position.x === 0 && position.y === 8`.
+These represent the coordinates of the position as integers. E.g. for a1, `position.x === 0 && position.y === 0`.
 
 `position.x` represents the file, and `position.y` represents the row.
 

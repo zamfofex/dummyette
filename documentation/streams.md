@@ -142,7 +142,7 @@ Returns a promise that resolves with the first value that is deemed suitable by 
 `stream.slice(start, length)`
 ---
 
-Returns a new stream with `start` elements skipped, and that contains at most `length` elements. If unspecified, `length` will implcitly be `Infinity`, and `start` will implicitly be `0`.
+Returns a new stream with `start` elements skipped, and that contains at most `length` elements. If unspecified, `length` will implicitly be `Infinity`, and `start` will implicitly be `0`.
 
 `stream.length`
 ---
