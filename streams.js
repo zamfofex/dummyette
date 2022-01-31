@@ -93,10 +93,10 @@ let createController = type =>
 		{
 			if (parallel)
 				for await (let value of getIterator())
-					await tryPush(f(value, past.length))
+					await tryPush(f(value))
 			else
 				for await (let value of getIterator())
-					await tryPush(await f(value, past.length))
+					await tryPush(await f(value))
 			finish()
 		})()
 		
@@ -107,7 +107,7 @@ let createController = type =>
 	{
 		let {stream: other, tryPush, finish} = createController(type)
 		
-		let mapped = map(async (value, index) => ({value, boolean: Boolean(await f(value, index))}), options)
+		let mapped = map(async value => ({value, boolean: Boolean(await f(value))}), options)
 		
 		; (async () =>
 		{
@@ -127,7 +127,7 @@ let createController = type =>
 		{
 			for await (let value of getIterator())
 			{
-				if (!await f(value, past.length)) break
+				if (!await f(value)) break
 				await tryPush(value)
 			}
 			finish()
@@ -218,7 +218,7 @@ let createStream = (type, iterables) =>
 {
 	let {stream, pushFrom, finish} = createController(type)
 	let promises = iterables.map(iterable => pushFrom(iterable))
-	Promise.all(iterables).then(finish)
+	Promise.all(promises).then(finish)
 	return stream
 }
 
