@@ -46,7 +46,7 @@ export type PieceNames =
 ]
 export type PieceName = PieceNames[number]
 
-export type PieceNameObject =
+type PieceNameObject =
 {
 	"white pawn": WhitePawn,
 	"white knight": WhiteKnight,
@@ -62,7 +62,7 @@ export type PieceNameObject =
 	"black king": BlackKing,
 }
 
-export type PieceIdentifierObject =
+type PieceIdentifierObject =
 {
 	whitePawn: WhitePawn,
 	whiteKnight: WhiteKnight,
@@ -82,7 +82,7 @@ export type PieceObject = PieceNameObject&PieceIdentifierObject
 
 export type Position = {x: number, y: number, file: string, rank: string, name: string}
 export type Positionish = {x: number, y: number} | string
-export type PositionArguments = [Positionish]|[number, number]
+type PositionArguments = [Positionish]|[number, number]
 
 export type Meta = string|null
 
