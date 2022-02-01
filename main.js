@@ -1,5 +1,5 @@
 import {Lichess} from "./lichess.js"
-import {analyse} from "./dummyette.js"
+import {AsyncAnalyser} from "./dummyette.js"
 
 let endArgs = () =>
 {
@@ -12,6 +12,8 @@ let endArgs = () =>
 
 let play = async game =>
 {
+	let analyser = AsyncAnalyser()
+	
 	let color = game.color
 	if (color === null)
 		console.error("The game could not be played because the bot is not partaking in it."),
@@ -59,7 +61,7 @@ let play = async game =>
 	for await (let board of game.boards.slice(game.boards.length - 1))
 	{
 		if (board.turn !== color) continue
-		let moves = analyse(board)
+		let moves = await analyser.analyse(board)
 		if (moves.length === 0) break
 		
 		if (!await game.play(moves[0].name))
