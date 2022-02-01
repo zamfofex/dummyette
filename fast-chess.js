@@ -24,6 +24,32 @@ let types = {pawn: Pawn, knight: Knight, bishop: Bishop, rook: Rook, queen: Quee
 let QueenSideCastle = 1
 let KingSideCastle = 2
 
+let createBoard = (state, array) =>
+{
+	let result =
+	{
+		getScore: () => getScore(array),
+		getMoves: () => getValidMoves(state, array),
+		isCheck: () => isCheck(state, array, state.turn),
+		toJSON: () =>
+		{
+			let state2 = {...state}
+			let array2 = [...array]
+			
+			state2.whiteKingPosition = {x: state.whiteKingPosition.x, y: state.whiteKingPosition.y}
+			state2.blackKingPosition = {x: state.blackKingPosition.x, y: state.blackKingPosition.y}
+			
+			let json = {state: state2, array: array2}
+			Object.freeze(json, state2, array2)
+			
+			return json
+		},
+	}
+	
+	Object.freeze(result)
+	return result
+}
+
 export let MutableBoard = board =>
 {
 	if (board.width !== 8) return
@@ -61,15 +87,14 @@ export let MutableBoard = board =>
 		whiteCastling, blackCastling,
 	}
 	
-	let result =
-	{
-		getScore: () => getScore(array),
-		getMoves: () => getValidMoves(state, array),
-		isCheck: () => isCheck(state, array, state.turn),
-	}
-	
-	Object.freeze(result)
-	return result
+	return createBoard(state, array)
+}
+
+export let fromJSON = ({state, array}) =>
+{
+	state = {...state}
+	array = new Uint8Array(array)
+	return createBoard(state, array)
 }
 
 let getScore = array =>

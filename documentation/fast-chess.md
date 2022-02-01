@@ -13,6 +13,9 @@ table of contents
 - moves
   - `move.play()`
   - `move.unplay()`
+- serialization
+  - `board.toJSON()`
+  - `fromJSON(board)`
 
 introduction
 ---
@@ -50,3 +53,13 @@ This will modify the board to play the move. Other moves will be invalidated and
 ---
 
 This will undo the move if it was the last move played. Otherwise, it might cause unexpected effects.
+
+`board.toJSON()`
+---
+
+Creates an object that can be serialized as JSON. Note that this object should be viewed as opaque and it is not suitable for persistent storage, since it might change with updates to the project.
+
+`fromJSON(board)`
+---
+
+Recreates a board from its serialized form.

@@ -22,3 +22,17 @@ console.log("Worst move: " + worstMove.name)
 // Play the best found move.
 board = bestMove.play()
 ~~~
+
+It is also possible to perform the analysis in parallel (using workers) by using an asynchronous analyser.
+
+~~~ JavaScript
+import {AsyncAnalyser} from ".../dummyette/dummyette.js"
+
+let analyser = AsyncAnalyser()
+
+let moves = await analyser.analyse(board)
+let bestMove = moves[0]
+
+// Shows the name of the best move found.
+console.log("Best move: " + bestMove.name)
+~~~

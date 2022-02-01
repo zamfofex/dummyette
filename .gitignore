@@ -6,6 +6,8 @@
 !/documentation
 !/examples
 !/types
+!/internal
+!/internal/*.js
 
 !/main.js
 !/dummyette.js
