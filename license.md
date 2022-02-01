@@ -1,7 +1,7 @@
 zero-clause BSD (0BSD)
 ===
 
-Copyright © 2021 by Zamfofex
+Copyright © 2021, 2022 by zamfofex
 
 Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted.
 
