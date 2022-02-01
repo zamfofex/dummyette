@@ -41,9 +41,7 @@ let sortCandidates = candidates =>
 			- 15 / (1 - state.loss) + 15
 			- state.draw * 10
 		
-		let random = Math.random() - 0.5
-		
-		state.score = state.total / state.count + bias + random
+		state.score = state.total / state.count + bias
 		
 		if (state.score !== state.score)
 			if (bias > 0)

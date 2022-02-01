@@ -21,7 +21,7 @@ export let traverse = (turn, board, state, i) =>
 		return
 	}
 	
-	let score = board.getScore()
+	let score = board.getScore() + Math.random() - 0.5
 	if (turn === "black") score *= -1
 	
 	state.count++
@@ -31,7 +31,7 @@ export let traverse = (turn, board, state, i) =>
 	for (let [j, move] of moves.entries())
 	{
 		move.play()
-		let score = board.getScore()
+		let score = board.getScore() + Math.random() - 0.5
 		if ((i % 2 === 0) !== (turn === "black")) score *= -1
 		next[j] = {move, score}
 		move.unplay()
