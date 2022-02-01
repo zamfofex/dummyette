@@ -13,16 +13,16 @@ import {standardBoard} from ".../dummyette/chess.js"
 let board = standardBoard
 ~~~
 
-We can verify that the board is in its inital position by using the `board.toASCII()` function to get a string with ASCII art of the board. We can also query which pieces are in each square by using the `board.atName(name)` function.
+We can verify that the board is in its inital position by using the `board.toASCII()` function to get a string with ASCII art of the board. We can also query which pieces are in each square by using the `board.at(name)` function.
 
 ~~~ JavaScript
 // Show ASCII art of the board.
 console.log(board.toASCII())
 
-console.log(board.atName("e1")) // "white king"
-console.log(board.atName("d8")) // "black queen"
-console.log(board.atName("c2")) // "white pawn"
-console.log(board.atName("f5")) // null
+console.log(board.at("e1")) // "white king"
+console.log(board.at("d8")) // "black queen"
+console.log(board.at("c2")) // "white pawn"
+console.log(board.at("f5")) // null
 ~~~
 
 Note: In these examples, even though I write e.g. `"white king"` in the comments (for brevity), in reality, pieces are not strings, they are represented by objects containing the properties `piece.color` and `piece.type`. Colors and types, however, *are* represented by strings.
@@ -32,20 +32,20 @@ Now that we have a board, we can start playing moves on it. The easiest way to p
 Note, however, that our board is immutable! If we just call the function without storing its return value, it won’t actually do anything.
 
 ~~~ JavaScript
-console.log(board.atName("d2")) // "white pawn"
+console.log(board.at("d2")) // "white pawn"
 board.play("d2d4")
-console.log(board.atName("d2")) // Still "white pawn"!
+console.log(board.at("d2")) // Still "white pawn"!
 ~~~
 
 The `board.play("d2d4")` function call will return us a new board that we need to keep in order to actually be able to see our change.
 
 ~~~ JavaScript
-console.log(board.atName("d2")) // "white pawn"
+console.log(board.at("d2")) // "white pawn"
 
 board = board.play("d2d4")
 
-console.log(board.atName("d2")) // null
-console.log(board.atName("d4")) // "white pawn"
+console.log(board.at("d2")) // null
+console.log(board.at("d4")) // "white pawn"
 ~~~
 
 Note that once you write `board.play("d2d4")` for white, it becomes black’s turn, and the next move you play has to be valid for black. You can figure out the side to play with `board.turn` which will be either `"white"` or `"black"`.
@@ -54,7 +54,7 @@ Note that once you write `board.play("d2d4")` for white, it becomes black’s tu
 console.log(board.turn) // "black"
 ~~~
 
-A lot of the time, we will want to operate on board square using numeric coordinates rather than their name because it can make it easier to do some kinds of computations. We can use the `board.at(x, y)` function to get a piece at the square with those coordinates. Note that the coordinates start at zero, so a1 would be `board.at(0, 0)` and d3 would be `board.at(3, 2)`.
+A lot of the time, we will want to operate on board square using numeric coordinates rather than their name because it can make it easier to do some kinds of computations. We can use the `board.at(x, y)` form of the `board.at(...)` function to get a piece at the square with those coordinates. Note that the coordinates start at zero, so a1 would be `board.at(0, 0)` and d3 would be `board.at(3, 2)`.
 
 We might also want to enumerate available legal moves. To do this, we can use `board.moves`, which will be an array containing the available moves on the position.
 
@@ -102,7 +102,7 @@ import {Piece} from ".../dummyette/chess.js"
 let object = {color: "white", type: "king"}
 let piece = Piece(object)
 
-let king = board.atName("e1")
+let king = board.at("e1")
 
 console.log(king) // "white king"
 console.log(king === object) // false
