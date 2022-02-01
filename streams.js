@@ -1,3 +1,6 @@
+/// <reference path="./types/streams.d.ts" />
+/// <reference types="./types/streams.d.ts" />
+
 let registry = new FinalizationRegistry(f => f())
 
 let createController = type =>

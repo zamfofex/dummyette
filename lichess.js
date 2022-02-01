@@ -1,3 +1,6 @@
+/// <reference path="./types/lichess.d.ts" />
+/// <reference types="./types/lichess.d.ts" />
+
 import {Color, standardBoard, other} from "./chess.js"
 import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"

@@ -1,3 +1,6 @@
+/// <reference path="./types/streams-browser.d.ts" />
+/// <reference types="./types/streams-browser.d.ts" />
+
 import {LiveController} from "./streams.js"
 
 export let splitBrowserStream = (browserStream, [...separator]) =>

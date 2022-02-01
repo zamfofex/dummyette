@@ -1,3 +1,6 @@
+/// <reference path="./types/fast-chess.d.ts" />
+/// <reference types="./types/fast-chess.d.ts" />
+
 let Color = 0x0F
 let Type = 0xF0
 

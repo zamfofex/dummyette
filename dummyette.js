@@ -1,3 +1,6 @@
+/// <reference path="./types/dummyette.d.ts" />
+/// <reference types="./types/dummyette.d.ts" />
+
 import {MutableBoard} from "./fast-chess.js"
 
 let depth = 4

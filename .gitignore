@@ -5,6 +5,7 @@
 !/license.md
 !/documentation
 !/examples
+!/types
 
 !/main.js
 !/dummyette.js
@@ -13,6 +14,14 @@
 !/lichess.js
 !/streams.js
 !/streams-browser.js
+
+!/types/main.d.ts
+!/types/dummyette.d.ts
+!/types/chess.d.ts
+!/types/fast-chess.d.ts
+!/types/lichess.d.ts
+!/types/streams.d.ts
+!/types/streams-browser.d.ts
 
 !/documentation/main.md
 !/documentation/dummyette.md

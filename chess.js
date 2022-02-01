@@ -1,3 +1,6 @@
+/// <reference path="./types/chess.d.ts" />
+/// <reference types="./types/chess.d.ts" />
+
 export let values = {pawn: 1, knight: 3, bishop: 3, rook: 5, queen: 9}
 Object.freeze(values)
 
