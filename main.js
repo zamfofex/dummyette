@@ -1,5 +1,5 @@
 import {Lichess} from "./lichess.js"
-import {AsyncAnalyser} from "./dummyette.js"
+import {AsyncAnalyser, analyse} from "./dummyette.js"
 
 let endArgs = () =>
 {
@@ -12,7 +12,7 @@ let endArgs = () =>
 
 let play = async game =>
 {
-	let analyser = AsyncAnalyser()
+	let analyser = Analyser()
 	
 	let color = game.color
 	if (color === null)
@@ -78,6 +78,18 @@ let play = async game =>
 
 let args = Deno.args.slice()
 let action = args.shift()
+
+let Analyser = () => ({analyse})
+
+if (action === "async")
+{
+	let options = {}
+	if (/^[0-9]+$/.test(args[0]))
+		options.workers = Number(args.shift())
+	Analyser = () => AsyncAnalyser(options)
+	
+	action = args.shift()
+}
 
 let token
 
