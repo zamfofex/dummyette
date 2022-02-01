@@ -79,10 +79,6 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 {
 	id++
 	
-	let length = board.moves.length
-	
-	let candidates = []
-	
 	let receive = ({data: state}) =>
 	{
 		if (state.move[0] !== id) return
@@ -101,6 +97,18 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 				worker.removeEventListener("message", receive)
 		}
 	}
+	
+	let length = board.moves.length
+	
+	if (length === 0)
+	{
+		let result = []
+		Object.freeze(result)
+		resolve(result)
+		return
+	}
+	
+	let candidates = []
 	
 	let count = 0
 	for (let [i, move] of board.moves.entries())
