@@ -37,9 +37,9 @@ let sortCandidates = candidates =>
 	for (let state of candidates)
 	{
 		let bias =
-			+ 15 / (1 - state.win) - 15
+			+ 5 / (1 - state.win) - 5
 			- 15 / (1 - state.loss) + 15
-			- state.draw * 15
+			- state.draw * 10
 		
 		let random = Math.random() - 0.5
 		
