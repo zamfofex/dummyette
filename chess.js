@@ -393,12 +393,13 @@ let getPosition = name =>
 	if (!match) return
 	let [full, file, rank] = match
 	
-	let x = -1
+	let x = 0
 	let y = Number(rank) - 1
 	
 	for (let ch of file)
 		x *= 26,
 		x += parseInt(ch, 36) - 9
+	x--
 	
 	return {x, y}
 }

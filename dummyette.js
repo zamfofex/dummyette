@@ -12,7 +12,7 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 	if (Math.round(workers) !== workers) return
 	if (workers <= 0) return
 	
-	workers = Array(workers).fill().map(() => new Worker(new URL("internal/worker.js", import.meta.url), {type: "module"}))
+	workers = Array(workers).fill().map(() => new Worker(new URL("internal/worker.js", import.meta.url), {type: "module", deno: {namespace: true}}))
 	
 	let terminate = () =>
 	{
@@ -21,8 +21,10 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 		workers = null
 	}
 	
+	let ready = Promise.all(workers.map(worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))))
+	
 	{
-		let analyse = board => analyseAsync(board, workers)
+		let analyse = board => ready.then(() => analyseAsync(board, workers))
 		
 		registry.register(analyse, terminate)
 		
