@@ -23,12 +23,22 @@ export let traverse = (turn, board, i) =>
 		move.unplay()
 	}
 	
-	let score = board.getScore() + Math.random() - 0.5
-	if (turn === "black") score *= -1
+	if (i === depth)
+	{
+		let score = board.getScore() + Math.random() - 0.5
+		if (turn === "black") score *= -1
+		return score
+	}
 	
+	let score
 	let minimax
-	if (i % 2 === 0) minimax = Math.min
-	else minimax = Math.max
+	
+	if	(i % 2 === 0)
+		score = Infinity,
+		minimax = Math.min
+	else
+		score = -Infinity,
+		minimax = Math.max
 	
 	next.sort((a, b) => b.score - a.score)
 	next.length = Math.min(next.length, Math.round(spread * (depth - i) / depth))
