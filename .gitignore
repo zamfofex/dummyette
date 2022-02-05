@@ -15,6 +15,7 @@
 !/fast-chess.js
 !/lichess.js
 !/streams.js
+!/openings.js
 !/streams-browser.js
 
 !/types/main.d.ts

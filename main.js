@@ -1,5 +1,6 @@
 import {Lichess} from "./lichess.js"
 import {AsyncAnalyser, analyse} from "./dummyette.js"
+import {OpeningBook} from "./openings.js"
 
 let endArgs = () =>
 {
@@ -26,35 +27,24 @@ let play = async game =>
 		return
 	}
 	
-	let opening = openings
-	
-	for await (let move of game.moves.slice(0, game.moves.length - 1))
+	if (openings)
 	{
-		if (!opening[move]) break
-		opening = opening[move].steps
-	}
-	
-	for await (let {move, turn} of game.history.slice(game.history.length - 1))
-	{
-		if (turn === color) continue
-		
-		if (!opening[move]) break
-		opening = opening[move].steps
-		
-		let steps = Object.entries(opening).filter(([{}, a]) => a.count > 4)
-		if (steps.length === 0) break
-		
-		steps.sort(([{}, a], [{}, b]) => b.wins - a.wins)
-		steps.length = Math.min(steps.length, 4)
-		
-		let step = steps[Math.floor(Math.random() * steps.length)]
-		opening = step[1].steps
-		
-		if (!await game.play(step[0]))
+		for await (let board of game.boards.slice(game.boards.length - 1))
 		{
-			console.error(`Opening move ${step[0]} was not played successfully.`)
-			await game.resign()
-			break
+			if (board.turn !== color) continue
+			
+			let moves = openings.lookup(board)
+			if (moves.length === 0) break
+			
+			moves = moves.map(({name, weight}) => ({name, weight: Math.random() ** (1 / weight)}))
+			moves.sort((a, b) => b.weight - a.weight)
+			
+			if (!await game.play(moves[0].name))
+			{
+				console.error(`Opening move ${moves[0].name} was not played successfully.`)
+				await game.resign()
+				break
+			}
 		}
 	}
 	
@@ -129,7 +119,7 @@ else
 	token = Deno.env.get("lichess_token")
 }
 
-let openings = {}
+let openings
 
 if (action === "openings")
 {
@@ -138,7 +128,7 @@ if (action === "openings")
 		console.error("No given opening book path."),
 		Deno.exit(1)
 	
-	openings = JSON.parse(await Deno.readTextFile(path))
+	openings = OpeningBook(await Deno.readFile(path))
 	
 	action = args.shift()
 }

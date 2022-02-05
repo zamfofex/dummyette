@@ -110,9 +110,7 @@ opening book <br> the `openings` specifier
 deno run -A .../dummyette/main.js openings "$openings_path" ...
 ~~~
 
-By default, no opening book is used. One can be specified using the `openings` specifier. An opening book is a JSON file containing information about openings that the bot will use.
-
-TODO: Explain the opening book format more thoroughly.
+By default, no opening book is used. One can be specified using the `openings` specifier. An opening book is a Polyglot `.bin` file that the bot will use for openings.
 
 specifier ordering
 ---
