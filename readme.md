@@ -33,6 +33,20 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
 - [`streams-browser.js`](streams-browser.js) [[reference](documentation/streams-browser.md) | [tutorial](examples/streams-browser.md)] <br>
   Interoperation between streams from the `streams.js` module and [WHATWG streams](https://streams.spec.whatwg.org).
 
+more stuff
+---
+
+There are other projects directly related to Dummyette that don’t fit into this repository. Either because they are out of scope or because not as much effort was put into them. Still, they may be interesting, so they are listed below!
+
+- [Dummyette on Discord](https://gist.github.com/zamfofex/b9dc6375b3f4eb3798a536841ea7354d) <br>
+  A Discord bot that uses Dummyette’s APIs to allow you to play chess on [Discord].
+- [`faster-chess.js` for Dummyette](https://gist.github.com/zamfofex/54caa0027867edc1a15b57af67835bff) <br>
+  Faster valid move computations using [Ellie Moore’s][Ellie Moore] fantastic [Charon] perft compiled to WebAssembly.
+
+[Ellie Moore]: <https://github.com/RedBedHed>
+[Charon]: <https://github.com/RedBedHed/Charon>
+[Discord]: <https://discord.com>
+
 contributing
 ---
 

@@ -87,7 +87,7 @@ parallelization <br> the `async` specifier
 ---
 
 ~~~
-deno run -A .../dummyette/main.js async "$worker_count" ..."
+deno run -A .../dummyette/main.js async "$worker_count" ...
 ~~~
 
 By default, the bot will perform move analyses synchronously on the main thread. This can be changed by using the `async` specifier.
@@ -124,10 +124,10 @@ required Deno permissions
 
 The only permission that is always required to run the bot is `--allow-net=lichess.org`. However, note that `--allow-env=lichess_token` might also be required if a different means of identifying the token is not provided.
 
-It is also necessary to provide the `--allow-read` permission to the opening book file if it is specified.
-
-When using the `async` specifier, it is also necessary to give `--allow-read` or `--allow-net` permission to the bot’s directory (depending on whether it is stored locally or has been run from HTTP) so that the workers can be started appropriately.
-
 ~~~
 deno run --allow-net=lichess.org .../dummyette/main.js token prompt wait
 ~~~
+
+It is also necessary to provide the `--allow-read` permission to the opening book file if it is specified.
+
+When using the `async` specifier, it is also necessary to give `--allow-read` or `--allow-net` permission to the bot’s directory (depending on whether it is stored locally or has been run from HTTP) so that the workers can be started appropriately. In that case, it is also necessary to specify `--unstable` (for now).
