@@ -2,7 +2,7 @@
 /// <reference types="./types/dummyette.d.ts" />
 
 import {MutableBoard} from "./fast-chess.js"
-import {traverse} from "./internal/analyse.js"
+import {traverse} from "./internal/analysis.js"
 
 let registry = new FinalizationRegistry(f => f())
 
@@ -34,39 +34,14 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 	}
 }
 
-let sortCandidates = candidates =>
-{
-	for (let state of candidates)
-	{
-		let bias =
-			+ 5 / (1 - state.win) - 5
-			- 15 / (1 - state.loss) + 15
-			- state.draw * 10
-		
-		state.score = state.total / state.count + bias
-		
-		if (state.score !== state.score)
-			if (bias > 0)
-				state.score = Infinity
-			else
-				state.score = -Infinity
-	}
-	
-	candidates.sort((a, b) => (b.score - a.score) || 0)
-}
-
 export let analyse = board =>
 {
 	let candidates = []
 	
 	for (let move of board.moves)
-	{
-		let state = {move, total: 0, count: 0, chance: 0, win: 0, loss: 0, draw: 0}
-		candidates.push(state)
-		traverse(board.turn, MutableBoard(move.play()), state, 0)
-	}
+		candidates.push(traverse(board.turn, MutableBoard(move.play()), move, 0))
 	
-	sortCandidates(candidates)
+	candidates.sort((a, b) => b.score - a.score)
 	candidates = candidates.map(({move}) => move)
 	
 	Object.freeze(candidates)
@@ -87,7 +62,7 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 		
 		if (candidates.length === length)
 		{
-			sortCandidates(candidates)
+			candidates.sort((a, b) => b.score - a.score)
 			candidates = candidates.map(({move: [id, name]}) => board.Move(name))
 			
 			Object.freeze(candidates)
