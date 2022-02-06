@@ -38,7 +38,7 @@ export let analyse = board =>
 {
 	let candidates = []
 	
-	for (let move of board.moves)
+	for (let move of shuffle(board.moves))
 		candidates.push(traverse(board.turn, MutableBoard(move.play()), move, 0))
 	
 	candidates.sort(compare)
@@ -73,7 +73,8 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 		}
 	}
 	
-	let length = board.moves.length
+	let moves = shuffle(board.moves)
+	let length = moves.length
 	
 	if (length === 0)
 	{
@@ -86,7 +87,7 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 	let candidates = []
 	
 	let count = 0
-	for (let [i, move] of board.moves.entries())
+	for (let [i, move] of moves.entries())
 	{
 		let worker = workers[i % workers.length]
 		let json = MutableBoard(move.play()).toJSON()
@@ -105,5 +106,14 @@ let compare = ({score: [a, i]}, {score: [b, j]}) =>
 		else
 			result = j - i
 	}
+	return result
+}
+
+let shuffle = moves =>
+{
+	moves = moves.slice(0)
+	let result = []
+	while (moves.length !== 0)
+		result.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0])
 	return result
 }

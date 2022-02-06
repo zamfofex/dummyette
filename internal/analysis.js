@@ -13,15 +13,14 @@ export let traverse = (turn, board, i) =>
 	}
 	
 	let boardScore = board.getScore()
-	if (i === depth)
-	{
-		if (turn === "black") boardScore *= -1
-		return [boardScore + Math.random() - 0.5]
-	}
 	
 	let next = moves
 	
-	if (i > 1)
+	if (i === depth)
+	{
+		next = []
+	}
+	else if (i > 1)
 	{
 		next = []
 		for (let move of moves)
@@ -31,6 +30,12 @@ export let traverse = (turn, board, i) =>
 				next.push(move)
 			move.unplay()
 		}
+	}
+	
+	if (next.length === 0)
+	{
+		if (turn === "black") boardScore *= -1
+		return [boardScore]
 	}
 	
 	let score
