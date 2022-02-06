@@ -39,7 +39,7 @@ export let analyse = board =>
 	let candidates = []
 	
 	for (let move of shuffle(board.moves))
-		candidates.push(traverse(board.turn, MutableBoard(move.play()), move, 0))
+		candidates.push({move, score: traverse(board.turn, MutableBoard(move.play()), 0)})
 	
 	candidates.sort(compare)
 	candidates = candidates.map(({move}) => move)
@@ -102,9 +102,9 @@ let compare = ({score: [a, i]}, {score: [b, j]}) =>
 	if (result !== result)
 	{
 		if (a > 0)
-			result = i - j
+			return i - j
 		else
-			result = j - i
+			return j - i
 	}
 	return result
 }

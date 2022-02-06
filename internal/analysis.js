@@ -34,26 +34,26 @@ export let traverse = (turn, board, i) =>
 	
 	if (next.length === 0)
 	{
-		if (turn === "black") boardScore *= -1
-		return [boardScore]
+		if (turn === "black") return [-boardScore]
+		else return [boardScore]
 	}
 	
 	let score
 	let minimax
 	
 	if (i % 2 === 0)
-		score = Infinity,
-		minimax = Math.min
+		score = [Infinity],
+		minimax = (a, b) => a[0] < b[0] ? a : b
 	else
-		score = -Infinity,
-		minimax = Math.max
+		score = [-Infinity],
+		minimax = (a, b) => a[0] > b[0] ? a : b
 	
 	for (let move of next)
 	{
 		move.play()
-		score = minimax(score, traverse(turn, board, i + 1)[0])
+		score = minimax(score, traverse(turn, board, i + 1))
 		move.unplay()
 	}
 	
-	return [score]
+	return score
 }
