@@ -41,7 +41,7 @@ export let analyse = board =>
 	for (let move of board.moves)
 		candidates.push(traverse(board.turn, MutableBoard(move.play()), move, 0))
 	
-	candidates.sort((a, b) => b.score - a.score)
+	candidates.sort(compare)
 	candidates = candidates.map(({move}) => move)
 	
 	Object.freeze(candidates)
@@ -62,7 +62,7 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 		
 		if (candidates.length === length)
 		{
-			candidates.sort((a, b) => b.score - a.score)
+			candidates.sort(compare)
 			candidates = candidates.map(({move: [id, name]}) => board.Move(name))
 			
 			Object.freeze(candidates)
@@ -94,3 +94,16 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 		worker.addEventListener("message", receive)
 	}
 })
+
+let compare = ({score: [a, i]}, {score: [b, j]}) =>
+{
+	let result = b - a
+	if (result !== result)
+	{
+		if (a > 0)
+			result = i - j
+		else
+			result = j - i
+	}
+	return result
+}

@@ -8,27 +8,38 @@ export let traverse = (turn, board, i) =>
 	if (moves.length === 0)
 	{
 		if ((i % 2 === 0) === board.isCheck())
-			return Infinity
+			return [Infinity, i]
 		else
-			return -Infinity
+			return [-Infinity, i]
 	}
 	
+	let boardScore = board.getScore()
+	if (i === depth)
+	{
+		if (turn === "black") boardScore *= -1
+		return [boardScore + Math.random() - 0.5]
+	}
+	
+	let captures = []
 	let next = Array(moves.length).fill()
 	for (let [j, move] of moves.entries())
 	{
 		move.play()
-		let score = board.getScore() + Math.random() - 0.5
-		if ((i % 2 === 0) !== (turn === "black")) score *= -1
-		next[j] = {move, score}
+		
+		let moveScore = board.getScore()
+		let info = {move, score: moveScore + Math.random() - 0.5}
+		if ((i % 2 === 0) !== (turn === "black")) info.score *= -1
+		
+		if (moveScore !== boardScore) captures.push(info)
+		next[j] = info
+		
 		move.unplay()
 	}
 	
-	if (i === depth)
-	{
-		let score = board.getScore() + Math.random() - 0.5
-		if (turn === "black") score *= -1
-		return score
-	}
+	next.sort((a, b) => b.score - a.score)
+	next.length = Math.min(next.length, Math.round(spread * (depth - i) / depth))
+	
+	next.push(...captures)
 	
 	let score
 	let minimax
@@ -40,14 +51,12 @@ export let traverse = (turn, board, i) =>
 		score = -Infinity,
 		minimax = Math.max
 	
-	next.sort((a, b) => b.score - a.score)
-	next.length = Math.min(next.length, Math.round(spread * (depth - i) / depth))
-	for (let {move} of next)
+	for (let {move} of new Set(next))
 	{
 		move.play()
-		score = minimax(score, traverse(turn, board, i + 1))
+		score = minimax(score, traverse(turn, board, i + 1)[0])
 		move.unplay()
 	}
 	
-	return score
+	return [score]
 }
