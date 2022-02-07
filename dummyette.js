@@ -73,7 +73,6 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 		if (candidates.length === length)
 		{
 			candidates.sort(compare)
-			console.log(candidates.map(({score, move: [{}, name]}) => ({name, score: score[0]})))
 			candidates = candidates.map(({move: [id, name]}) => board.Move(name))
 			
 			Object.freeze(candidates)
