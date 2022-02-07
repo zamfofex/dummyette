@@ -1,6 +1,4 @@
-let depth = 4
-
-export let traverse = (turn, board, i) =>
+export let traverse = (turn, board, depth, i = 0) =>
 {
 	let moves = board.getMoves()
 	
@@ -16,11 +14,11 @@ export let traverse = (turn, board, i) =>
 	
 	let next = moves
 	
-	if (i === depth)
+	if (i > depth)
 	{
 		next = []
 	}
-	else if (i > 1)
+	else if (i > 2)
 	{
 		next = []
 		for (let move of moves)
@@ -51,7 +49,7 @@ export let traverse = (turn, board, i) =>
 	for (let move of next)
 	{
 		move.play()
-		score = minimax(score, traverse(turn, board, i + 1))
+		score = minimax(score, traverse(turn, board, depth, i + 1))
 		move.unplay()
 	}
 	
