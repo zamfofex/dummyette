@@ -6,15 +6,6 @@ import {traverse} from "./internal/analysis.js"
 
 let registry = new FinalizationRegistry(f => f())
 
-let Depth = board =>
-{
-	let count = 0
-	for (let x = 0 ; x < 8 ; x++)
-	for (let y = 0 ; y < 8 ; y++)
-		if (board.at(x, y)) count++
-	return 64 / count
-}
-
 export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 {
 	workers = Number(workers)
@@ -47,9 +38,8 @@ export let analyse = board =>
 {
 	let candidates = []
 	
-	let depth = Depth(board)
 	for (let move of shuffle(board.moves))
-		candidates.push({move, score: traverse(board.turn, MutableBoard(move.play()), depth)})
+		candidates.push({move, score: traverse(board.turn, MutableBoard(move.play()))})
 	
 	candidates.sort(compare)
 	candidates = candidates.map(({move}) => move)
@@ -96,13 +86,12 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 	
 	let candidates = []
 	
-	let depth = Depth(board)
 	let count = 0
 	for (let [i, move] of moves.entries())
 	{
 		let worker = workers[i % workers.length]
 		let json = MutableBoard(move.play()).toJSON()
-		worker.postMessage([board.turn, [id, move.name], json, depth])
+		worker.postMessage([board.turn, [id, move.name], json])
 		worker.addEventListener("message", receive)
 	}
 })
