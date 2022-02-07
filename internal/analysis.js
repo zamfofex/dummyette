@@ -21,7 +21,7 @@ export let traverse = (turn, board, i = 0) =>
 		score = [-Infinity],
 		minimax = (a, b) => a[0] > b[0] ? a : b
 	
-	if (i > 2)
+	if (i > 1)
 	{
 		let boardScore = board.getScore()
 		let done = true
@@ -35,7 +35,7 @@ export let traverse = (turn, board, i = 0) =>
 			if (turn === "black") turnScore *= -1
 			if (i % 2 === 0) turnScore *= -1
 			
-			if (i < 4 && board.isCheck() || turnScore <= 0 && moveScore !== boardScore)
+			if (i < 6 && board.isCheck() || turnScore <= 0 && moveScore !== boardScore)
 				score = minimax(score, traverse(turn, board, i + 1)),
 				done = false
 			
