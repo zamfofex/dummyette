@@ -4,7 +4,8 @@ export let traverse = (turn, board, i = 0) =>
 	
 	if (moves.length === 0)
 	{
-		if ((i % 2 === 0) === board.isCheck())
+		if (!board.isCheck()) return [0]
+		if (i % 2 === 0)
 			return [Infinity, i]
 		else
 			return [-Infinity, i]
@@ -21,11 +22,12 @@ export let traverse = (turn, board, i = 0) =>
 		{
 			move.play()
 			
-			let turnScore = board.getScore()
+			let score = board.getScore()
+			let turnScore = score
 			if (turn === "black") turnScore *= -1
 			if (i % 2 !== 0) turnScore *= -1
 			
-			if (i < 6 && board.isCheck() || turnScore >= 0 && board.getScore() !== boardScore)
+			if (i < 4 && board.isCheck() || turnScore >= 0 && score !== boardScore)
 				next.push(move)
 			
 			move.unplay()
