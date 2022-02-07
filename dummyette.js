@@ -65,8 +65,6 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 			candidates.sort(compare)
 			candidates = candidates.map(({move: [id, name], score: [score]}) => ({score, move: board.Move(name)}))
 			
-			console.log(candidates)
-			
 			Object.freeze(candidates)
 			resolve(candidates)
 			
