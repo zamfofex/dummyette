@@ -1,8 +1,15 @@
 import {Board, Move} from "../chess.js"
 
-type AsyncAnalyser =
+export type Evaluation =
+{
+	move: Move,
+	score: number,
+}
+
+export type AsyncAnalyser =
 {
 	analyse: (board: Board) => Promise<Move[]>,
+	evaluate: (board: Board) => Promise<Evaluation[]>,
 }
 
 // --- // --- //

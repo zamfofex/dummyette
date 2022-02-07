@@ -23,12 +23,12 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 	
 	let ready = Promise.all(workers.map(worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))))
 	
+	let evaluate = board => ready.then(() => evaluateAsync(board, workers))
+	let analyse = board => evaluate(board).then(moves => Object.freeze(moves.map(({move}) => move)))
+	
 	{
-		let analyse = board => ready.then(() => analyseAsync(board, workers))
-		
-		registry.register(analyse, terminate)
-		
-		let result = {analyse}
+		let result = {analyse, evaluate}
+		registry.register(result, terminate)
 		Object.freeze(result)
 		return result
 	}
@@ -50,7 +50,7 @@ export let analyse = board =>
 
 let id = 0
 
-let analyseAsync = (board, workers) => new Promise(resolve =>
+let evaluateAsync = (board, workers) => new Promise(resolve =>
 {
 	id++
 	
@@ -63,7 +63,9 @@ let analyseAsync = (board, workers) => new Promise(resolve =>
 		if (candidates.length === length)
 		{
 			candidates.sort(compare)
-			candidates = candidates.map(({move: [id, name]}) => board.Move(name))
+			candidates = candidates.map(({move: [id, name], score: [score]}) => ({score, move: board.Move(name)}))
+			
+			console.log(candidates)
 			
 			Object.freeze(candidates)
 			resolve(candidates)

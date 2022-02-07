@@ -9,6 +9,8 @@ table of contents
   - `analyse(board)`
   - `AsyncAnalyser({workers})`
   - `await analyser.analyse(board)`
+  - `await analyser.evaluate(board)`
+  - `evaluation.move`, `evaluation.score`
 
 introduction
 ---
@@ -29,3 +31,12 @@ Creates an analyser that can perform the analysis in parallel using multiple wor
 ---
 
 Similar to `analyse`, except that it uses workers to run the analysis in parallel and asynchronously.
+
+`await analyser.evaluate(board)`
+
+Similar to `await analyser.analyse(board)`, except that it will return an array of evaluations. An evaluation cotains information about the move’s analysed score.
+
+`evaluation.move`, `evaluation.score`
+---
+
+These properties represent the evaluations’s move and the score attributed to it respectively.
