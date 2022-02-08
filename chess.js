@@ -419,17 +419,20 @@ let createMoves = (board, moves, x, y, x1, y1, extra = board => board) =>
 			meta = "passing"
 	}
 	
-	for (let piece of replacements)
+	for (let replacement of replacements)
 	{
-		let play = () => extra(board.delete(x, y).put(x1, y1, piece, meta)).flip()
+		let play = () => extra(board.delete(x, y).put(x1, y1, replacement, meta)).flip()
 		
 		let from = Position(x, y)
 		let to = Position(x1, y1)
 		
 		let name = from.name + to.name
-		if (replacements.length > 1) name += shortNames[piece.type]
+		let move = {play, name, from, to, piece, before: board}
 		
-		let move = {play, name, from, to}
+		if (replacements.length > 1)
+			move.name += shortNames[replacement.type],
+			move.promotion = replacement
+		
 		Object.freeze(move)
 		moves.push(move)
 	}

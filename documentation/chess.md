@@ -55,6 +55,9 @@ table of contents
   - `move.play()`
   - `move.name`
   - `move.from`, `move.to`
+  - `move.piece`
+  - `move.promotion`
+  - `move.before`
   - `board.play(...names)`
   - `board.moves`
 
@@ -325,6 +328,21 @@ This will be the name of the move in UCI format.
 ---
 
 These will be the starting and ending positions of the moving piece respectively.
+
+`move.piece`
+---
+
+This will be the piece being moved.
+
+`move.promotion`
+---
+
+In case this move causes a promotion, this will be the piece the pawn will promote to.
+
+`move.before`
+---
+
+This is the board before the move was played.
 
 `board.play(...names)`
 ---

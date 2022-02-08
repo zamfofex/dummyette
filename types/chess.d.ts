@@ -92,6 +92,9 @@ export type Move =
 	name: string,
 	from: Position,
 	to: Position,
+	piece: Piece,
+	promotion?: Piece,
+	before: Board,
 }
 
 export type Board =

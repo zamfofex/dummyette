@@ -28,8 +28,10 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
   Limited utilities for interacting with mutable chess boards (for performance).
 - [`lichess.js`](lichess.js) [[reference](documentation/lichess.md) | [tutorial](examples/lichess.md)] <br>
   Interface for interacting with lichess through its bot API.
-- [`openings.js`](openings.js) [no documentation (yet)]
+- [`openings.js`](openings.js) [no documentation (yet)] <br>
   Parsing Polyglot `.bin` opening books.
+- [`notation.js`](notation.js) [[reference](documentation/notation.md) | [tutorial](examples/notation.md)] <br>
+  Converting `chess.js` datatypes to/from string formats.
 - [`streams.js`](streams.js) [[reference](documentation/streams.md) | [tutorial](examples/streams.md) (slightly incomplete)] <br>
   High level API for handling streams of data, e.g. the network.
 - [`streams-browser.js`](streams-browser.js) [[reference](documentation/streams-browser.md) | [tutorial](examples/streams-browser.md)] <br>
