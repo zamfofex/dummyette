@@ -240,7 +240,7 @@ else if (action === "wait")
 			
 			let game = await opponent.start()
 			if (game)
-				console.log("Started a game against Stockfish!"),
+				console.log("Started a game!"),
 				console.log(`> https://lichess.org/${game.id}/black`)
 			else
 				console.error(`A game '${opponent.name}' could not be started.`),
