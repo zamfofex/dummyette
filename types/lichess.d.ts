@@ -18,7 +18,7 @@ export type Lichess =
 	getGameIDs: () => Promise<ID[]>,
 	getGames: () => Promise<Game[]>,
 	StockfishGame: (level: Level, color: Color) => Promise<Game|undefined>,
-	challenge: (username: string, {rated?: boolean, time?: TimeControl|string, color?: Color}?) => Promise<Game|undefined>,
+	challenge: (username: string, options?: {rated?: boolean, time?: TimeControl|string, color?: Color}) => Promise<Game|undefined>,
 }
 
 export type TimeControl =
