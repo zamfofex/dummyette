@@ -210,6 +210,7 @@ else if (action === "wait")
 		let names = args.splice(0, Infinity)
 		if (names.length === 0) names.push("1")
 		
+		opponents = []
 		for (let name of names)
 			opponents.push({name, start: parseOpponent(name)})
 	}
