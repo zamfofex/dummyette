@@ -374,11 +374,7 @@ let range = (n, start = -Infinity, end = Infinity) =>
 {
 	n = Number(n)
 	
-	// Note: This accounts for fractional numbers, as well as 'NaN'.
-	if (Math.floor(n) !== n) return false
-	
-	// Note: This accounts for positive and negative infinity.
-	if (n !== 0 && n / n !== 1) return false
+	if (!Number.isInteger(n)) return false
 	
 	if (n < start) return false
 	if (n > end) return false

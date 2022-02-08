@@ -141,20 +141,31 @@ if (!lichess)
 	Deno.exit(1)
 }
 
+let stockfishLevels = "12345678".split("")
+
+let parseOpponent = opponent =>
+{
+	let [{}, rated, name, time] = opponent.match(/^(\+)?(.*?)(?::(.*))?$/)
+	if (!name) name = "1"
+	rated = Boolean(rated)
+	
+	if (stockfishLevels.includes(name))
+		return () => lichess.StockfishGame(name, "black")
+	else
+		return () => lichess.challenge(name, {rated, time, color: "black"})
+}
+
 if (action === "start")
 {
-	let level = args.shift()
+	let name = args.shift()
 	endArgs()
 	
-	if (level === undefined) level = "1"
+	if (name === undefined) name = "1"
+	let start = parseOpponent(name)
 	
-	if (!"12345678".split("").includes(level))
-		console.error("Invalid Stockfish level."),
-		Deno.exit(1)
+	console.log("Starting a game...")
 	
-	console.log("Starting a game against Stockfish...")
-	
-	let game = await lichess.StockfishGame(level, "black")
+	let game = await start()
 	if (game)
 		console.log("The game has started!"),
 		console.log(`> https://lichess.org/${game.id}/black`)
@@ -190,24 +201,17 @@ else if (action === "continue")
 }
 else if (action === "wait")
 {
-	let levels
+	let opponents
 	
 	if (args[0] === "play")
 	{
 		args.shift()
 		
-		levels = args.splice(0, Infinity)
+		let names = args.splice(0, Infinity)
+		if (names.length === 0) names.push("1")
 		
-		for (let level of levels)
-		{
-			if (!"12345678".split("").includes(level))
-			{
-				console.error(`Invalid Stockfish level: '${level}'.`)
-				Deno.exit(1)
-			}
-		}
-		
-		if (levels.length === 0) levels.push(1)
+		for (let name of names)
+			opponents.push({name, start: parseOpponent(name)})
 	}
 	
 	endArgs()
@@ -224,21 +228,21 @@ else if (action === "wait")
 	
 	; (async () =>
 	{
-		if (!levels) return
+		if (!opponents) return
 		
 		await Promise.all(games.map(({history}) => history.last))
 		
-		console.log("Starting games against Stockfish...")
+		console.log("Starting games...")
 		while (true)
 		{
-			let level = levels[Math.floor(Math.random() * levels.length)]
+			let opponent = opponents[Math.floor(Math.random() * opponents.length)]
 			
-			let game = await lichess.StockfishGame(level, "black")
+			let game = await opponent.start()
 			if (game)
 				console.log("Started a game against Stockfish!"),
 				console.log(`> https://lichess.org/${game.id}/black`)
 			else
-				console.error("A game against Stockfish could not be started."),
+				console.error(`A game '${opponent.name}' could not be started.`),
 				Deno.exit(1)
 			await play(game)
 		}

@@ -17,7 +17,14 @@ export type Lichess =
 	getGame: (id: ID) => Promise<Game|undefined>,
 	getGameIDs: () => Promise<ID[]>,
 	getGames: () => Promise<Game[]>,
-	StockfishGame: (level: Level, color: Color) => Promise<Game>,
+	StockfishGame: (level: Level, color: Color) => Promise<Game|undefined>,
+	challenge: (username: string, {rated?: boolean, time?: TimeControl|string, color?: Color}?) => Promise<Game|undefined>,
+}
+
+export type TimeControl =
+{
+	limit: number,
+	increment: number,
 }
 
 export type Challenge =

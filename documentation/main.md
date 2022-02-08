@@ -29,7 +29,7 @@ the `idle` action
 deno run -A .../dummyette/main.js idle
 ~~~
 
-Sets up a connection with lichess and keeps rejecting all incoming challenges. Ignores all ongoing games.
+Sets up a connection with lichess and keeps rejecting all incoming challenges. This will ignore all ongoing games.
 
 the `resign` action
 ---
@@ -44,10 +44,14 @@ the `start` action
 ---
 
 ~~~
-deno run -A .../dummyette/main.js start "$level"
+deno run -A .../dummyette/main.js start "$username"
 ~~~
 
-Starts a game against Stockfish at the given level and exits once the game is over. If the level is not given explicitly, it is assumed to be `1`. Rejects any incoming challenges during the game.
+Sends a challenge to the player with the given username. The username may be prefixed by `+` to indicate that the game will be rated. It may be suffixed by `:${time_control}` (colon followed by a time control string) to create a game with that time control. The time control format is the same as for the `lichess.challenge(...)` function of the `lichess.js` module.
+
+The username may be replaced by a numberic string from 1 through 8, and that will instead start a game against Stockfish of that level. A `+` or time control has no effect then, but those might change in the future to either be an error or have an effect.
+
+This will reject any incoming challenges during the game.
 
 the `continue` action
 ---
@@ -56,7 +60,7 @@ the `continue` action
 deno run -A .../dummyette/main.js continue "$id"
 ~~~
 
-Continues a previous game with the given id and exits once the game is over. Rejects any incoming challenges during the game.
+Continues a previous game with the given id and exits once the game is over. This will reject any incoming challenges during the game.
 
 the `wait` action
 ---
@@ -76,12 +80,14 @@ the `wait play` action
 ---
 
 ~~~
-deno run -A .../dummyette/main.js wait play "${levels[@]}"
+deno run -A .../dummyette/main.js wait play "${usernames[@]}"
 ~~~
 
-Similar to the `wait` action, but this will additionally begin games against Stockfish sequentially. The Stockfish level of each game will be randomly chosen between the given levels.
+Similar to the `wait` action, but this will additionally send challenges to the players with the given usernames instead. It will send challenges to a random player and wait for it to complete in a loop.
 
-If no levels are specified, the level chosen will always be 1.
+The player usernames will follow the same format as for the `play` action, and thus allow time information to be specified, as well as whether the game will be rated or not. It can also be used to start games against Stockfish.
+
+If no username is specified, it will continue starting new games against Stockfish level 1 in a loop.
 
 parallelization <br> the `async` specifier
 ---

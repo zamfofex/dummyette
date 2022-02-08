@@ -12,7 +12,12 @@ export let Lichess = async token =>
 	
 	let response = await fetch("https://lichess.org/api/account", {headers})
 	if (!response.ok) return
-	let {id: username} = await response.json()
+	
+	let info = await response.json()
+	if (!info) return
+	if (!info.id) return
+	
+	let username = info.id
 	
 	let events = await streamURL(headers, "https://lichess.org/api/stream/event")
 	if (!events) return
@@ -78,11 +83,39 @@ export let Lichess = async token =>
 	
 	let acceptChallenges = () => challenges.map(challenge => challenge.accept(), {parallel: true}).filter(Boolean)
 	
+	let challenge = async (otherUsername, {rated = false, time = "unlimited", color = "random"} = {}) =>
+	{
+		otherUsername = String(otherUsername)
+		rated = Boolean(rated)
+		if (color !== "random")
+			color = Color(color)
+		
+		if (!color) return
+		
+		if (typeof time === "string")
+			time = parseTime(time)
+		else
+			time = normalizeTime(time)
+		
+		if (!time) return
+		
+		let stream = await streamURL(headers, `https://lichess.org/api/challenge/${otherUsername}`, JSON.stringify({...time, rated, color, keepAliveStream: true}))
+		
+		let info = await stream.first
+		if (!info) return
+		if (!info.challenge) return
+		let id = info.challenge.id
+		
+		await stream.last
+		return createGame(headers, username, id)
+	}
+	
 	let lichess =
 	{
 		StockfishGame, challenges, username, getGame,
 		getGames, getGameIDs,
 		declineChallenges, acceptChallenges,
+		challenge,
 	}
 	Object.freeze(lichess)
 	return lichess
@@ -232,9 +265,58 @@ let validateChallenge = (headers, {id, variant}) =>
 	return true
 }
 
-let streamURL = async (headers, url) =>
+let parseTime = string =>
 {
-	let response = await fetch(url, {headers})
+	if (string === "unlimited") return {}
+	if (string.endsWith("d"))
+	{
+		string = string.replace(/^0+/, "")
+		string = string.slice(0, -1)
+		if (string.length > 2) return
+		if (string.length === 0) return
+		if (/[^0-9]/.test(string)) return
+		return {days: Number(string)}
+	}
+	let match = string.match(/^([0-9]*)(?::([0-9]+))?\+([0-9]+)$/)
+	if (!match) return
+	
+	let [{}, minutes, seconds, increment] = match
+	if (!minutes) minutes = 0
+	if (!seconds) seconds = 0
+	
+	minutes = Number(minutes)
+	seconds = Number(seconds)
+	increment = Number(increment)
+	
+	return normalizeTime({limit: minutes * 60 + seconds, increment})
+}
+
+let normalizeTime = ({limit = Infinity, increment = 0}) =>
+{
+	limit = Number(limit)
+	increment = Number(increment)
+	
+	if (limit <= 0) return
+	if (increment < 0) return
+	
+	limit = Math.ceil(limit)
+	increment = Math.floor(increment)
+	
+	if (limit === Infinity) return {}
+	if (increment === Infinity) return {}
+	
+	if (!Number.isFinite(limit)) return
+	if (!Number.isFinite(increment)) return
+	
+	return {clock: {limit, increment}}
+}
+
+let streamURL = async (headers, url, body) =>
+{
+	let method = "GET"
+	if (body) method = "POST", headers = {"content-type": "text/json", ...headers}
+	let response = await fetch(url, {method, headers, body})
+	if (!response.ok) console.log(response)
 	if (!response.ok) return
 	return ndjson(response.body)
 }

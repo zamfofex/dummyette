@@ -1,3 +1,6 @@
+let min = (a, b) => a[0] < b[0] ? a : b
+let max = (a, b) => a[0] > b[0] ? a : b
+
 export let traverse = (turn, board, i = 0) =>
 {
 	let moves = board.getMoves()
@@ -16,10 +19,10 @@ export let traverse = (turn, board, i = 0) =>
 	
 	if (i % 2 === 0)
 		score = [Infinity],
-		minimax = (a, b) => a[0] < b[0] ? a : b
+		minimax = min
 	else
 		score = [-Infinity],
-		minimax = (a, b) => a[0] > b[0] ? a : b
+		minimax = max
 	
 	if (i > 1)
 	{

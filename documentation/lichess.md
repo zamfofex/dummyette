@@ -24,6 +24,7 @@ table of contents
   - `await lichess.getGameIDs()`
   - `await lichess.getGames()`
   - `await lichess.StockfishGame(level, color)`
+  - `await lichess.challenge(username, {rated, time, color})`
   - `game.id`
   - `game.moveNames`, `game.moves`
   - `game.turn`
@@ -126,6 +127,17 @@ Returns a promise that resolves to an array with the all the ongoing games of th
 ---
 
 Starts a game against Stockfish and returns a promise that resolves to it. `level` must be an integer between 1 and 8 (inclusive), and if it is not given, it will default to `1`. `color` should be either `"white"`, `"black"` or `"random"`, and if it is not given, it’ll default to `"random"`.
+
+`await lichess.challenge(username, {rated, time, color})`
+---
+
+Sends a challenges to the player with the given username.
+
+`rated` is a boolean indicating whether the game will be rated, `time` is either a string or an object indicating the game’s time cotnrol, and `color` shoudl be either `"white"`, `"black"` or `"random"`, indicating the color the bot will play as.
+
+As a string, `time` can either be a in the form `"{n}d"` where `{n}` idicates the maximum number of days to make a move in a correspondence game, the string `"unlimited"`, representing a game without a time limit or `{limit}+{increment}` where `{limit}` is the starting time limit in minutes and `{increment}` is the increment in minutes. `limit` can additionally be given in the form `{minutes}:{seconds}` indicating the starting time will be the sum of `{minutes}` and `{seconds}` in their respective time measure. `{seconds}` does not need to be under 60.
+
+As an object, `time` can contain a `time.limit` property and a `time.increment` property given in seconds. If neither property is specified, the game will have unlimited time control. Correspondence games besides unlimited games cannot be specified in this form.
 
 `game.id`
 ---
