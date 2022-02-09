@@ -48,11 +48,11 @@ export let analyse = board =>
 	return candidates
 }
 
-let id = 0
+let i = 0
 
 let evaluateAsync = (board, workers) => new Promise(resolve =>
 {
-	id++
+	let id = i++
 	
 	let receive = ({data: state}) =>
 	{
