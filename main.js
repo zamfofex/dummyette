@@ -44,7 +44,7 @@ let play = async (game, time = 0) =>
 			moves.sort((a, b) => b.weight - a.weight)
 			
 			let t = performance.now()
-			if (t0 - t < time) await rest(time - t0 + t)
+			if (t - t0 < time) await rest(time - t + t0)
 			t0 = performance.now()
 			
 			if (!await game.play(moves[0].name))
@@ -63,7 +63,7 @@ let play = async (game, time = 0) =>
 		if (moves.length === 0) break
 		
 		let t = performance.now()
-		if (t0 - t < time) await rest(time - t0 + t)
+		if (t - t0 < time) await rest(time - t + t0)
 		t0 = performance.now()
 		
 		if (!await game.play(moves[0].name))
