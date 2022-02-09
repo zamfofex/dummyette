@@ -263,16 +263,10 @@ else if (action === "wait")
 	
 	console.log("Waiting for challenges...")
 	
-	for await (let {id, rated, color, variant, timeControl, accept, decline} of lichess.challenges)
+	for await (let {id, color, variant, timeControl, accept, decline} of lichess.challenges)
 	{
 		console.log("")
 		
-		if (rated)
-		{
-			console.log(`Declining rated challenge: ${id}.`)
-			await decline("casual")
-			continue
-		}
 		if (color !== "white")
 		{
 			console.log(`Declining miscolored challenge: ${id}.`)

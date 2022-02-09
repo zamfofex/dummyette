@@ -9,7 +9,6 @@ Dummyette is a [lichess] bot. It is not that great at chess, but it is reasonabl
 
 You might be able to [play Dummyette on lichess][Dummyette] if you catch it online. Note that it will **only accept challenges that meet these criteria**:
 
-- The challenge is not rated.
 - Dummyette gets to play as the black pieces.
 - The game is not a variant.
 - The time control is “unlimited”.
