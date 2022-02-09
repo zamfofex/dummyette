@@ -11,7 +11,9 @@ let endArgs = () =>
 	}
 }
 
-let play = async game =>
+let rest = time => new Promise(resolve => setTimeout(resolve, time))
+
+let play = async (game, time = 0) =>
 {
 	let analyser = Analyser()
 	
@@ -27,6 +29,8 @@ let play = async game =>
 		return
 	}
 	
+	let t0 = performance.now()
+	
 	if (openings)
 	{
 		for await (let board of game.boards.slice(game.boards.length - 1))
@@ -38,6 +42,10 @@ let play = async game =>
 			
 			moves = moves.map(({name, weight}) => ({name, weight: Math.random() ** (1 / weight)}))
 			moves.sort((a, b) => b.weight - a.weight)
+			
+			let t = performance.now()
+			if (t0 - t < time) await rest(time - t0 + t)
+			t0 = t
 			
 			if (!await game.play(moves[0].name))
 			{
@@ -53,6 +61,10 @@ let play = async game =>
 		if (board.turn !== color) continue
 		let moves = await analyser.analyse(board)
 		if (moves.length === 0) break
+		
+		let t = performance.now()
+		if (t0 - t < time) await rest(time - t0 + t)
+		t0 = t
 		
 		if (!await game.play(moves[0].name))
 		{
@@ -245,7 +257,7 @@ else if (action === "wait")
 			else
 				console.error(`A game '${opponent.name}' could not be started.`),
 				Deno.exit(1)
-			await play(game)
+			await play(game, 1500)
 		}
 	})()
 	
