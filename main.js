@@ -257,7 +257,7 @@ else if (action === "wait")
 			else
 				console.error(`A game '${opponent.name}' could not be started.`),
 				Deno.exit(1)
-			await play(game, 1500)
+			await play(game, 5000)
 		}
 	})()
 	
