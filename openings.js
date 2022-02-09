@@ -1,3 +1,6 @@
+/// <reference path="./types/openings.d.ts" />
+/// <reference types="./types/openings.d.ts" />
+
 import {pieces as pieceRandom, castling, enPassant, turn} from "./internal/random.js"
 import {Pawn, other, pieces} from "./chess.js"
 

@@ -27,7 +27,7 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
   Limited utilities for interacting with mutable chess boards (for performance).
 - [`lichess.js`](lichess.js) [[reference](documentation/lichess.md) | [tutorial](examples/lichess.md)] <br>
   Interface for interacting with lichess through its bot API.
-- [`openings.js`](openings.js) [no documentation (yet)] <br>
+- [`openings.js`](openings.js) [[reference](documentation/openings.md) | [tutorial](examples/openings.md)] <br>
   Parsing Polyglot `.bin` opening books.
 - [`notation.js`](notation.js) [[reference](documentation/notation.md) | [tutorial](examples/notation.md)] <br>
   Converting `chess.js` datatypes to/from string formats.
