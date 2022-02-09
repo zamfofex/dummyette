@@ -198,6 +198,7 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 		x = position.x
 		y = position.y
 		
+		if (piece === undefined) piece = null
 		if (metaValue === undefined) metaValue = null
 		if (metaValue !== null) metaValue = String(metaValue)
 		
