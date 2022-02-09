@@ -86,6 +86,8 @@ type PositionArguments = [Positionish]|[number, number]
 
 export type Meta = string|null
 
+export type Moveish = Move|string
+
 export type Move =
 {
 	play: () => Board,
@@ -94,6 +96,8 @@ export type Move =
 	to: Position,
 	piece: Piece,
 	promotion?: Piece,
+	captured?: {position: Position, piece: Piece},
+	rook?: {to: Position, from: Position, piece: Rook<Color>},
 	before: Board,
 }
 
@@ -130,11 +134,18 @@ export type Board =
 	
 	toASCII: ((color?: Color) => string) & ((color: Colorish) => string|undefined),
 	
-	Move: (name: string) => Move|undefined,
+	Move: (move: Moveish) => Move|undefined,
 	
-	play: (...names: string[]) => Board|undefined,
+	play: (...moves: Moveish[]) => Board|undefined,
 	
 	moves: Move[],
+}
+
+export type Game =
+{
+	boards: Board[],
+	moves: Move[],
+	deltas: {move: Move, before: Board, after: Board}[],
 }
 
 // --- // --- //
@@ -183,3 +194,5 @@ export let Position: (...args: PositionArguments) => Position|undefined
 export let standardBoard: Board
 export let emptyBoard: Board
 export let EmptyBoard: (width?: number, height?: number) => Board|undefined
+
+export let Game: (...moves: Moveish[]) => Game|undefined

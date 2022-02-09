@@ -32,6 +32,7 @@ table of contents
   - `standardBoard`
   - `emptyBoard`
   - `EmptyBoard(width, height)`
+  - `sameBoard(boardA, boardB)`
   - `board.width`
   - `board.height`
   - `board.turn`
@@ -51,15 +52,22 @@ table of contents
   - `board.getKingPosition(color)`
   - `board.toASCII(color)`
 - moves
-  - `board.Move(name)`
+  - `board.Move(move)`
   - `move.play()`
   - `move.name`
   - `move.from`, `move.to`
   - `move.piece`
   - `move.promotion`
+  - `move.captured`
+  - `move.rook`
   - `move.before`
-  - `board.play(...names)`
+  - `board.play(...moves)`
   - `board.moves`
+- games
+  - `Game(...moves)`
+  - `game.boards`
+  - `game.moves`
+  - `game.deltas`
 
 introduction
 ---
@@ -201,6 +209,11 @@ A board with no pieces in it. This can be used to more easily set up games with 
 
 Creates an empty board with a nonstandard size. If `height` is omited, it’ll be the same as `width`. If `width` is omited, it’ll be `8` by default.
 
+`sameBoard(boardA, boardB)`
+---
+
+Determines if the two boards represent the same chess position.
+
 `board.width`
 ---
 
@@ -254,7 +267,7 @@ For kings and rooks, the metadata can be either `"initial"`, or `null`, and toge
 
 These functions will return a new (immutable) board with the squares at the given coodinates having their pieces or metadata changed. For `board.put(...)`, the metadata given is optional. If `piece` is `null`, it’ll be removed from the board.
 
-These functions are not yet completely ready to be used generally, and might behave strangely or inconsistently in some circumstances. The recommended way to interact with the board at the moment is by using `board.play(...names)`, `board.Move(name)`, and `board.moves`.
+These functions are not yet completely ready to be used generally, and might behave strangely or inconsistently in some circumstances. The recommended way to interact with the board at the moment is by using `board.play(...)`, `board.Move(...)`, and `board.moves`.
 
 If the change could not be performed, these functions will return `undefined`.
 
@@ -307,12 +320,12 @@ If `color` does not represent a color, this will return `undefined`.
 
 Returns an ASCII art representation of the board, with the given color at the bottom. This will return `undefined` if `color` does not represent a valid color.
 
-`board.Move(name)`
+`board.Move(move)`
 ---
 
-Returns the move object represented by the given string. If the string does not represent a legal move name for the current board, this will return `undefined`.
+If `move` is a string, this will return the move object represented by the given string. If the string does not represent a legal move name for the current board, this will return `undefined`. Move names must be given in UCI format.
 
-Move names must be given in UCI format.
+Otherwise, if `move` is a move object, this will return an object representing the same move if the given move is a move on a board that is the same as this (as determined by `sameBoard(...)`).
 
 `move.play()`
 ---
@@ -339,17 +352,69 @@ This will be the piece being moved.
 
 In case this move causes a promotion, this will be the piece the pawn will promote to.
 
+If this move does not cause a promotiong, this field will be absent.
+
+`move.captured`
+---
+
+If this move is a captured, this will contain information about the capture. `move.captured.piece` is the piece that was captured, and `move.captured.position` is the position of the captured piece.
+
+For most moves, `move.captured.position` will be the same as `move.to`, but it will be different for *en passant*.
+
+If this move is not a capture, this field will be absent.
+
+`move.rook`
+---
+
+For castling moves, this will contain information about the rook being moved.
+
+`move.rook.from` contains the rook’s previous position, `move.rook.to` contains the rook’s target position, and `move.rook.piece` contains the rook as a piece.
+
+If this move is not a castling move, this field will be absent.
+
 `move.before`
 ---
 
 This is the board before the move was played.
 
-`board.play(...names)`
+`board.play(...moves)`
 ---
 
-This will play the moves with the given UCI names in order. If any of the moves is not valid, this will return `undefined`, otherwise it’ll return a new board representing the position after having played the moves.
+This will play the given moves in order. Moves can be either strings of the move name in UCI format or move objects belonging to this board.
+
+If any of the moves is not valid, this will return `undefined`, otherwise it’ll return a new board representing the position after having played the moves.
 
 `board.moves`
 ---
 
 This will be an array containing all the valid move objects for the position this board is in.
+
+`Game(...moves)`
+---
+
+Creates a new game from the given moves. The moves can be given as a string in UCI format, or as move objects.
+
+Moves must be valid for the board formed after playing the immediately preceeding move.
+
+The first move must be valid on `standardBoard`.
+
+A game is just a grouped sequence of moves that might have occurred in a game between two players.
+
+`game.boards`
+---
+
+This will be the boards that happened in this game. This includes the initial position (`standardBoard`) followed by the boards after playing each move.
+
+`game.moves`
+---
+
+This will be the moves played in this game. These will all be move objects rather than strings.
+
+`game.deltas`
+---
+
+This is an array that contains information about changes in the board over time.
+
+- `delta.before` is the board before a move was played.
+- `delta.after` is the board after the move was played.
+- `delta.move` is the move that caused the change.

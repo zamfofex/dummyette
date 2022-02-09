@@ -16,10 +16,10 @@ export let toSAN = move =>
 	let resultingBoard = move.play()
 	
 	let checkmark = ""
+	if (resultingBoard.check)
+		checkmark = "+"
 	if (resultingBoard.checkmate)
 		checkmark = "#"
-	else if (resultingBoard.check)
-		checkmark = "+"
 	
 	if (piece.type === "king")
 	{

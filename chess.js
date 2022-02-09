@@ -114,6 +114,23 @@ export let EmptyBoard = (width = 8, height = width) =>
 	return createBoard("white", array, {width, height})
 }
 
+export let sameBoard = (a, b) =>
+{
+	if (a.width !== b.width) return false
+	if (a.height !== b.height) return false
+	
+	let {width, height} = a
+	
+	for (let x = 0 ; x < width ; x++)
+	for (let y = 0 ; y < width ; y++)
+	{
+		if (a.at(x, y) !== b.at(x, y)) return false
+		if (a.get(x, y) !== b.get(x, y)) return false
+	}
+	
+	return true
+}
+
 let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * height).fill(null)} = {}) =>
 {
 	Object.freeze(array)
@@ -137,22 +154,31 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 		return array[position.x + position.y * width]
 	}
 	
-	let play = (...names) =>
+	let play = (...moves) =>
 	{
-		if (names.length === 0) return board
+		if (moves.length === 0) return board
 		
-		let name = String(names[0])
-		let move = Move(name)
+		let move = Move(moves[0])
 		if (!move) return
 		
 		let other = move.play()
-		return other.play(...names.slice(1))
+		return other.play(...moves.slice(1))
 	}
 	
-	let Move = name =>
+	let Move = move =>
 	{
-		name = String(name)
-		return getMoves().find(move => move.name === name)
+		let moves = getMoves()
+		if (moves.includes(move)) return move
+		
+		let name = move
+		if (typeof move !== "string")
+		{
+			if (!sameBoard(board, move.before))
+				return
+			name = move.name
+		}
+		
+		return moves.find(move => move.name === name)
 	}
 	
 	let put = (x, y, piece, metaValue) =>
@@ -402,12 +428,27 @@ let getPosition = name =>
 
 let shortNames = {pawn: "p", knight: "n", bishop: "b", rook: "r", queen: "q", king: "k"}
 
-let createMoves = (board, moves, x, y, x1, y1, extra = board => board) =>
+let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 {
 	if (!board.contains(x1, y1)) return
 	
 	let piece = board.at(x, y)
 	let meta = null
+	
+	if (!capturedPosition) capturedPosition = Position(x1, y1)
+	let capturedPiece = board.at(capturedPosition)
+	let captured
+	if (capturedPiece)
+	{
+		captured = {piece: capturedPiece, position: capturedPosition}
+		Object.freeze(captured)
+	}
+	
+	if (rook)
+	{
+		rook.piece = board.at(rook.from)
+		Object.freeze(rook)
+	}
 	
 	let replacements = [piece]
 	if (piece.type === "pawn")
@@ -418,6 +459,10 @@ let createMoves = (board, moves, x, y, x1, y1, extra = board => board) =>
 		if (Math.abs(y1 - y) === 2)
 			meta = "passing"
 	}
+	
+	let extra = board => board
+	if (rook) extra = board => board.delete(rook.from).put(rook.to, rook.piece)
+	if (capturedPosition.y !== y1) extra = board => board.delete(capturedPosition)
 	
 	for (let replacement of replacements)
 	{
@@ -432,6 +477,9 @@ let createMoves = (board, moves, x, y, x1, y1, extra = board => board) =>
 		if (replacements.length > 1)
 			move.name += shortNames[replacement.type],
 			move.promotion = replacement
+		
+		if (captured) move.captured = captured
+		if (rook) move.rook = rook
 		
 		Object.freeze(move)
 		moves.push(move)
@@ -542,9 +590,9 @@ let getValidMoves = board =>
 				
 				let passing = Pawn(other(piece.color))
 				if (board.at(x - 1, y) === passing && board.get(x - 1, y) === "passing")
-					createMoves(board, moves, x, y, x - 1, y1, board => board.delete(x - 1, y))
+					createMoves(board, moves, x, y, x - 1, y1, null, Position(x - 1, y))
 				if (board.at(x + 1, y) === passing && board.get(x + 1, y) === "passing")
-					createMoves(board, moves, x, y, x + 1, y1, board => board.delete(x + 1, y))
+					createMoves(board, moves, x, y, x + 1, y1, null, Position(x + 1, y))
 				
 				break
 			case "rook":
@@ -592,7 +640,7 @@ let getValidMoves = board =>
 						for (let x1 = x + dx ; x1 !== rookX ; x1 += dx)
 							if (board.at(x1, y)) continue rooksLoop
 						
-						createMoves(board, moves, x, y, x + 2 * dx, y, board => board.delete(rookX, y).put(x + dx, y, rook))
+						createMoves(board, moves, x, y, x + 2 * dx, y, {from: Position(rookX, y), to: Position(x + dx, y, rook)})
 					}
 				}
 				
@@ -611,4 +659,39 @@ let isValid = board =>
 	let position = board.getKingPosition(color)
 	if (!position) return true
 	return !threatened(board, position.x, position.y, color)
+}
+
+export let Game = (...entries) =>
+{
+	let boards = [standardBoard]
+	let moves = []
+	
+	for (let move of entries)
+	{
+		let board = boards[boards.length - 1]
+		move = board.Move(move)
+		if (!move) return
+		moves.push(move)
+		boards.push(move.play())
+	}
+	
+	let finished = boards[boards.length - 1].moves.length === 0
+	let ongoing = !finished
+	
+	let deltas = []
+	for (let move of moves)
+	{
+		let delta = {before: move.before, move, after: move.play()}
+		Object.freeze(delta)
+		deltas.push(delta)
+	}
+	
+	let game = {boards, moves, deltas, finished, ongoing}
+	
+	Object.freeze(boards)
+	Object.freeze(moves)
+	Object.freeze(deltas)
+	Object.freeze(game)
+	
+	return game
 }
