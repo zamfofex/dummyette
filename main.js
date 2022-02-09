@@ -45,7 +45,7 @@ let play = async (game, time = 0) =>
 			
 			let t = performance.now()
 			if (t0 - t < time) await rest(time - t0 + t)
-			t0 = t
+			t0 = performance.now()
 			
 			if (!await game.play(moves[0].name))
 			{
@@ -64,7 +64,7 @@ let play = async (game, time = 0) =>
 		
 		let t = performance.now()
 		if (t0 - t < time) await rest(time - t0 + t)
-		t0 = t
+		t0 = performance.now()
 		
 		if (!await game.play(moves[0].name))
 		{
