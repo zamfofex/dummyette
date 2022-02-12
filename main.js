@@ -229,15 +229,18 @@ else if (action === "wait")
 	
 	endArgs()
 	
-	let games = await lichess.getGames()
-	if (games.length !== 0)
+	; (async () =>
 	{
-		console.log("Continuing ongoing games...")
-		for (let game of games)
-			console.log("The game is continuing!"),
-			console.log(`> https://lichess.org/${game.id}/black`),
-			play(game)
-	}
+		let games = await lichess.getGames()
+		if (games.length !== 0)
+		{
+			console.log("Continuing ongoing games...")
+			for (let game of games)
+				console.log("The game is continuing!"),
+				console.log(`> https://lichess.org/${game.id}/black`),
+				play(game)
+		}
+	})()
 	
 	; (async () =>
 	{
