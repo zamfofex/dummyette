@@ -36,10 +36,17 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 
 export let analyse = board =>
 {
+	if (board.width !== 8) return
+	if (board.height !== 8) return
+	
 	let candidates = []
 	
+	let turn = board.turn
 	for (let move of shuffle(board.moves))
-		candidates.push({move, score: traverse(board.turn, MutableBoard(move.play()))})
+	{
+		let board = move.play()
+		candidates.push({move, score: traverse(turn, depth(board), MutableBoard(board))})
+	}
 	
 	candidates.sort(compare)
 	candidates = candidates.map(({move}) => move)
@@ -52,6 +59,9 @@ let i = 0
 
 let evaluateAsync = (board, workers) => new Promise(resolve =>
 {
+	if (board.width !== 8) return
+	if (board.height !== 8) return
+	
 	let id = i++
 	
 	let receive = ({data: state}) =>
@@ -84,14 +94,17 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 		return
 	}
 	
+	let turn = board.turn
+	
 	let candidates = []
 	
 	let count = 0
 	for (let [i, move] of moves.entries())
 	{
 		let worker = workers[i % workers.length]
-		let json = MutableBoard(move.play()).toJSON()
-		worker.postMessage([board.turn, [id, move.name], json])
+		let board = move.play()
+		let json = MutableBoard(board).toJSON()
+		worker.postMessage([turn, [id, move.name], depth(board), json])
 		worker.addEventListener("message", receive)
 	}
 })
@@ -116,4 +129,14 @@ let shuffle = moves =>
 	while (moves.length !== 0)
 		result.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0])
 	return result
+}
+
+let depth = board =>
+{
+	let count = 0
+	for (let x = 0 ; x < 8 ; x++)
+	for (let y = 0 ; y < 8 ; y++)
+		if (board.at(x, y))
+			count++
+	return Math.floor(64 / count) * 2
 }
