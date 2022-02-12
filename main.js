@@ -246,8 +246,6 @@ else if (action === "wait")
 	{
 		if (!opponents) return
 		
-		await Promise.all(games.map(({history}) => history.last))
-		
 		console.log("Starting games...")
 		while (true)
 		{
