@@ -229,9 +229,10 @@ else if (action === "wait")
 	
 	endArgs()
 	
+	let games = await lichess.getGames()
+	
 	; (async () =>
 	{
-		let games = await lichess.getGames()
 		if (games.length !== 0)
 		{
 			console.log("Continuing ongoing games...")
@@ -245,6 +246,12 @@ else if (action === "wait")
 	; (async () =>
 	{
 		if (!opponents) return
+		
+		if (games.length > 2)
+		{
+			console.log("Too many ongoing games, waiting for their completion...")
+			await Promise.all(games.map(game => game.history.last))
+		}
 		
 		console.log("Starting games...")
 		while (true)
