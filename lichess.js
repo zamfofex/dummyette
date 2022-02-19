@@ -317,7 +317,6 @@ let streamURL = async (headers, url, body) =>
 	let method = "GET"
 	if (body) method = "POST", headers = {"content-type": "text/json", ...headers}
 	let response = await fetch(url, {method, headers, body})
-	if (!response.ok) console.log(response)
 	if (!response.ok) return
 	return ndjson(response.body)
 }
