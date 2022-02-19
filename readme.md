@@ -5,7 +5,11 @@ Dummyette
 [Dummyette]: https://lichess.org/@/Dummyette
 [Deno]: https://deno.land
 
-Dummyette is a [lichess] bot. It is not that great at chess, but it is reasonably decent. It can beat Stockfish at level 2 the vast majority of times, and although it is not able to beat level 3, it is generally able to get to late in the middlegame before eventually losing.
+Dummyette is a [lichess] bot. It is not that great at chess, but it is reasonably decent. It can win against [Maia1] most times, and sometimes also [Maia5]. It has also won against [Maia9] occasionally.
+
+[Maia1]: <https://lichess.org/@/maia1>
+[Maia5]: <https://lichess.org/@/maia5>
+[Maia9]: <https://lichess.org/@/maia9>
 
 You might be able to [play Dummyette on lichess][Dummyette] if you catch it online. Note that it will **only accept challenges that meet these criteria**:
 
