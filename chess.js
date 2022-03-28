@@ -570,7 +570,7 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 			if (board.width === 8)
 			if (rook.from.x === 0 || rook.from.x === 7)
 			if (x === 4)
-				move.name = from.name + to.name
+				move.name = from.name + move.to.name
 		}
 		
 		Object.freeze(move)
