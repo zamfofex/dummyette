@@ -352,6 +352,7 @@ export let Position = (value, other) =>
 	if (other !== undefined) return Position({x: value, y: other})
 	if (typeof value === "string") value = getPosition(value)
 	if (typeof value !== "object") return
+	if (!value) return
 	
 	let {x, y} = value
 	
