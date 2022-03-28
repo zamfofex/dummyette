@@ -271,7 +271,7 @@ else if (action === "wait")
 	
 	console.log("Waiting for challenges...")
 	
-	for await (let {id, color, variant, timeControl, accept, decline} of lichess.challenges)
+	for await (let {id, color, variant, timeControl, speed, rated, accept, decline} of lichess.challenges)
 	{
 		console.log("")
 		
@@ -282,14 +282,24 @@ else if (action === "wait")
 			continue
 		}
 		if (variant !== "standard")
+		if (variant !== "chess960")
+		if (variant !== "fromPosition")
 		{
 			console.log(`Declining variant challenge: ${id}.`)
 			await decline("standard")
 			continue
 		}
-		if (timeControl !== "unlimited")
+		if (timeControl !== "clock")
+		if (rated)
 		{
-			console.log(`Declining timed challenge: ${id}.`)
+			console.log(`Declining rated correspondence challenge: ${id}.`)
+			await decline("tooSlow")
+			continue
+		}
+		if (timeControl !== "unlimited")
+		if (speed === "bullet")
+		{
+			console.log(`Declining bullet challenge: ${id}.`)
 			await decline("tooFast")
 			continue
 		}

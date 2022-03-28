@@ -4,13 +4,16 @@
 import {Color, standardBoard, other} from "./chess.js"
 import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"
+import {fromFEN} from "./notation.js"
+
+let origin = "https://lichess.org"
 
 export let Lichess = async token =>
 {
 	token = String(token)
 	let headers = {authorization: token}
 	
-	let response = await fetch("https://lichess.org/api/account", {headers})
+	let response = await fetch(`${origin}/api/account`, {headers})
 	if (!response.ok) return
 	
 	let info = await response.json()
@@ -19,7 +22,7 @@ export let Lichess = async token =>
 	
 	let username = info.id
 	
-	let events = await streamURL(headers, "https://lichess.org/api/stream/event")
+	let events = await streamURL(headers, `${origin}/api/stream/event`)
 	if (!events) return
 	
 	events.last.then(() =>
@@ -40,7 +43,7 @@ export let Lichess = async token =>
 			color = Color(color)
 		if (!color) return
 		
-		let response = await fetch("https://lichess.org/api/challenge/ai", {method: "POST", headers, body: new URLSearchParams({level, color})})
+		let response = await fetch(`${origin}/api/challenge/ai`, {method: "POST", headers, body: new URLSearchParams({level, color})})
 		if (!response.ok) return
 		
 		let {id} = await response.json()
@@ -56,7 +59,7 @@ export let Lichess = async token =>
 	
 	let getGameIDs = async () =>
 	{
-		let response = await fetch("https://lichess.org/api/account/playing", {headers})
+		let response = await fetch(`${origin}/api/account/playing`, {headers})
 		if (!response.ok) return
 		let {nowPlaying} = await response.json()
 		let ids = nowPlaying.map(({gameId}) => gameId)
@@ -100,7 +103,7 @@ export let Lichess = async token =>
 		
 		if (!time) return
 		
-		let stream = await streamURL(headers, `https://lichess.org/api/challenge/${otherUsername}`, JSON.stringify({...time, rated, color, keepAliveStream: true}))
+		let stream = await streamURL(headers, `${origin}/api/challenge/${otherUsername}`, JSON.stringify({...time, rated, color, keepAliveStream: true}))
 		
 		let info = await stream.first
 		if (!info) return
@@ -124,13 +127,13 @@ export let Lichess = async token =>
 
 let createGame = async (headers, username, id) =>
 {
-	let gameEvents = await streamURL(headers, `https://lichess.org/api/bot/game/stream/${id}`)
+	let gameEvents = await streamURL(headers, `${origin}/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
 	gameEvents = RewindJoinStream(gameEvents)
 	
 	let resign = async () =>
 	{
-		let response = await fetch(`https://lichess.org/api/bot/game/${id}/resign`, {method: "POST", headers})
+		let response = await fetch(`${origin}/api/bot/game/${id}/resign`, {method: "POST", headers})
 		return response.ok
 	}
 	
@@ -166,8 +169,13 @@ let createGame = async (headers, username, id) =>
 	
 	if (initialFen !== "startpos")
 	{
-		resign()
-		return
+		board = fromFEN(initialFen)
+		if (!board)
+		{
+			await resign()
+			console.error(`Unexpected starting position, finalizing process: ${initialFen}`)
+			Deno.exit(-1)
+		}
 	}
 	
 	let history = RewindJoinStream([full.state], gameEvents)
@@ -201,7 +209,7 @@ let createGame = async (headers, username, id) =>
 		{
 			name = String(name)
 			if (!/^[a-z0-9]+$/.test(name)) break
-			let response = await fetch(`https://lichess.org/api/bot/game/${id}/move/${name}`, {method: "POST", headers})
+			let response = await fetch(`${origin}/api/bot/game/${id}/move/${name}`, {method: "POST", headers})
 			if (!response.ok) break
 			played++
 		}
@@ -231,13 +239,13 @@ let createGame = async (headers, username, id) =>
 	return game
 }
 
-let createChallenge = async (headers, username, events, {id, rated, color, variant: {key: variant}, timeControl: {type: timeControl}}) =>
+let createChallenge = async (headers, username, events, {id, rated, color, variant: {key: variant}, timeControl: {type: timeControl}, speed}) =>
 {
 	let accept = async () =>
 	{
 		let gamePromise = events.find(event => event.type === "gameStart" && event.game.id === id)
 		
-		let response = await fetch(`https://lichess.org/api/challenge/${id}/accept`, {method: "POST", headers})
+		let response = await fetch(`${origin}/api/challenge/${id}/accept`, {method: "POST", headers})
 		if (!response.ok) return
 		await gamePromise
 		return createGame(headers, username, id)
@@ -247,11 +255,11 @@ let createChallenge = async (headers, username, events, {id, rated, color, varia
 	{
 		if (reason === undefined) reason = "generic"
 		reason = String(reason)
-		let response = await fetch(`https://lichess.org/api/challenge/${id}/decline`, {method: "POST", headers, body: new URLSearchParams({reason})})
+		let response = await fetch(`${origin}/api/challenge/${id}/decline`, {method: "POST", headers, body: new URLSearchParams({reason})})
 		return response.ok
 	}
 	
-	let challenge = {id, variant, rated, timeControl, accept, decline, color}
+	let challenge = {id, variant, rated, timeControl, speed, accept, decline, color}
 	Object.freeze(challenge)
 	return challenge
 }
@@ -259,8 +267,10 @@ let createChallenge = async (headers, username, events, {id, rated, color, varia
 let validateChallenge = (headers, {id, variant}) =>
 {
 	if (variant.key !== "standard")
+	if (variant.key !== "chess960")
+	if (variant.key !== "fromPosition")
 	{
-		fetch(`https://lichess.org/api/challenge/${id}/decline`, {method: "POST", headers, body: new URLSearchParams({reason: "standard"})})
+		fetch(`${origin}/api/challenge/${id}/decline`, {method: "POST", headers, body: new URLSearchParams({reason: "standard"})})
 		return false
 	}
 	return true

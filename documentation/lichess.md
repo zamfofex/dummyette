@@ -16,6 +16,7 @@ table of contents
   - `await challenge.decline(reason)`
   - `challenge.rated`
   - `challenge.timeControl`
+  - `challenge.speed`
   - `challenge.variant`
   - `lichess.acceptChallenges()`
   - `lichess.declineChallenges(reason)`
@@ -93,10 +94,15 @@ Whether the game will be rated or not, `true` or `false`.
 
 This will be a string representing the type of time control of the game, e.g. `"unlimited"`.
 
+`challenge.speed`
+---
+
+This will be a string representing the speed of the game, e.g. `"rapid"`.
+
 `challenge.variant`
 ---
 
-Which chess variant the game will be. Currently, this can only be `"standard"`. Variant challenges will be declined automatically and never become a challenge object.
+Which chess variant the game will be. Currently, this can only be `"standard"`, `"chess960"` and `"fromPosition"`.
 
 `lichess.acceptChallenges()`
 ---

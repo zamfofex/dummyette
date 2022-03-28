@@ -14,8 +14,9 @@ Dummyette is a [lichess] bot. It is not that great at chess, but it is reasonabl
 You might be able to [play Dummyette on lichess][Dummyette] if you catch it online. Note that it will **only accept challenges that meet these criteria**:
 
 - Dummyette gets to play as the black pieces.
-- The game is not a variant.
-- The time control is “unlimited”.
+- The game is not a variant. (Chess 960 and different starting positions are accepted, though!)
+- The time control is not bullet.
+- If the time control is correspondence (including unlimited), the game isn’t rated.
 
 As a program, Dummyette is written in JavaScript for [Deno]. It has no external library dependencies!
 
