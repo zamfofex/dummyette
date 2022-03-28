@@ -155,6 +155,7 @@ export let fromFEN = string =>
 	let castling = new Set()
 	
 	if (string[i++] !== " ") return
+	
 	if (string[i] === "-")
 	{
 		i++
@@ -174,6 +175,7 @@ export let fromFEN = string =>
 	let enPassant
 	
 	if (string[i++] !== " ") return
+	
 	if (string[i] === "-")
 	{
 		i++
@@ -199,7 +201,15 @@ export let fromFEN = string =>
 	for (let [x, piece] of rank.entries())
 		board = board.put(x, y, piece)
 	
-	if (enPassant) board = board.set(enPassant, "initial")
+	if (enPassant) board = board.set(enPassant, "passing")
+	
+	for (let x = 0 ; x < board.width ; x++)
+	{
+		if (board.at(x, 1)?.type === "pawn")
+			board = board.set(x, 1, "initial")
+		if (board.at(x, board.height - 2)?.type === "pawn")
+			board = board.set(x, board.height - 2, "initial")
+	}
 	
 	let whiteKing = board.getKingPosition("white")
 	let blackKing = board.getKingPosition("white")
@@ -212,20 +222,21 @@ export let fromFEN = string =>
 	
 	for (let [n, side, rook, position] of possibilities)
 	{
-		if (castling.has(side))
+		if (!castling.has(side)) continue
+		
+		board = board.set(position, "initial")
+		
+		let {x, y} = position
+		let rx = null
+		while (true)
 		{
-			board = board.set(position, "initial")
-			
-			let {x, y} = position
-			while (true)
-			{
-				x += n
-				if (x < 0) break
-				if (x >= board.width) break
-				if (board.at(x, y) === rook)
-					board = board.set(x, y, "initial")
-			}
+			x += n
+			if (x < 0) break
+			if (x >= board.width) break
+			if (board.at(x, y) === rook)
+				rx = x
 		}
+		if (rx !== null) board = board.set(rx, y, "initial")
 	}
 	
 	return board
