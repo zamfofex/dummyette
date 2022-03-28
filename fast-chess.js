@@ -67,12 +67,14 @@ export let MutableBoard = board =>
 	}
 	
 	let whiteCastling = 0
+	if (board.at(4, 0)?.type === "king")
 	if (board.get(4, 0) === "initial")
 	{
 		if (board.get(0, 0) === "initial") whiteCastling |= QueenSideCastle
 		if (board.get(7, 0) === "initial") whiteCastling |= KingSideCastle
 	}
 	let blackCastling = 0
+	if (board.at(4, 7)?.type === "king")
 	if (board.get(4, 7) === "initial")
 	{
 		if (board.get(0, 7) === "initial") blackCastling |= QueenSideCastle

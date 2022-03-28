@@ -76,44 +76,6 @@ export let Type = type =>
 	return type
 }
 
-let ordered = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
-
-let array = Array(64).fill(null)
-let meta = Array(64).fill(null)
-
-// king meta values
-meta[4 + 0 * 8] = "initial"
-meta[4 + 7 * 8] = "initial"
-
-// rook meta values
-meta[0] = "initial"
-meta[7] = "initial"
-meta[0 + 7 * 8] = "initial"
-meta[7 + 7 * 8] = "initial"
-
-for (let x = 0 ; x < 8 ; x++)
-{
-	array[x + 0 * 8] = ordered[x]("white")
-	array[x + 7 * 8] = ordered[x]("black")
-	
-	array[x + 1 * 8] = pieces.whitePawn
-	array[x + 6 * 8] = pieces.blackPawn
-	meta[x + 1 * 8] = "initial"
-	meta[x + 6 * 8] = "initial"
-}
-
-export let EmptyBoard = (width = 8, height = width) =>
-{
-	width = Number(width)
-	height = Number(height)
-	if (!range(width, 1)) return
-	if (!range(height, 1)) return
-	
-	let array = Array(width * height).fill(null)
-	
-	return createBoard("white", array, {width, height})
-}
-
 export let sameBoard = (a, b) =>
 {
 	if (a.width !== b.width) return false
@@ -127,6 +89,18 @@ export let sameBoard = (a, b) =>
 		if (a.at(x, y) !== b.at(x, y)) return false
 		if (a.get(x, y) !== b.get(x, y)) return false
 	}
+	
+	return true
+}
+
+let range = (n, start = -Infinity, end = Infinity) =>
+{
+	n = Number(n)
+	
+	if (!Number.isInteger(n)) return false
+	
+	if (n < start) return false
+	if (n > end) return false
 	
 	return true
 }
@@ -234,7 +208,21 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 	
 	let del = (x, y) => put(x, y, null)
 	
-	let set = (x, y, meta) => put(x, y, at(x, y), meta)
+	let set = (x, y, meta) =>
+	{
+		let position = createPosition(x)
+		if (position)
+		{
+			meta = y
+		}
+		else
+		{
+			position = createPosition(x, y)
+			if (!position) return
+		}
+		
+		return put(position, at(position), meta)
+	}
 	
 	let get = (x, y) =>
 	{
@@ -257,7 +245,7 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 		let position = getKingPosition(turn)
 		if (!position) return false
 		let {x, y} = position
-		return threatened(board, x, y, turn)
+		return attacked(board, x, y, turn)
 	})
 	
 	let isCheckmate = memoize(() => isCheck() && getMoves().length === 0)
@@ -393,21 +381,86 @@ let memoize = f =>
 	return () => g()
 }
 
-export let standardBoard = createBoard("white", array, {meta})
-
-export let emptyBoard = createBoard("white", Array(64).fill(null))
-
-let range = (n, start = -Infinity, end = Infinity) =>
+export let Board960 = (n = Math.floor(Math.random() * 960)) =>
 {
 	n = Number(n)
+	if (!range(n, 0, 959)) return
 	
-	if (!Number.isInteger(n)) return false
+	let board = emptyBoard
+	let available = Array(8).fill().map((n, i) => i)
 	
-	if (n < start) return false
-	if (n > end) return false
+	let next = m =>
+	{
+		let result = n % m
+		n = Math.floor(n / m)
+		return result
+	}
 	
-	return true
+	let place = (type, x) =>
+	{
+		let meta = null
+		if (type === "king") meta = "initial"
+		if (type === "rook") meta = "initial"
+		let white = Piece({type, color: "white"})
+		let black = Piece({type, color: "black"})
+		
+		board = board.put(x, 0, white, meta)
+		board = board.put(x, 1, pieces.whitePawn, "initial")
+		
+		board = board.put(x, 7, black, meta)
+		board = board.put(x, 6, pieces.blackPawn, "initial")
+		
+		available.splice(available.indexOf(x), 1)
+	}
+	
+	place("bishop", next(4) * 2 + 1)
+	place("bishop", next(4) * 2)
+	
+	place("queen", available[next(6)])
+	
+	if (n < 4)
+	{
+		place("knight", available[0])
+		place("knight", available[n])
+	}
+	else if (n < 7)
+	{
+		place("knight", available[1])
+		place("knight", available[n - 3])
+	}
+	else if (n < 9)
+	{
+		place("knight", available[2])
+		place("knight", available[n - 5])
+	}
+	else
+	{
+		place("knight", available[3])
+		place("knight", available[3])
+	}
+	
+	place("rook", available[0])
+	place("king", available[0])
+	place("rook", available[0])
+	
+	return board
 }
+
+export let EmptyBoard = (width = 8, height = width) =>
+{
+	width = Number(width)
+	height = Number(height)
+	if (!range(width, 1)) return
+	if (!range(height, 1)) return
+	
+	let array = Array(width * height).fill(null)
+	
+	return createBoard("white", array, {width, height})
+}
+
+export let emptyBoard = EmptyBoard()
+
+export let standardBoard = Board960(518)
 
 let getPosition = name =>
 {
@@ -439,16 +492,16 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 	if (!capturedPosition) capturedPosition = Position(x1, y1)
 	let capturedPiece = board.at(capturedPosition)
 	let captured
-	if (capturedPiece)
-	{
-		captured = {piece: capturedPiece, position: capturedPosition}
-		Object.freeze(captured)
-	}
 	
 	if (rook)
 	{
 		rook.piece = board.at(rook.from)
 		Object.freeze(rook)
+	}
+	else if (capturedPiece)
+	{
+		captured = {piece: capturedPiece, position: capturedPosition}
+		Object.freeze(captured)
 	}
 	
 	let replacements = [piece]
@@ -467,7 +520,7 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 	
 	for (let replacement of replacements)
 	{
-		let play = () => extra(board.delete(x, y).put(x1, y1, replacement, meta)).flip()
+		let play = () => extra(board.delete(x, y)).put(x1, y1, replacement, meta).flip()
 		
 		let from = Position(x, y)
 		let to = Position(x1, y1)
@@ -480,7 +533,44 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 			move.promotion = replacement
 		
 		if (captured) move.captured = captured
-		if (rook) move.rook = rook
+		
+		// castling
+		if (rook)
+		{
+			move.rook = rook
+			
+			x1 = rook.to.x + Math.sign(move.to.x - move.from.x)
+			move.to = Position(x1, y1)
+			
+			if (attacked(board, x, y1, piece.color)) return
+			
+			let dx = Math.sign(move.to.x - move.from.x)
+			
+			for (let x0 = x + dx ; x0 !== x1 ; x0 += dx)
+			{
+				if (attacked(board, x0, y1, piece.color)) return
+				
+				let other = board.at(x0, y1)
+				if (other === rook.piece) continue
+				if (other) return
+			}
+			
+			let rdx = Math.sign(rook.to.x - rook.from.x)
+			for (let x1 = rook.from.x + rdx ; x1 !== rook.to.x ; x1 += rdx)
+			{
+				let other = board.at(x1, y)
+				if (other === piece) continue
+				if (other) return
+			}
+			
+			let other = board.at(rook.to.x, y)
+			if (other && other !== piece) return
+			
+			if (board.width === 8)
+			if (rook.from.x === 0 || rook.from.x === 7)
+			if (x === 4)
+				move.name = from.name + to.name
+		}
 		
 		Object.freeze(move)
 		moves.push(move)
@@ -499,7 +589,7 @@ let find = (board, piece, x, y, dx, dy) =>
 	}
 }
 
-let threatened = (board, x, y, color) =>
+let attacked = (board, x, y, color) =>
 {
 	let opponent = other(color)
 	
@@ -631,17 +721,20 @@ let getValidMoves = board =>
 				if (meta === "initial" && !board.check)
 				{
 					rooksLoop:
-					for (let [dx, rookX] of [[1, board.width - 1], [-1, 0]])
+					for (let [dx, toX] of [[-1, 3], [1, board.width - 3]])
 					{
-						if (board.at(rookX, y) !== rook) continue
+						let rookX = x
+						
+						while (board.at(rookX, y) !== rook)
+						{
+							rookX += dx
+							if (rookX < 0) continue rooksLoop
+							if (rookX >= board.width) continue rooksLoop
+						}
+						
 						if (board.get(rookX, y) !== "initial") continue
-						if (threatened(board, x + dx, y, piece.color)) continue
-						if (threatened(board, x + 2 * dx, y, piece.color)) continue
 						
-						for (let x1 = x + dx ; x1 !== rookX ; x1 += dx)
-							if (board.at(x1, y)) continue rooksLoop
-						
-						createMoves(board, moves, x, y, x + 2 * dx, y, {from: Position(rookX, y), to: Position(x + dx, y, rook)})
+						createMoves(board, moves, x, y, rookX, y, {from: Position(rookX, y), to: Position(toX, y, rook)})
 					}
 				}
 				
@@ -659,7 +752,7 @@ let isValid = board =>
 	let color = other(board.turn)
 	let position = board.getKingPosition(color)
 	if (!position) return true
-	return !threatened(board, position.x, position.y, color)
+	return !attacked(board, position.x, position.y, color)
 }
 
 export let Game = (...entries) =>

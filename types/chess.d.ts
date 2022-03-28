@@ -194,5 +194,6 @@ export let Position: (...args: PositionArguments) => Position|undefined
 export let standardBoard: Board
 export let emptyBoard: Board
 export let EmptyBoard: (width?: number, height?: number) => Board|undefined
+export let Board960: (() => Board) & ((n: number) => Board|undefined)
 
 export let Game: (...moves: Moveish[]) => Game|undefined

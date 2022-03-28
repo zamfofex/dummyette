@@ -32,6 +32,7 @@ table of contents
   - `standardBoard`
   - `emptyBoard`
   - `EmptyBoard(width, height)`
+  - `Board960(n)`
   - `sameBoard(boardA, boardB)`
   - `board.width`
   - `board.height`
@@ -208,6 +209,11 @@ A board with no pieces in it. This can be used to more easily set up games with 
 ---
 
 Creates an empty board with a nonstandard size. If `height` is omited, it’ll be the same as `width`. If `width` is omited, it’ll be `8` by default.
+
+`Board960(n)`
+---
+
+This function creates a new chess 960 board. If `n` is provided, it must be a natural number lower than 960. It can be elided, however, and in that case, a value will be chosen using `Math.random(...)`.
 
 `sameBoard(boardA, boardB)`
 ---
