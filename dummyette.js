@@ -11,7 +11,7 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 	if (Math.round(workers) !== workers) return
 	if (workers <= 0) return
 	
-	workers = Array(workers).fill().map(() => new Worker(new URL("internal/worker.js", import.meta.url), {type: "module", deno: {namespace: true}}))
+	workers = Array(workers).fill().map(() => new Worker(new URL("internal/worker.js", import.meta.url), {type: "module"}))
 	
 	let terminate = () =>
 	{

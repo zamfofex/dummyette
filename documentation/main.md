@@ -134,4 +134,4 @@ deno run --allow-net=lichess.org .../dummyette/main.js token prompt wait
 
 It is also necessary to provide the `--allow-read` permission to the opening book file if it is specified.
 
-When using the `async` specifier, it is also necessary to give `--allow-read` or `--allow-net` permission to the bot’s directory (depending on whether it is stored locally or has been run from HTTP) so that the workers can be started appropriately. In that case, it is also necessary to specify `--unstable` (for now).
+When using the `async` specifier, it is also necessary to give `--allow-read` or `--allow-net` permission to the bot’s directory (depending on whether it is stored locally or has been run from HTTP) so that the workers can be started appropriately.
