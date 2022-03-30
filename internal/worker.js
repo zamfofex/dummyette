@@ -1,6 +1,5 @@
-import {fromJSON} from "../fast-chess.js"
 import {traverse} from "./analysis.js"
 
 postMessage("ready")
 
-addEventListener("message", ({data: [turn, move, json]}) => postMessage({move, score: traverse(turn, fromJSON(json))}))
+addEventListener("message", ({data: [move, board]}) => postMessage({move, score: traverse(board)}))

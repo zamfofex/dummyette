@@ -1,8 +1,7 @@
 /// <reference path="./types/dummyette.d.ts" />
 /// <reference types="./types/dummyette.d.ts" />
 
-import {MutableBoard} from "./fast-chess.js"
-import {traverse} from "./internal/analysis.js"
+import {traverse, serialize} from "./internal/analysis.js"
 
 let registry = new FinalizationRegistry(f => f())
 
@@ -45,7 +44,7 @@ export let analyse = board =>
 	for (let move of shuffle(board.moves))
 	{
 		let board = move.play()
-		candidates.push({move, score: traverse(turn, MutableBoard(board))})
+		candidates.push({move, score: traverse(turn, serialize(board))})
 	}
 	
 	candidates.sort(compare)
@@ -94,8 +93,6 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 		return
 	}
 	
-	let turn = board.turn
-	
 	let candidates = []
 	
 	let count = 0
@@ -103,8 +100,7 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 	{
 		let worker = workers[i % workers.length]
 		let board = move.play()
-		let json = MutableBoard(board).toJSON()
-		worker.postMessage([turn, [id, move.name], json])
+		worker.postMessage([[id, move.name], serialize(board)])
 		worker.addEventListener("message", receive)
 	}
 })
