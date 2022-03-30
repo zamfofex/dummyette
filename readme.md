@@ -48,8 +48,6 @@ There are other projects directly related to Dummyette that don’t fit into thi
 
 - [Dummyette on Discord](https://gist.github.com/zamfofex/b9dc6375b3f4eb3798a536841ea7354d) <br>
   A Discord bot that uses Dummyette’s APIs to allow you to play chess on [Discord].
-- [`faster-chess.js` for Dummyette](https://gist.github.com/zamfofex/54caa0027867edc1a15b57af67835bff) <br>
-  Faster valid move computations using [Ellie Moore’s][Ellie Moore] fantastic [Charon] perft compiled to WebAssembly.
 - [Dummyette in your browser](https://gist.github.com/zamfofex/d478de89883e1629ce21de5367b9bfdd) <br>
   Play Dummyette in your browser, no Deno required! (Only a simple HTTP server.)
 - [UCI front end](https://gist.github.com/zamfofex/078a2bae37dbb60440093db30f816a63) <br>
