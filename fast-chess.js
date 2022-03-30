@@ -1,6 +1,8 @@
 /// <reference path="./types/fast-chess.d.ts" />
 /// <reference types="./types/fast-chess.d.ts" />
 
+console.warn(`Dummyette’s "fast-chess.js" module is deprecated and might be removed soon. Use "chess.js" operations directly instead.`)
+
 let Color = 0x0F
 let Type = 0xF0
 

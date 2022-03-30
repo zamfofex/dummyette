@@ -1,6 +1,11 @@
 documentation for `fast-chess.js`
 ===
 
+deprecation notice
+---
+
+This module is deprecated. Use the `chess.js` module directly instead.
+
 table of contents
 ---
 
