@@ -53,7 +53,7 @@ export let Lichess = async token =>
 	let challenges = events
 		.filter(event => event.type === "challenge")
 		.map(event => event.challenge)
-		.filter(challenge => challenge.challenger.id !== username)
+		.filter(challenge => challenge.challenger?.id !== username)
 		.filter(challenge => validateChallenge(headers, challenge))
 		.map(challenge => createChallenge(headers, username, events, challenge))
 	
