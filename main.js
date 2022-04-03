@@ -19,7 +19,8 @@ let play = async (game, time = 0) =>
 	let chat = async messages =>
 	{
 		if (game.rated) return
-		await game.chat.send(messages[Math.floor(Math.random() * messages.length)])
+		let messages2 = messages[Math.floor(Math.random() * messages.length)]
+		await game.chat.send(messages2[Math.floor(Math.random() * messages2.length)])
 	}
 	
 	let analyser = Analyser()
@@ -75,10 +76,13 @@ let play = async (game, time = 0) =>
 		let evaluations = await analyser.evaluate(board)
 		if (evaluations.length === 0)
 		{
-			if (board.turn === color)
-				await chat(messages.lost)
-			else
-				await chat(messages.won)
+			if (board.checkmate)
+			{
+				if (board.turn === color)
+					await chat(messages.lost)
+				else
+					await chat(messages.won)
+			}
 			
 			break
 		}
