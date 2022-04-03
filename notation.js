@@ -148,8 +148,8 @@ export let fromFEN = string =>
 	switch (string[i++])
 	{
 		default: return
-		case "w": turn = "white"
-		case "b": turn = "black"
+		case "w": turn = "white" ; break
+		case "b": turn = "black" ; break
 	}
 	
 	let castling = new Set()
@@ -195,7 +195,7 @@ export let fromFEN = string =>
 	}
 	
 	let board = EmptyBoard(width, height)
-	if (turn === "white") board = board.flip()
+	board = board.flip(turn)
 	
 	for (let [y, rank] of ranks.entries())
 	for (let [x, piece] of rank.entries())
