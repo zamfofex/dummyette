@@ -27,6 +27,7 @@ table of contents
   - `await lichess.StockfishGame(level, color)`
   - `await lichess.challenge(username, {rated, time, color})`
   - `game.id`
+  - `game.rated`
   - `game.moveNames`, `game.moves`
   - `game.turn`
   - `game.status`, `game.ongoing`, `game.finished`
@@ -39,6 +40,9 @@ table of contents
   - `historyEntry.moveNumber`
   - `historyEntry.board`
   - `historyEntry.turn`
+- chat
+  - `game.chat`
+  - `await chat.send(message)`
 
 introduction
 ---
@@ -150,6 +154,11 @@ As an object, `time` can contain a `time.limit` property and a `time.increment` 
 
 This will be the id of the game, it is what appears on the URL of the game.
 
+`game.rated`
+---
+
+This is a boolean representing whether the game is rated or not.
+
 `game.moveNames`, `game.moves`
 ---
 
@@ -211,3 +220,13 @@ The board position after the move of this entry was played.
 ---
 
 Which side played the move on this entry. Either `"white"` or `"black"`.
+
+`game.chat`
+---
+
+This represent the game’s player chat channel object. Currently the only operation that can be done with it is sending a message.
+
+`await chat.send(message)`
+---
+
+Sends a message to this chat channel. The promise will resolve to a boolean indicating whether the message was sent successfully.

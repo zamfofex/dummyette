@@ -165,7 +165,7 @@ let createGame = async (headers, username, id) =>
 	let full = await gameEvents.first
 	if (full.type !== "gameFull") return
 	
-	let {white: {id: whiteUsername}, black: {id: blackUsername}, initialFen} = full
+	let {white: {id: whiteUsername}, black: {id: blackUsername}, initialFen, rated} = full
 	
 	if (initialFen !== "startpos")
 	{
@@ -220,14 +220,23 @@ let createGame = async (headers, username, id) =>
 	if (whiteUsername === username) color = "white"
 	if (blackUsername === username) color = "black"
 	
+	let send = async message =>
+	{
+		let response = await fetch(`${origin}/api/bot/game/${id}/chat`, {method: "POST", headers, body: new URLSearchParams({room: "player", text: message})})
+		return response.ok
+	}
+	
+	let chat = {send}
+	Object.freeze(chat)
+	
 	let game =
 	{
 		id,
 		moveNames, moves: moveNames,
-		history, boards,
+		history, boards, chat,
 		play, resign,
 		blackUsername, whiteUsername,
-		color,
+		color, rated,
 		get board() { return board },
 		get status() { return status },
 		get turn() { return board.turn },

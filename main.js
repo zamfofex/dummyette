@@ -1,6 +1,7 @@
 import {Lichess} from "./lichess.js"
 import {AsyncAnalyser, analyse} from "./dummyette.js"
 import {OpeningBook} from "./openings.js"
+import * as messages from "./internal/flavoring.js"
 
 let endArgs = () =>
 {
@@ -15,6 +16,12 @@ let rest = time => new Promise(resolve => setTimeout(resolve, time))
 
 let play = async (game, time = 0) =>
 {
+	let chat = async messages =>
+	{
+		if (game.rated) return
+		await game.chat.send(messages[Math.floor(Math.random() * messages.length)])
+	}
+	
 	let analyser = Analyser()
 	
 	let color = game.color
@@ -28,6 +35,8 @@ let play = async (game, time = 0) =>
 		console.log(`< https://lichess.org/${game.id}/black`)
 		return
 	}
+	
+	if (game.boards.length === 0) await chat(messages.start)
 	
 	let t0 = performance.now()
 	
@@ -56,19 +65,51 @@ let play = async (game, time = 0) =>
 		}
 	}
 	
+	let average = 0
+	let messageIndex = 0
+	let status
+	
 	for await (let board of game.boards.slice(game.boards.length - 1))
 	{
 		if (board.turn !== color) continue
-		let moves = await analyser.analyse(board)
-		if (moves.length === 0) break
+		let evaluations = await analyser.evaluate(board)
+		if (evaluations.length === 0)
+		{
+			if (board.turn === color)
+				await chat(messages.lost)
+			else
+				await chat(messages.won)
+			
+			break
+		}
+		
+		let {score, move} = evaluations[0]
+		
+		if (score < average && (messageIndex <= 0 || status !== "losing"))
+		{
+			messageIndex = 4
+			status = "losing"
+			await chat(messages.losing)
+		}
+		if (score > average && (messageIndex <= 0 || status !== "winning"))
+		{
+			messageIndex = 4
+			status = "winning"
+			await chat(messages.winning)
+		}
+		messageIndex--
+		
+		if (Number.isFinite(score))
+			average *= 2 / 3,
+			average += score / 3
 		
 		let t = performance.now()
 		if (t - t0 < time) await rest(time - t + t0)
 		t0 = performance.now()
 		
-		if (!await game.play(moves[0].name))
+		if (!await game.play(move.name))
 		{
-			console.error(`Move ${moves[0].name} was not played successfully.`)
+			console.error(`Move ${move.name} was not played successfully.`)
 			await game.resign()
 			break
 		}
