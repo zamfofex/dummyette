@@ -1,7 +1,7 @@
 /// <reference path="./types/lichess.d.ts" />
 /// <reference types="./types/lichess.d.ts" />
 
-import {Color, standardBoard, other} from "./chess.js"
+import {Color, standardBoard, other, King, Rook} from "./chess.js"
 import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"
 import {fromFEN} from "./notation.js"
@@ -125,8 +125,19 @@ export let Lichess = async token =>
 	return lichess
 }
 
+let castling =
+[
+	["e1c1", "e1a1", "white", "e1", "a1"],
+	["e1g1", "e1h1", "white", "e1", "h1"],
+	["e8c8", "e8a8", "black", "e8", "a8"],
+	["e8g8", "e8h8", "black", "e8", "h8"],
+]
+
 let createGame = async (headers, username, id) =>
 {
+	let toLichessName = new Map()
+	let fromLichessName = new Map()
+	
 	let gameEvents = await streamURL(headers, `${origin}/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
 	gameEvents = RewindJoinStream(gameEvents)
@@ -143,6 +154,8 @@ let createGame = async (headers, username, id) =>
 		names = names.split(" ").slice(n)
 		for (let name of names)
 		{
+			name = fromLichessName.get(name) ?? name
+			
 			let turn = board.turn
 			board = board.play(name)
 			if (!board)
@@ -175,6 +188,17 @@ let createGame = async (headers, username, id) =>
 			await resign()
 			console.error(`Unexpected starting position, finalizing process: ${initialFen}`)
 			Deno.exit(-1)
+		}
+		
+		for (let [name, lichessName, color, kingPosition, rookPosition] of castling)
+		{
+			if (board.at(kingPosition) !== King(color)) continue
+			if (board.at(rookPosition) !== Rook(color)) continue
+			if (board.get(kingPosition) !== "initial") continue
+			if (board.get(rookPosition) !== "initial") continue
+			
+			toLichessName.set(name, lichessName)
+			fromLichessName.set(lichessName, name)
 		}
 	}
 	
@@ -209,6 +233,7 @@ let createGame = async (headers, username, id) =>
 		{
 			name = String(name)
 			if (!/^[a-z0-9]+$/.test(name)) break
+			name = toLichessName.get(name) ?? name
 			let response = await fetch(`${origin}/api/bot/game/${id}/move/${name}`, {method: "POST", headers})
 			if (!response.ok) break
 			played++
