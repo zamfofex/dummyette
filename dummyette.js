@@ -40,11 +40,10 @@ export let analyse = board =>
 	
 	let candidates = []
 	
-	let turn = board.turn
 	for (let move of shuffle(board.moves))
 	{
 		let board = move.play()
-		candidates.push({move, score: traverse(turn, serialize(board))})
+		candidates.push({move, score: traverse(serialize(board))})
 	}
 	
 	candidates.sort(compare)
