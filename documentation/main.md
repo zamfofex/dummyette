@@ -29,7 +29,7 @@ the `idle` action
 deno run -A .../dummyette/main.js idle
 ~~~
 
-Sets up a connection with lichess and keeps rejecting all incoming challenges. This will ignore all ongoing games.
+Sets up a connection with Lichess and keeps rejecting all incoming challenges. This will ignore all ongoing games.
 
 the `resign` action
 ---
@@ -103,7 +103,7 @@ The maximum number of workers used can be given, but it can also be elided. If i
 specifying the access token <br> the `token` specifier
 ---
 
-By default, the lichess access token is identified through the `lichess_token` environment variable. This can be changed by specifying `token` as the first argument to the program followed by a means of identifying the token. The action can be specified after the token information.
+By default, the Lichess access token is identified through the `lichess_token` environment variable. This can be changed by specifying `token` as the first argument to the program followed by a means of identifying the token. The action can be specified after the token information.
 
 - `deno run -A .../dummyette/main.js token env "$name" ...` — uses the environment variable with the given name as the token.
 - `deno run -A .../dummyette/main.js token given "$token" ...` — uses the given argument as the token.

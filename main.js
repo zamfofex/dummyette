@@ -121,7 +121,7 @@ if (action === "token")
 	}
 	else if (means === "prompt")
 	{
-		token = prompt("Specify your lichess bot account token:", "")
+		token = prompt("Specify your Lichess bot account token:", "")
 	}
 	
 	action = args.shift()
@@ -148,7 +148,7 @@ if (action === "openings")
 let lichess = await Lichess(token)
 if (!lichess)
 {
-	console.error("Could not connect to lichess.")
+	console.error("Could not connect to Lichess.")
 	if (!token) console.error("Did you set up your token correctly?")
 	Deno.exit(1)
 }

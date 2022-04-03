@@ -1,13 +1,13 @@
 `lichess.js` examples
 ===
 
-This module serves as a way to interface with lichess through its API. With it, you can establish connections to the website, and interact with games and incoming challenges.
+This module serves as a way to interface with Lichess through its API. With it, you can establish connections to the website, and interact with games and incoming challenges.
 
 Note: Currently, this will only work well with bot accounts.
 
 Before you can get started, you need an access token for your bot account. You can generate one by logging into your bot account and browsing to <https://lichess.org/account/oauth/token/create>.
 
-Once you have your token set up, you can establish a connection to lichess by using the `Lichess(token)` function. Once you call it, it’ll immediately start trying to connect and return a promise. Once it succeeds, this promise will resolve with a lichess connection object. If there is a network error, the promise will reject, but if the connection was refused by lichess (e.g. because your token is wrong), it’ll resolve to `undefined`.
+Once you have your token set up, you can establish a connection to Lichess by using the `Lichess(token)` function. Once you call it, it’ll immediately start trying to connect and return a promise. Once it succeeds, this promise will resolve with a Lichess connection object. If there is a network error, the promise will reject, but if the connection was refused by Lichess (e.g. because your token is wrong), it’ll resolve to `undefined`.
 
 ~~~ JavaScript
 import {Lichess} from ".../dummyette/lichess.js"
@@ -15,7 +15,7 @@ import {Lichess} from ".../dummyette/lichess.js"
 let lichess = await Lichess("Bearer XXXXX")
 ~~~
 
-Now that we have set up a lichess connection, we can start interacting with it. One of the easiest way to try it out is by using the `lichess.StockfishGame(level, color)` function to start a game against Stockfish. It’ll return a promise that resolves with the game object once it starts. We can pass it the Stockfish level, as well as the color we want for the bot to play as.
+Now that we have set up a Lichess connection, we can start interacting with it. One of the easiest way to try it out is by using the `lichess.StockfishGame(level, color)` function to start a game against Stockfish. It’ll return a promise that resolves with the game object once it starts. We can pass it the Stockfish level, as well as the color we want for the bot to play as.
 
 ~~~ JavaScript
 let game = await lichess.StockfishGame(4, "black")
@@ -75,7 +75,7 @@ However, although playing games against Stockfish can be interesting, sometimes 
 
 The `lichess.challenges` is a `LiveStream` of incoming challenges. We can decide whether we want to accept or decline the challenge by using the `challenge.rated`, `challenge.timeControl`, and `challenge.color` properties. Once we want to consolidate the decision, we can use the `challenge.accept()` and `challenge.decline(reason)` functions.
 
-The `challenge.decline(reason)` function takes an optional string representing the reason for declining the challenge. Note that it *cannot* be any string, it must be one of the strings predicted by lichess like `"later"` or `"noBot"`, etc. See <https://lichess.org/api#operation/challengeDecline> for accepted reason strings.
+The `challenge.decline(reason)` function takes an optional string representing the reason for declining the challenge. Note that it *cannot* be any string, it must be one of the strings predicted by Lichess like `"later"` or `"noBot"`, etc. See <https://lichess.org/api#operation/challengeDecline> for accepted reason strings.
 
 The `challenge.accept()` function will return a promise that resolves to a game that can be used as seen earlier. It might also resolve to `undefined` if the challenge could not be accepted.
 
@@ -83,6 +83,6 @@ There are also a couple shortcut functions that we can use to either decline or 
 
 Note, however, that there is a bit of an assymmetry between those functions. `lichess.declineChallenges(reason)` will return `undefined`, whereas `lichess.acceptChallenges()` will return a `LiveStream` of the games that originated from accepting those challenges.
 
-Something worth noting is that once we establish the connection with lichess, there might already be ongoing games (e.g. because a previous connection was interrupted before they finished). You can use the `lichess.getGameIDs()` function to get a promise that resolves to the id of all ongoing games, and `lichess.getGames()` to get a promise that resolves to an array of all games. Note that they will also include ongoing games started on this connection.
+Something worth noting is that once we establish the connection with Lichess, there might already be ongoing games (e.g. because a previous connection was interrupted before they finished). You can use the `lichess.getGameIDs()` function to get a promise that resolves to the id of all ongoing games, and `lichess.getGames()` to get a promise that resolves to an array of all games. Note that they will also include ongoing games started on this connection.
 
 Note that the `lichess.getGames()` function can be expensive, because it’ll start listening for moves on every ongoing games, so you should be careful when using it.

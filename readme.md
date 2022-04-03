@@ -1,17 +1,17 @@
 Dummyette
 ===
 
-[lichess]: https://lichess.org
+[Lichess]: https://lichess.org
 [Dummyette]: https://lichess.org/@/Dummyette
 [Deno]: https://deno.land
 
-Dummyette is a [lichess] bot. It is not that great at chess, but it is reasonably decent. It can win against [Maia1] most times, and sometimes also [Maia5]. It has also won against [Maia9] occasionally.
+Dummyette is a [Lichess] bot. It is not that great at chess, but it is reasonably decent. It can win against [Maia1] most times, and sometimes also [Maia5]. It has also won against [Maia9] occasionally.
 
 [Maia1]: <https://lichess.org/@/maia1>
 [Maia5]: <https://lichess.org/@/maia5>
 [Maia9]: <https://lichess.org/@/maia9>
 
-You might be able to [play Dummyette on lichess][Dummyette] if you catch it online. Note that it will **only accept challenges that meet these criteria**:
+You might be able to [play Dummyette on Lichess][Dummyette] if you catch it online. Note that it will **only accept challenges that meet these criteria**:
 
 - Dummyette gets to play as the black pieces.
 - The game is not a variant. (Chess 960 and different starting positions are accepted, though!)
@@ -31,7 +31,7 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
 - ~~[`fast-chess.js`](fast-chess.js)~~ [deprecated] [[reference](documentation/fast-chess.md)] <br>
   Limited utilities for interacting with mutable chess boards (for performance).
 - [`lichess.js`](lichess.js) [[reference](documentation/lichess.md) | [tutorial](examples/lichess.md)] <br>
-  Interface for interacting with lichess through its bot API.
+  Interface for interacting with Lichess through its bot API.
 - [`openings.js`](openings.js) [[reference](documentation/openings.md) | [tutorial](examples/openings.md)] <br>
   Parsing Polyglot `.bin` opening books.
 - [`notation.js`](notation.js) [[reference](documentation/notation.md) | [tutorial](examples/notation.md)] <br>

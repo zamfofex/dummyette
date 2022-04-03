@@ -27,7 +27,7 @@ export let Lichess = async token =>
 	
 	events.last.then(() =>
 	{
-		console.error("The lichess event stream was broken, finalizing the process.")
+		console.error("The Lichess event stream was broken, finalizing the process.")
 		Deno.exit(-1)
 	})
 	

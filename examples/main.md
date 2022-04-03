@@ -3,9 +3,9 @@
 
 Note: All the examples here assume Bash (or similar), adapt as appropriate for you shell of choice.
 
-This module is the entrypoint command line interface for the bot. You can use it to easily run the bot on lichess through your bot account token.
+This module is the entrypoint command line interface for the bot. You can use it to easily run the bot on Lichess through your bot account token.
 
-In order to get the bot to connect to lichess and start accepting challenges, you can use pass in `wait` as the only argument to the command. It’ll pick back up all ongoing games for its account and start accepting challenges for new games.
+In order to get the bot to connect to Lichess and start accepting challenges, you can use pass in `wait` as the only argument to the command. It’ll pick back up all ongoing games for its account and start accepting challenges for new games.
 
 ~~~
 lichess_token="Bearer XXXXX" deno run -A .../dummyette/main.js wait

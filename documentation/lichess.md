@@ -5,7 +5,7 @@ table of contents
 ---
 
 - introduction
-- lichess connections
+- Lichess connections
   - `await Lichess(token)`
   - `lichess.username`
 - challenges
@@ -43,19 +43,19 @@ table of contents
 introduction
 ---
 
-This module can be used to interface with lichess’ APIs to interact with chess games on the website, both ongoing and past.
+This module can be used to interface with Lichess’ APIs to interact with chess games on the website, both ongoing and past.
 
 `await Lichess(token)`
 ---
 
-This function will return a promise that resolves with a connection to lichess given an access token. The promise will resolve to `undefined` if the connection could not be established.
+This function will return a promise that resolves with a connection to Lichess given an access token. The promise will resolve to `undefined` if the connection could not be established.
 
 `lichess.username`
 ---
 
 This will be a string with the username of the account of the connection.
 
-Note: This is what lichess calls a “user id”.
+Note: This is what Lichess calls a “user id”.
 
 `lichess.challenges`
 ---
@@ -65,7 +65,7 @@ This will be a `LiveStream` of incoming challenges on the connection.
 `challenge.id`
 ---
 
-This will be the id of the challenge. This will match the id of the resulting game, and is what appears on the URL of lichess games.
+This will be the id of the challenge. This will match the id of the resulting game, and is what appears on the URL of Lichess games.
 
 `challenge.color`
 ---
