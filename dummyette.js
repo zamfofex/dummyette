@@ -107,7 +107,7 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 let compare = ({score: [a, i]}, {score: [b, j]}) =>
 {
 	let result = b - a
-	if (result !== result)
+	if (Number.isNaN(result))
 	{
 		if (a > 0)
 			return i - j

@@ -16,6 +16,8 @@ let knight8 = rank8 | (rank8 >> 8n)
 
 export let traverse = board =>
 {
+	if (board.done) return [Infinity * (board.status * 2 - 1), 0]
+	
 	let play = (bitboard, before, after) =>
 	{
 		let n = (bitboard.color === white) * 2 - 1
@@ -29,7 +31,7 @@ export let traverse = board =>
 			score += n * ((after & bishops[0]) !== 0n) * 3
 			score += n * ((after & rooks[0]) !== 0n) * 5
 			score += n * ((after & queens[0]) !== 0n) * 9
-			score += n * ((after & kings[0]) !== 0n) * 199
+			score += n * ((after & kings[0]) !== 0n) * 5999
 		}
 		
 		let anyBefore = any
@@ -450,12 +452,9 @@ export let traverse = board =>
 		whiteTurn = !whiteTurn
 		
 		i++
-		if (i % 2 === 0)
-			results[i] = -Infinity,
-			indices[i] = 0
-		else
-			results[i] = Infinity,
-			indices[i] = 0
+		
+		indices[i] = i
+		results[i] = Infinity * ((i % 2 !== 0) * 2 - 1)
 		
 		for (let bitboard of bitboards)
 		{
@@ -465,13 +464,18 @@ export let traverse = board =>
 		}
 		
 		i--
+		
 		if (i % 2 === 0)
 		{
-			if (results[i] < results[i + 1]) results[i] = results[i + 1], indices[i] = indices[i + 1]
+			if (results[i] < results[i + 1])
+				results[i] = results[i + 1],
+				indices[i] = indices[i + 1]
 		}
 		else
 		{
-			if (results[i] > results[i + 1]) results[i] = results[i + 1], indices[i] = indices[i + 1]
+			if (results[i] > results[i + 1])
+				results[i] = results[i + 1],
+				indices[i] = indices[i + 1]
 		}
 		
 		whiteTurn = !whiteTurn
@@ -567,6 +571,8 @@ export let traverse = board =>
 
 export let serialize = board =>
 {
+	if (board.moves.length === 0) return {done: true, status: board.checkmate}
+	
 	let {score, turn} = board
 	let result = {score, turn, array: []}
 	
