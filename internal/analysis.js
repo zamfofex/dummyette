@@ -1,3 +1,5 @@
+import {values} from "../chess.js"
+
 let fileA = 0x0101010101010101n
 let rank1 = 0b11111111n
 
@@ -18,14 +20,16 @@ export let traverse = board =>
 {
 	if (board.done) return [Infinity * (board.status * 2 - 1), 0]
 	
+	let {score, whiteScore, blackScore} = board
+	
 	let play = (bitboard, before, after) =>
 	{
-		let n = (bitboard.color === white) * 2 - 1
-		
 		let scoreBefore = score
 		
 		if (after & any & bitboard.other[0])
 		{
+			let n = (bitboard.color === white) / blackScore - (bitboard.color === black) / whiteScore
+			
 			score += n * ((after & pawns[0]) !== 0n) * 1
 			score += n * ((after & knights[0]) !== 0n) * 3
 			score += n * ((after & bishops[0]) !== 0n) * 3
@@ -91,7 +95,7 @@ export let traverse = board =>
 		bitboard.group[0] = group
 	}
 	
-	let moveRook = bitboard =>
+	let playLineCapture = (bitboard, limit, n) =>
 	{
 		let before = bitboard.self
 		let after
@@ -99,134 +103,77 @@ export let traverse = board =>
 		after = before
 		while (true)
 		{
-			if (after & rank1) break
+			if (after & limit) break
 			
-			after >>= 8n
+			after >>= n
 			if (after & any)
 			{
 				if (after & bitboard.other[0]) play(bitboard, before, after)
 				break
 			}
-			
-			play(bitboard, before, after)
 		}
+	}
+	
+	let playLineMove = (bitboard, limit, n) =>
+	{
+		let before = bitboard.self
+		let after
 		
 		after = before
 		while (true)
 		{
-			if (after & rank8) break
-			
-			after <<= 8n
-			if (after & any)
-			{
-				if (after & bitboard.other[0]) play(bitboard, before, after)
-				break
-			}
-			
+			if (after & limit) break
+			after >>= n
+			if (after & any) break
 			play(bitboard, before, after)
 		}
+	}
+	
+	let moveRook = bitboard =>
+	{
+		playLineCapture(bitboard, rank1, 8n)
+		playLineCapture(bitboard, rank8, -8n)
+		playLineCapture(bitboard, fileA, 1n)
+		playLineCapture(bitboard, fileH, -1n)
 		
-		after = before
-		while (true)
-		{
-			if (after & fileA) break
-			
-			after >>= 1n
-			if (after & any)
-			{
-				if (after & bitboard.other[0]) play(bitboard, before, after)
-				break
-			}
-			
-			play(bitboard, before, after)
-		}
-		
-		after = before
-		while (true)
-		{
-			if (after & fileH) break
-			
-			after <<= 1n
-			if (after & any)
-			{
-				if (after & bitboard.other[0]) play(bitboard, before, after)
-				break
-			}
-			
-			play(bitboard, before, after)
-		}
+		playLineMove(bitboard, rank1, 8n)
+		playLineMove(bitboard, rank8, -8n)
+		playLineMove(bitboard, fileA, 1n)
+		playLineMove(bitboard, fileH, -1n)
 	}
 	
 	let moveBishop = bitboard =>
 	{
-		let before = bitboard.self
-		let after
+		playLineCapture(bitboard, cornerA1, 9n)
+		playLineCapture(bitboard, cornerA8, -7n)
+		playLineCapture(bitboard, cornerH1, 7n)
+		playLineCapture(bitboard, cornerH8, -9n)
 		
-		after = before
-		while (true)
-		{
-			if (after & cornerA1) break
-			
-			after >>= 9n
-			if (after & any)
-			{
-				if (after & bitboard.other[0]) play(bitboard, before, after)
-				break
-			}
-			
-			play(bitboard, before, after)
-		}
-		
-		after = before
-		while (true)
-		{
-			if (after & cornerA8) break
-			
-			after <<= 7n
-			if (after & any)
-			{
-				if (after & bitboard.other[0]) play(bitboard, before, after)
-				break
-			}
-			
-			play(bitboard, before, after)
-		}
-		
-		after = before
-		while (true)
-		{
-			if (after & cornerH1) break
-			
-			after >>= 7n
-			if (after & any)
-			{
-				if (after & bitboard.other[0]) play(bitboard, before, after)
-				break
-			}
-			
-			play(bitboard, before, after)
-		}
-		
-		after = before
-		while (true)
-		{
-			if (after & cornerH8) break
-			
-			after <<= 9n
-			if (after & any)
-			{
-				if (after & bitboard.other[0]) play(bitboard, before, after)
-				break
-			}
-			
-			play(bitboard, before, after)
-		}
+		playLineMove(bitboard, cornerA1, 9n)
+		playLineMove(bitboard, cornerA8, -7n)
+		playLineMove(bitboard, cornerH1, 7n)
+		playLineMove(bitboard, cornerH8, -9n)
 	}
 	
 	let moveQueen = bitboard =>
 	{
-		moveRook(bitboard)
-		moveBishop(bitboard)
+		playLineCapture(bitboard, rank1, 8n)
+		playLineCapture(bitboard, rank8, -8n)
+		playLineCapture(bitboard, fileA, 1n)
+		playLineCapture(bitboard, fileH, -1n)
+		playLineCapture(bitboard, cornerA1, 9n)
+		playLineCapture(bitboard, cornerA8, -7n)
+		playLineCapture(bitboard, cornerH1, 7n)
+		playLineCapture(bitboard, cornerH8, -9n)
+		
+		playLineMove(bitboard, rank1, 8n)
+		playLineMove(bitboard, rank8, -8n)
+		playLineMove(bitboard, fileA, 1n)
+		playLineMove(bitboard, fileH, -1n)
+		playLineMove(bitboard, cornerA1, 9n)
+		playLineMove(bitboard, cornerA8, -7n)
+		playLineMove(bitboard, cornerH1, 7n)
+		playLineMove(bitboard, cornerH8, -9n)
 	}
 	
 	let moveKnight = bitboard =>
@@ -343,15 +290,6 @@ export let traverse = board =>
 		let before = bitboard.self
 		let after
 		
-		after = before << 8n
-		if (!(after & any))
-		{
-			if (after & rank8)
-				playPromotion(bitboard, before, after)
-			else
-				play(bitboard, before, after)
-		}
-		
 		after = before << 7n
 		if (!(before & fileA) && (after & any & black[0]))
 		{
@@ -369,21 +307,21 @@ export let traverse = board =>
 			else
 				play(bitboard, before, after)
 		}
+		
+		after = before << 8n
+		if (!(after & any))
+		{
+			if (after & rank8)
+				playPromotion(bitboard, before, after)
+			else
+				play(bitboard, before, after)
+		}
 	}
 	
 	let moveBlackPawn = bitboard =>
 	{
 		let before = bitboard.self
 		let after
-		
-		after = before >> 8n
-		if (!(after & any))
-		{
-			if (after & rank1)
-				playPromotion(bitboard, before, after)
-			else
-				play(bitboard, before, after)
-		}
 		
 		after = before >> 7n
 		if (!(before & fileH) && (after & any & white[0]))
@@ -396,6 +334,15 @@ export let traverse = board =>
 		
 		after = before >> 9n
 		if (!(before & fileA) &&  (after & any & white[0]))
+		{
+			if (after & rank1)
+				playPromotion(bitboard, before, after)
+			else
+				play(bitboard, before, after)
+		}
+		
+		after = before >> 8n
+		if (!(after & any))
 		{
 			if (after & rank1)
 				playPromotion(bitboard, before, after)
@@ -439,8 +386,18 @@ export let traverse = board =>
 	let i = 0
 	let next = () =>
 	{
-		if (!(kings[0] & any & white[0])) { indices[i] = i ; results[i] = Infinity * initialTurn ; return }
-		if (!(kings[0] & any & black[0])) { indices[i] = i ; results[i] = -Infinity * initialTurn ; return }
+		if (!(kings[0] & any & white[0]))
+		{
+			indices[i] = i
+			results[i] = Infinity * initialTurn
+			return
+		}
+		if (!(kings[0] & any & black[0]))
+		{
+			indices[i] = i
+			results[i] = -Infinity * initialTurn
+			return
+		}
 		
 		if (i > 2)
 		{
@@ -450,38 +407,44 @@ export let traverse = board =>
 		}
 		
 		whiteTurn = !whiteTurn
-		
 		i++
 		
-		indices[i] = i
-		results[i] = Infinity * ((i % 2 !== 0) * 2 - 1)
-		
-		for (let bitboard of bitboards)
+		if (i % 2 !== 0)
 		{
-			if ((bitboard.color === white) === whiteTurn) continue
-			if (!(bitboard.self & bitboard.color[0] & any)) continue
-			bitboard.move(bitboard)
-		}
-		
-		i--
-		
-		if (i % 2 === 0)
-		{
-			if (results[i] < results[i + 1])
-				results[i] = results[i + 1],
-				indices[i] = indices[i + 1]
+			indices[i] = i
+			results[i] = Infinity
+			for (let bitboard of bitboards)
+			{
+				if (results[i] < results[i - 1]) break
+				if ((bitboard.color === white) === whiteTurn) continue
+				if (!(bitboard.self & bitboard.color[0] & any)) continue
+				bitboard.move(bitboard)
+			}
+			
+			if (results[i - 1] < results[i])
+				results[i - 1] = results[i],
+				indices[i - 1] = indices[i]
 		}
 		else
 		{
-			if (results[i] > results[i + 1])
-				results[i] = results[i + 1],
-				indices[i] = indices[i + 1]
+			indices[i] = i
+			results[i] = -Infinity
+			for (let bitboard of bitboards)
+			{
+				if (results[i] > results[i - 1]) break
+				if ((bitboard.color === white) === whiteTurn) continue
+				if (!(bitboard.self & bitboard.color[0] & any)) continue
+				bitboard.move(bitboard)
+			}
+			
+			if (results[i - 1] > results[i])
+				results[i - 1] = results[i],
+				indices[i - 1] = indices[i]
 		}
 		
 		whiteTurn = !whiteTurn
+		i--
 	}
-	
-	let score = board.score
 	
 	let any = 0n
 	let pawns = [0n]
@@ -569,16 +532,53 @@ export let traverse = board =>
 	return [results[0], indices[0]]
 }
 
-export let serialize = board =>
+export let serialize = (board, before) =>
 {
 	if (board.moves.length === 0) return {done: true, status: board.checkmate}
 	
-	let {score, turn} = board
-	let result = {score, turn, array: []}
+	let whiteScore = 1
+	let blackScore = 1
+	
+	let result = {turn: board.turn, array: []}
 	
 	for (let y = 0 ; y < 8 ; y++)
 	for (let x = 0 ; x < 8 ; x++)
-		result.array.push(board.at(x, y))
+	{
+		let piece = before.at(x, y)
+		if (!piece) continue
+		
+		let {color, type} = piece
+		if (type === "king") continue
+		if (color === "white")
+			whiteScore += values[type]
+		else
+			blackScore += values[type]
+	}
+	
+	let score = 0
+	
+	for (let y = 0 ; y < 8 ; y++)
+	for (let x = 0 ; x < 8 ; x++)
+	{
+		let piece = board.at(x, y)
+		if (!piece)
+		{
+			result.array.push(null)
+			continue
+		}
+		
+		let {color, type} = piece
+		result.array.push({color, type})
+		
+		if (type === "king") continue
+		
+		if (color === "white")
+			score += values[type] / whiteScore
+		else
+			score -= values[type] / blackScore
+	}
+	
+	Object.assign(result, {score, whiteScore, blackScore})
 	
 	return result
 }

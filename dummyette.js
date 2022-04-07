@@ -25,12 +25,11 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 	let evaluate = board => ready.then(() => evaluateAsync(board, workers))
 	let analyse = board => evaluate(board).then(moves => Object.freeze(moves?.map(({move}) => move)))
 	
-	{
-		let result = {analyse, evaluate}
-		registry.register(result, terminate)
-		Object.freeze(result)
-		return result
-	}
+	registry.register(evaluate, terminate)
+	
+	let result = {analyse, evaluate}
+	Object.freeze(result)
+	return result
 }
 
 export let analyse = board =>
@@ -41,10 +40,7 @@ export let analyse = board =>
 	let candidates = []
 	
 	for (let move of shuffle(board.moves))
-	{
-		let board = move.play()
-		candidates.push({move, score: traverse(serialize(board))})
-	}
+		candidates.push({move, score: traverse(serialize(move.play(), board))})
 	
 	candidates.sort(compare)
 	candidates = candidates.map(({move}) => move)
@@ -98,8 +94,7 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 	for (let [i, move] of moves.entries())
 	{
 		let worker = workers[i % workers.length]
-		let board = move.play()
-		worker.postMessage([[id, move.name], serialize(board)])
+		worker.postMessage([[id, move.name], serialize(move.play(), board)])
 		worker.addEventListener("message", receive)
 	}
 })
