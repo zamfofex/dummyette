@@ -6,12 +6,24 @@ import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"
 import {fromFEN} from "./notation.js"
 
-let origin = "https://lichess.org"
-
-export let Lichess = async token =>
+export let Lichess = async options =>
 {
+	if (typeof options === "string") options = {token: options}
+	
+	if (options === undefined) options = {}
+	if (options === null) options = {}
+	
+	let {token, origin = "https://lichess.org"} = options
+	
+	try { origin = new URL(origin) }
+	catch { return }
+	if (!origin.pathname.endsWith("/"))
+		origin.pathname += "/"
+	origin = new URL(".", origin).href.slice(0, -1)
+	
 	token = String(token)
 	let headers = {authorization: token}
+	let args = {origin, headers}
 	
 	let response = await fetch(`${origin}/api/account`, {headers})
 	if (!response.ok) return
@@ -47,15 +59,15 @@ export let Lichess = async token =>
 		if (!response.ok) return
 		
 		let {id} = await response.json()
-		return createGame(headers, username, id)
+		return createGame(args, username, id)
 	}
 	
 	let challenges = events
 		.filter(event => event.type === "challenge")
 		.map(event => event.challenge)
 		.filter(challenge => challenge.challenger?.id !== username)
-		.filter(challenge => validateChallenge(headers, challenge))
-		.map(challenge => createChallenge(headers, username, events, challenge))
+		.filter(challenge => validateChallenge(args, challenge))
+		.map(challenge => createChallenge(args, username, events, challenge))
 	
 	let getGameIDs = async () =>
 	{
@@ -70,7 +82,7 @@ export let Lichess = async token =>
 	let getGames = async () =>
 	{
 		let ids = await getGameIDs()
-		let promises = ids.map(id => createGame(headers, username, id)).filter(Boolean)
+		let promises = ids.map(id => createGame(args, username, id)).filter(Boolean)
 		let games = await Promise.all(promises)
 		Object.freeze(games)
 		return games
@@ -80,7 +92,7 @@ export let Lichess = async token =>
 	{
 		id = String(id)
 		if (!/^[a-z0-9]{8}$/i.test(id)) return
-		return createGame(headers, username, id)
+		return createGame(args, username, id)
 	}
 	
 	let declineChallenges = reason => { challenges.forEach(challenge => { challenge.decline(reason) }) }
@@ -104,14 +116,40 @@ export let Lichess = async token =>
 		if (!time) return
 		
 		let stream = await streamURL(headers, `${origin}/api/challenge/${otherUsername}`, JSON.stringify({...time, rated, color, keepAliveStream: true}))
+		if (!stream) return
 		
 		let info = await stream.first
 		if (!info) return
 		if (!info.challenge) return
 		let id = info.challenge.id
 		
-		await stream.last
-		return createGame(headers, username, id)
+		let result = await stream.last
+		if (result.done !== "accepted") return
+		return createGame(args, username, id)
+	}
+	
+	let getBotUsernames = async () =>
+	{
+		let usernames = []
+		for await (let {username} of await streamURL(headers, `${origin}/api/bot/online`))
+			usernames.push(username)
+		Object.freeze(usernames)
+		return usernames
+	}
+	
+	let getUsernameGameIDs = async username =>
+	{
+		username = String(username)
+		if (!/^[a-z0-9_]+$/i.test(username)) return
+		
+		let games = await streamURL(headers, `${origin}/api/games/user/${username}?ongoing=true`)
+		if (!games) return
+		
+		let ids = []
+		for await (let {id} of games)
+			ids.push(id)
+		Object.freeze(ids)
+		return ids
 	}
 	
 	let lichess =
@@ -120,6 +158,8 @@ export let Lichess = async token =>
 		getGames, getGameIDs,
 		declineChallenges, acceptChallenges,
 		challenge,
+		getBotUsernames,
+		getUsernameGameIDs,
 	}
 	Object.freeze(lichess)
 	return lichess
@@ -133,7 +173,7 @@ let castling =
 	["e8g8", "e8h8", "black", "e8", "h8"],
 ]
 
-let createGame = async (headers, username, id) =>
+let createGame = async ({origin, headers}, username, id) =>
 {
 	let toLichessName = new Map()
 	let fromLichessName = new Map()
@@ -273,8 +313,10 @@ let createGame = async (headers, username, id) =>
 	return game
 }
 
-let createChallenge = async (headers, username, events, {id, rated, color, variant: {key: variant}, timeControl: {type: timeControl}, speed}) =>
+let createChallenge = async (args, username, events, {id, rated, color, variant: {key: variant}, timeControl: {type: timeControl}, speed}) =>
 {
+	let {origin, headers} = args
+	
 	let accept = async () =>
 	{
 		let gamePromise = events.find(event => event.type === "gameStart" && event.game.id === id)
@@ -282,7 +324,7 @@ let createChallenge = async (headers, username, events, {id, rated, color, varia
 		let response = await fetch(`${origin}/api/challenge/${id}/accept`, {method: "POST", headers})
 		if (!response.ok) return
 		await gamePromise
-		return createGame(headers, username, id)
+		return createGame(args, username, id)
 	}
 	
 	let decline = async reason =>
@@ -298,7 +340,7 @@ let createChallenge = async (headers, username, events, {id, rated, color, varia
 	return challenge
 }
 
-let validateChallenge = (headers, {id, variant}) =>
+let validateChallenge = ({origin, headers}, {id, variant}) =>
 {
 	if (variant.key !== "standard")
 	if (variant.key !== "chess960")
@@ -359,7 +401,7 @@ let normalizeTime = ({limit = Infinity, increment = 0}) =>
 let streamURL = async (headers, url, body) =>
 {
 	let method = "GET"
-	if (body) method = "POST", headers = {"content-type": "text/json", ...headers}
+	if (body) method = "POST", headers = {"content-type": "application/json", ...headers}
 	let response = await fetch(url, {method, headers, body})
 	if (!response.ok) return
 	return ndjson(response.body)

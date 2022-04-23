@@ -6,7 +6,7 @@ table of contents
 
 - introduction
 - Lichess connections
-  - `await Lichess(token)`
+  - `await Lichess(token)`, `await Lichess({origin, token})`
   - `lichess.username`
 - challenges
   - `lichess.challenges`
@@ -24,6 +24,7 @@ table of contents
   - `await lichess.getGame(id)`
   - `await lichess.getGameIDs()`
   - `await lichess.getGames()`
+  - `await lichess.getUsernameGameIDs(username)`
   - `await lichess.StockfishGame(level, color)`
   - `await lichess.challenge(username, {rated, time, color})`
   - `game.id`
@@ -40,6 +41,8 @@ table of contents
   - `historyEntry.moveNumber`
   - `historyEntry.board`
   - `historyEntry.turn`
+- users
+  - `await lichess.getBotUsernames()`
 - chat
   - `game.chat`
   - `await chat.send(message)`
@@ -49,10 +52,12 @@ introduction
 
 This module can be used to interface with Lichess’ APIs to interact with chess games on the website, both ongoing and past.
 
-`await Lichess(token)`
+`await Lichess(token)`, `await Lichess({origin, token})`
 ---
 
 This function will return a promise that resolves with a connection to Lichess given an access token. The promise will resolve to `undefined` if the connection could not be established.
+
+`origin` represents the base Lichess URL, and can be used to connect to alternate Lichess instances. If it is omitted, it will default to `"https://lichess.org"`.
 
 `lichess.username`
 ---
@@ -132,6 +137,13 @@ Returns a promise that resolves to an array with the ids of all the ongoing game
 ---
 
 Returns a promise that resolves to an array with the all the ongoing games of the user of the connection.
+
+`await lichess.getUsernameGameIDs(username)`
+---
+
+This function will return a promise that resolves to an array with IDs of all past and ongoing games of the user with the given username.
+
+The promise may resolve to `undefined` if there was an error such as the user not existing.
 
 `await lichess.StockfishGame(level, color)`
 ---
@@ -220,6 +232,11 @@ The board position after the move of this entry was played.
 ---
 
 Which side played the move on this entry. Either `"white"` or `"black"`.
+
+`await lichess.getBotUsernames()`
+---
+
+This function will return a promise that resolves to an array with the usernames of bots currently online.
 
 `game.chat`
 ---

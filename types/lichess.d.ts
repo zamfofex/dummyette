@@ -21,6 +21,8 @@ export type Lichess =
 	challenge: (username: string, options?: {rated?: boolean, time?: TimeControl|string, color?: Color}) => Promise<Game|undefined>,
 	rated: boolean,
 	chat: Chat,
+	getUsernameGameIDs: (username: string) => Promise<ID[]>,
+	getBotUsernames: () => Promise<string[]>,
 }
 
 export type TimeControl =
@@ -71,4 +73,4 @@ export type Chat =
 
 // --- // --- //
 
-export let Lichess: (token: string) => Promise<Lichess|undefined>
+export let Lichess: (options: string|{token: string, origin?: string|URL}) => Promise<Lichess|undefined>
