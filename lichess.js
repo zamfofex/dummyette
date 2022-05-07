@@ -124,6 +124,7 @@ export let Lichess = async options =>
 		let id = info.challenge.id
 		
 		let result = await stream.last
+		if (!result) return
 		if (result.done !== "accepted") return
 		return createGame(args, username, id)
 	}
@@ -384,8 +385,9 @@ let normalizeTime = ({limit = Infinity, increment = 0}) =>
 	limit = Number(limit)
 	increment = Number(increment)
 	
-	if (limit <= 0) return
+	if (limit < 0) return
 	if (increment < 0) return
+	if (limit === 0 && increment === 0) return
 	
 	limit = Math.ceil(limit)
 	increment = Math.floor(increment)
