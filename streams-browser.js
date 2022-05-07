@@ -32,7 +32,7 @@ export let splitBrowserStream = (browserStream, [...separator]) =>
 				
 				buffers.push(buffer.subarray(0, i))
 				buffer = buffer.subarray(i + 1)
-				i = 0
+				i = -1
 				push(joinBuffers(buffers))
 				buffers = []
 			}
