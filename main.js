@@ -33,7 +33,7 @@ let play = async (game, time = 0) =>
 	if (game.finished)
 	{
 		console.warn("The game could not be played because it is already finished.")
-		console.log(`< https://lichess.org/${game.id}/black`)
+		console.log(`< ${lichess.origin}/${game.id}/black`)
 		return
 	}
 	
@@ -120,7 +120,7 @@ let play = async (game, time = 0) =>
 	}
 	
 	console.log("Game completed.")
-	console.log(`< https://lichess.org/${game.id}/black`)
+	console.log(`< ${lichess.origin}/${game.id}/black`)
 }
 
 let args = Deno.args.slice()
@@ -138,8 +138,17 @@ if (action === "async")
 	action = args.shift()
 }
 
-let token
+let origin
+if (action === "origin")
+{
+	origin = args.shift()
+	if (origin === undefined)
+		console.error("Unterminated 'origin' specification."),
+		Deno.exit(1)
+	action = args.shift()
+}
 
+let token
 if (action === "token")
 {
 	let means = args.shift()
@@ -190,7 +199,10 @@ if (action === "openings")
 	action = args.shift()
 }
 
-let lichess = await Lichess(token)
+let options = {token}
+if (origin !== undefined) options.origin = origin
+
+let lichess = await Lichess(options)
 if (!lichess)
 {
 	console.error("Could not connect to Lichess.")
@@ -225,7 +237,7 @@ if (action === "start")
 	let game = await start()
 	if (game)
 		console.log("The game has started!"),
-		console.log(`> https://lichess.org/${game.id}/black`)
+		console.log(`> ${lichess.origin}/${game.id}/black`)
 	else
 		console.error("The game could not be started."),
 		Deno.exit(1)
@@ -252,7 +264,7 @@ else if (action === "continue")
 	lichess.declineChallenges("later")
 	
 	console.log("The game is continuing!")
-	console.log(`> https://lichess.org/${id}/black`)
+	console.log(`> ${lichess.origin}/${id}/black`)
 	
 	await play(game)
 }
@@ -283,7 +295,7 @@ else if (action === "wait")
 			console.log("Continuing ongoing games...")
 			for (let game of games)
 				console.log("The game is continuing!"),
-				console.log(`> https://lichess.org/${game.id}/black`),
+				console.log(`> ${lichess.origin}/${game.id}/black`),
 				play(game)
 		}
 	})()
@@ -306,7 +318,7 @@ else if (action === "wait")
 			let game = await opponent.start()
 			if (game)
 				console.log("Started a game!"),
-				console.log(`> https://lichess.org/${game.id}/black`)
+				console.log(`> ${lichess.origin}/${game.id}/black`)
 			else
 				console.error(`A game '${opponent.name}' could not be started.`),
 				Deno.exit(1)
@@ -357,7 +369,7 @@ else if (action === "wait")
 			continue
 		}
 		console.log("Challenge accepted!")
-		console.log(`> https://lichess.org/${id}/black`)
+		console.log(`> ${lichess.origin}/${id}/black`)
 		play(game)
 	}
 }

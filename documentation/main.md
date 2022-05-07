@@ -12,6 +12,7 @@ table of contents
 - the `wait` action
 - the `wait play` action
 - parallelization — the `async` specifier
+- changing the base Lichess URL — the `origin` specifier
 - specifying the access token — the `token` specifier
 - opening book — the `openings` specifier
 - specifier ordering
@@ -100,6 +101,15 @@ By default, the bot will perform move analyses synchronously on the main thread.
 
 The maximum number of workers used can be given, but it can also be elided. If it is elided, the number of cores in the CPU will be used to determine how many workers to use.
 
+changing the base Lichess URL <br> the `origin` specifier
+---
+
+~~~
+deno run -A .../dummyette/main.js origin "$base_url" ...
+~~~
+
+By default, the base URL used to connect to Lichess is `https://lichess.org`. This can be changed, however, to support connecting to a different instance of Lichess.
+
 specifying the access token <br> the `token` specifier
 ---
 
@@ -121,12 +131,12 @@ By default, no opening book is used. One can be specified using the `openings` s
 specifier ordering
 ---
 
-The `async`, `token` and `openings` specifiers must appear in that specific order. Some or all of them may be absent, however.
+The `async`, `origin`, `token` and `openings` specifiers must appear in that specific order. Some or all of them may be absent, however.
 
 required Deno permissions
 ---
 
-The only permission that is always required to run the bot is `--allow-net=lichess.org`. However, note that `--allow-env=lichess_token` might also be required if a different means of identifying the token is not provided.
+The only permission that is always required to run the bot is `--allow-net=lichess.org` (or conversely the origin of the base URL specified, if provided with the `origin` specifier). However, note that `--allow-env=lichess_token` might also be required if a different means of identifying the token is not provided.
 
 ~~~
 deno run --allow-net=lichess.org .../dummyette/main.js token prompt wait
