@@ -154,6 +154,7 @@ export let Lichess = async options =>
 	
 	let lichess =
 	{
+		origin,
 		StockfishGame, challenges, username, getGame,
 		getGames, getGameIDs,
 		declineChallenges, acceptChallenges,

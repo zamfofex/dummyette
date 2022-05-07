@@ -8,6 +8,7 @@ table of contents
 - Lichess connections
   - `await Lichess(token)`, `await Lichess({origin, token})`
   - `lichess.username`
+  - `lichess.origin`
 - challenges
   - `lichess.challenges`
   - `challenge.id`
@@ -65,6 +66,11 @@ This function will return a promise that resolves with a connection to Lichess g
 This will be a string with the username of the account of the connection.
 
 Note: This is what Lichess calls a “user id”.
+
+`lichess.origin`
+---
+
+The base URL passed in as an argument to create this connection object after URL normalization.
 
 `lichess.challenges`
 ---

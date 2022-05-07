@@ -10,6 +10,7 @@ export type Status = "ongoing"|"checkmate"|"draw"|"aborted"
 
 export type Lichess =
 {
+	origin: string,
 	username: string,
 	challenges: LiveStream<Challenge>,
 	acceptChallenges: () => LiveStream<Game>,
