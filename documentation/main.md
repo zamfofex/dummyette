@@ -48,9 +48,13 @@ the `start` action
 deno run -A .../dummyette/main.js start "$username"
 ~~~
 
-Sends a challenge to the player with the given username. The username may be prefixed by `+` to indicate that the game will be rated. It may be suffixed by `:${time_control}` (colon followed by a time control string) to create a game with that time control. The time control format is the same as for the `lichess.challenge(...)` function of the `lichess.js` module.
+Sends a challenge to the player with the given username. The username may be prefixed by `+` to indicate that the game will be rated. It may be suffixed by `/${color}` (a slash followed by a color) and also `:${time_control}` (a colon followed by a time control string), each optional, in that order.
 
-The username may be replaced by a numberic string from 1 through 8, and that will instead start a game against Stockfish of that level. A `+` or time control has no effect then, but those might change in the future to either be an error or have an effect.
+The specified color must be either `white`, `black` or `random`, and will create a game where the bot plays as that color. The default color is `black`.
+
+The given `time` option can be used to create a game with that time control. The time control format is the same as for the `lichess.challenge(...)` function of the `lichess.js` module.
+
+The username may be replaced by a numeric string from 1 through 8, and that will instead start a game against Stockfish of that level. A `+` or time control has no effect then, but those might change in the future to either be an error or have an effect.
 
 This will reject any incoming challenges during the game.
 
@@ -84,7 +88,7 @@ the `wait play` action
 deno run -A .../dummyette/main.js wait play "${usernames[@]}"
 ~~~
 
-Similar to the `wait` action, but this will additionally send challenges to the players with the given usernames instead. It will send challenges to a random player and wait for it to complete in a loop.
+Similar to the `wait` action, but this will additionally send challenges to the players with the given usernames instead. It will send challenges to a random given player and wait for it to complete in a loop.
 
 The player usernames will follow the same format as for the `play` action, and thus allow time information to be specified, as well as whether the game will be rated or not. It can also be used to start games against Stockfish.
 

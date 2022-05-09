@@ -33,7 +33,7 @@ let play = async (game, time = 0) =>
 	if (game.finished)
 	{
 		console.warn("The game could not be played because it is already finished.")
-		console.log(`< ${lichess.origin}/${game.id}/black`)
+		console.log(`< ${lichess.origin}/${game.id}`)
 		return
 	}
 	
@@ -120,7 +120,7 @@ let play = async (game, time = 0) =>
 	}
 	
 	console.log("Game completed.")
-	console.log(`< ${lichess.origin}/${game.id}/black`)
+	console.log(`< ${lichess.origin}/${game.id}`)
 }
 
 let args = Deno.args.slice()
@@ -214,14 +214,15 @@ let stockfishLevels = "12345678".split("")
 
 let parseOpponent = opponent =>
 {
-	let [{}, rated, name, time] = opponent.match(/^(\+)?(.*?)(?::(.*))?$/)
+	let [{}, rated, name, color, time] = opponent.match(/^(\+)?(.*?)(?:\/(black|white|random))?(?::(.*))?$/)
 	if (!name) name = "1"
+	if (!color) color = "black"
 	rated = Boolean(rated)
 	
 	if (stockfishLevels.includes(name))
-		return () => lichess.StockfishGame(name, "black")
+		return () => lichess.StockfishGame(name, color)
 	else
-		return () => lichess.challenge(name, {rated, time, color: "black"})
+		return () => lichess.challenge(name, {rated, time, color})
 }
 
 if (action === "start")
@@ -237,7 +238,7 @@ if (action === "start")
 	let game = await start()
 	if (game)
 		console.log("The game has started!"),
-		console.log(`> ${lichess.origin}/${game.id}/black`)
+		console.log(`> ${lichess.origin}/${game.id}`)
 	else
 		console.error("The game could not be started."),
 		Deno.exit(1)
@@ -264,7 +265,7 @@ else if (action === "continue")
 	lichess.declineChallenges("later")
 	
 	console.log("The game is continuing!")
-	console.log(`> ${lichess.origin}/${id}/black`)
+	console.log(`> ${lichess.origin}/${id}`)
 	
 	await play(game)
 }
@@ -295,7 +296,7 @@ else if (action === "wait")
 			console.log("Continuing ongoing games...")
 			for (let game of games)
 				console.log("The game is continuing!"),
-				console.log(`> ${lichess.origin}/${game.id}/black`),
+				console.log(`> ${lichess.origin}/${game.id}`),
 				play(game)
 		}
 	})()
@@ -318,7 +319,7 @@ else if (action === "wait")
 			let game = await opponent.start()
 			if (game)
 				console.log("Started a game!"),
-				console.log(`> ${lichess.origin}/${game.id}/black`)
+				console.log(`> ${lichess.origin}/${game.id}`)
 			else
 				console.error(`A game '${opponent.name}' could not be started.`),
 				Deno.exit(1)
@@ -332,12 +333,6 @@ else if (action === "wait")
 	{
 		console.log("")
 		
-		if (color !== "white")
-		{
-			console.log(`Declining miscolored challenge: ${id}.`)
-			await decline("later")
-			continue
-		}
 		if (variant !== "standard")
 		if (variant !== "chess960")
 		if (variant !== "fromPosition")
@@ -369,7 +364,7 @@ else if (action === "wait")
 			continue
 		}
 		console.log("Challenge accepted!")
-		console.log(`> ${lichess.origin}/${id}/black`)
+		console.log(`> ${lichess.origin}/${id}`)
 		play(game)
 	}
 }
