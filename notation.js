@@ -207,7 +207,7 @@ export let fromFEN = string =>
 	}
 	
 	let whiteKing = board.getKingPosition("white")
-	let blackKing = board.getKingPosition("white")
+	let blackKing = board.getKingPosition("black")
 	
 	let possibilities =
 	[
