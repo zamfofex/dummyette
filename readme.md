@@ -40,6 +40,13 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
 - [`streams-browser.js`](streams-browser.js) [[reference](documentation/streams-browser.md) | [tutorial](examples/streams-browser.md)] <br>
   Interoperation between streams from the `streams.js` module and [WHATWG streams](https://streams.spec.whatwg.org).
 
+running tests
+---
+
+`perft` tests can be run using `deno test`. Some tests will be skipped to avoid taking too long.
+
+The default is to skip tests that would compare against over one million nodes, but that can be changed by specifying a numeric argument to the tests, e.g. `deno test -- 5000000`.
+
 more stuff
 ---
 
