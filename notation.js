@@ -31,7 +31,6 @@ export let toSAN = move =>
 			return "O-O" + checkmark
 	}
 	
-	let ambiguity
 	let fileAmbiguity
 	let rankAmbiguity
 	if (!move.promotion)
@@ -40,9 +39,8 @@ export let toSAN = move =>
 		{
 			if (other !== move)
 			if (other.to.name === move.to.name)
-			if (other.from.piece === piece)
+			if (other.piece === piece)
 			{
-				ambiguity = true
 				if (other.from.file === move.from.file)
 					fileAmbiguity = true
 				if (other.from.rank === move.from.rank)
@@ -57,19 +55,16 @@ export let toSAN = move =>
 	{
 		name += move.from.file
 	}
-	else if (ambiguity)
+	else if (fileAmbiguity)
 	{
-		if (fileAmbiguity)
-		{
-			if (rankAmbiguity)
-				name += move.from.name
-			else
-				name += move.from.rank
-		}
+		if (rankAmbiguity)
+			name += move.from.name
 		else
-		{
-			name += move.from.file
-		}
+			name += move.from.rank
+	}
+	else if (rankAmbiguity)
+	{
+		name += move.from.file
 	}
 	
 	if (captured) name += "x"
