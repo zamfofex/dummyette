@@ -74,7 +74,7 @@ export let traverse = board =>
 	{
 		let scoreBefore = score
 		
-		let n = (bitboard.color === white) / blackScore - (bitboard.color === black) / whiteScore
+		let n = (bitboard.color === white) / whiteScore - (bitboard.color === black) / blackScore
 		score += n * 8
 		
 		let move = bitboard.move
