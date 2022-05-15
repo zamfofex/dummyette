@@ -114,7 +114,7 @@ let compare = ({score: [a, i]}, {score: [b, j]}) =>
 
 let shuffle = moves =>
 {
-	moves = moves.slice(0)
+	moves = moves.slice()
 	let result = []
 	while (moves.length !== 0)
 		result.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0])
