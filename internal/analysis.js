@@ -351,7 +351,7 @@ export let traverse = board =>
 		
 		if (i > 2)
 		{
-			if (results[i] > score * initialTurn)
+			if (results[i] > -score * initialTurn)
 				results[i] = -score * initialTurn
 			return
 		}
