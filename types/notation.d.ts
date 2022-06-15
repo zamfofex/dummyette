@@ -1,4 +1,3 @@
-import {Move, Board} from "../chess.js"
-
-export let toSAN: (move: Move) => string
-export let fromFEN: (string: string) => Board|undefined
+export {toBoard as fromFEN} from "../notation/from-fen.js"
+export {fromMove as toSAN} from "../notation/to-san.js"
+export {toGames as fromPGN} from "../notation/from-pgn.js"

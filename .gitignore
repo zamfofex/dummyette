@@ -18,6 +18,10 @@
 !/openings.js
 !/notation.js
 !/streams-browser.js
+!/notation
+!/notation/to-san.js
+!/notation/from-fen.js
+!/notation/from-pgn.js
 
 !/types/main.d.ts
 !/types/dummyette.d.ts
@@ -28,6 +32,10 @@
 !/types/openings.d.ts
 !/types/notation.d.ts
 !/types/streams-browser.d.ts
+!/types/notation
+!/types/notation/to-san.d.ts
+!/types/notation/from-fen.d.ts
+!/types/notation/from-pgn.d.ts
 
 !/documentation/main.md
 !/documentation/dummyette.md
@@ -38,6 +46,10 @@
 !/documentation/openings.md
 !/documentation/notation.md
 !/documentation/streams-browser.md
+!/documentation/notation
+!/documentation/notation/to-san.md
+!/documentation/notation/from-fen.md
+!/documentation/notation/from-pgn.md
 
 !/examples/main.md
 !/examples/dummyette.md
