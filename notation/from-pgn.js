@@ -3,7 +3,7 @@
 
 import {standardBoard} from "../chess.js"
 import {fromFEN, toSAN} from "../notation.js"
-import {LiveController,LiveStream} from "../streams.js"
+import {LiveController, LiveStream} from "../streams.js"
 
 function * lexG(produce)
 {

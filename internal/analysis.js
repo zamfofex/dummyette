@@ -283,7 +283,7 @@ export let traverse = board =>
 		}
 		
 		after = before >> 9n
-		if (!(before & fileA) &&  (after & any & white[0]))
+		if (!(before & fileA) && (after & any & white[0]))
 		{
 			if (after & rank1)
 				playPromotion(bitboard, after)
