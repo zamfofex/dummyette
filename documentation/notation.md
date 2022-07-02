@@ -30,4 +30,4 @@ Creates a board based on a FEN string. This will return `undefined` if the strin
 `fromPGN(stream)`
 ---
 
-Creates a PGN game array or stream from a FEN string or stream. This will return `undefined` if the input couldn’t be parsed. This is an alias to `toGames` from the [`notation/from-pgn.js`]((notation/from-pgn.md)) module.
+Creates a PGN game array or stream from a FEN string or stream. This will return `undefined` if the input couldn’t be parsed. This is an alias to `toGames` from the [`notation/from-pgn.js`](notation/from-pgn.md) module.
