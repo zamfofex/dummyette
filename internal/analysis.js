@@ -1,4 +1,4 @@
-import {values} from "../chess.js"
+let values = {pawn: 1, knight: 3.2, bishop: 3.3, rook: 5, queen: 9, king: 5999}
 
 let fileA = 0x0101010101010101n
 let rank1 = 0b11111111n
@@ -37,12 +37,12 @@ export let traverse = board =>
 		{
 			let n = (bitboard.color === white) / blackScore - (bitboard.color === black) / whiteScore
 			
-			score += n * ((after & pawns[0]) !== 0n) * 1
-			score += n * ((after & knights[0]) !== 0n) * 3
-			score += n * ((after & bishops[0]) !== 0n) * 3
-			score += n * ((after & rooks[0]) !== 0n) * 5
-			score += n * ((after & queens[0]) !== 0n) * 9
-			score += n * ((after & kings[0]) !== 0n) * 5999
+			if (after & pawns[0]) score += n * values.pawn
+			if (after & knights[0]) score += n * values.knight
+			if (after & bishops[0]) score += n * values.bishop
+			if (after & rooks[0]) score += n * values.rook
+			if (after & queens[0]) score += n * values.queen
+			if (after & kings[0]) score += n * values.king
 		}
 		
 		let capture = after & any
@@ -54,10 +54,12 @@ export let traverse = board =>
 		any &= ~bitboard.self
 		any |= after
 		
-		bitboard.self = after
-		bitboard.group[0] |= after
-		bitboard.color[0] |= after
 		bitboard.other[0] &= ~after
+		bitboard.group[0] |= after
+		bitboard.group[0] &= ~bitboard.self
+		bitboard.color[0] |= after
+		bitboard.color[0] &= ~bitboard.self
+		bitboard.self = after
 		
 		next()
 		load(state)
@@ -68,7 +70,7 @@ export let traverse = board =>
 		let state = save()
 		
 		let n = (bitboard.color === white) / whiteScore - (bitboard.color === black) / blackScore
-		score += n * 8
+		score += n * (values.queen - values.pawn)
 		
 		let move = bitboard.move
 		bitboard.move = moveQueen
@@ -519,8 +521,6 @@ export let serialize = (board, before) =>
 		
 		let {color, type} = piece
 		result.array.push({color, type})
-		
-		if (type === "king") continue
 		
 		if (color === "white")
 			score += values[type] / whiteScore
