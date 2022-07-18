@@ -37,11 +37,7 @@ export let Lichess = async options =>
 	let events = await streamURL(headers, `${origin}/api/stream/event`)
 	if (!events) return
 	
-	events.last.then(() =>
-	{
-		console.error("The Lichess event stream was broken, finalizing the process.")
-		Deno.exit(-1)
-	})
+	events.last.then(() => { throw new Error("The Lichess event stream was broken.") })
 	
 	let StockfishGame = async (level = 1, color = "random") =>
 	{
@@ -202,9 +198,9 @@ let createGame = async ({origin, headers}, username, id) =>
 			board = board.play(name)
 			if (!board)
 			{
+				console.error(`Unexpected move in game: ${name}`)
 				await resign()
-				console.error(`Unexpected move in game, finalizing process: ${name}`)
-				Deno.exit(-1)
+				return
 			}
 			
 			let result = {moveName: name, move: name, board, turn, moveNumber: Math.floor(n / 2)}
@@ -227,9 +223,9 @@ let createGame = async ({origin, headers}, username, id) =>
 		board = fromFEN(initialFen)
 		if (!board)
 		{
+			console.error(`Unexpected starting position: ${initialFen}`)
 			await resign()
-			console.error(`Unexpected starting position, finalizing process: ${initialFen}`)
-			Deno.exit(-1)
+			return
 		}
 		
 		for (let [name, lichessName, color, kingPosition, rookPosition] of castling)

@@ -5,6 +5,8 @@ Dummyette
 [play Dummyette]: <https://lichess.org/?user=Dummyette#friend>
 [Lichess]: <https://lichess.org>
 [Deno]: <https://deno.land>
+[Bun]: <https://bun.sh>
+[Node]: <https://nodejs.org>
 
 [Maia1]: <https://lichess.org/@/maia1>
 [Maia5]: <https://lichess.org/@/maia5>
@@ -18,7 +20,7 @@ You might be able to [play Dummyette] on Lichess if you catch it online. Note th
 - The time control is not bullet.
 - If the time control is correspondence (including unlimited), the game isn’t rated.
 
-As a program, Dummyette is written in JavaScript for [Deno]. It has no external library dependencies!
+As a program, Dummyette is written in JavaScript for [Deno] with experimental support for [Bun] and [Node]. It has no external library dependencies!
 
 As a project, Dummyette is separated into a couple modules, each specialized in a specific kind of functionality that come together to form the bot.
 

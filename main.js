@@ -3,12 +3,49 @@ import {AsyncAnalyser, analyse} from "./dummyette.js"
 import {OpeningBook} from "./openings.js"
 import * as messages from "./internal/flavoring.js"
 
+let runtime
+
+if (typeof Deno !== "undefined")
+{
+	runtime = Deno
+}
+else if (typeof Bun !== "undefined")
+{
+	let fsp = await import("fs/promises")
+	runtime =
+	{
+		args: Bun.argv.slice(3),
+		env: {get: name => Bun.env[name]},
+		exit: process.exit,
+		readFile: fsp.readFile,
+	}
+}
+else if (typeof global !== "undefined")
+{
+	let process = await import("process")
+	let fsp = await import("fs/promises")
+	runtime =
+	{
+		args: process.argv.slice(2),
+		env: {get: name => process.env[name]},
+		exit: process.exit,
+		readFile: fsp.readFile,
+	}
+}
+else
+{
+	throw new Error("Unsupported JavaScript runtime")
+}
+
+let {args, env, readFile, exit} = runtime
+args = args.slice()
+
 let endArgs = () =>
 {
 	if (args.length !== 0)
 	{
 		console.error("Too many arguments were supplied.")
-		Deno.exit(1)
+		exit(1)
 	}
 }
 
@@ -28,7 +65,7 @@ let play = async (game, time = 0) =>
 	let color = game.color
 	if (color === null)
 		console.error("The game could not be played because the bot is not partaking in it."),
-		Deno.exit(1)
+		exit(1)
 	
 	if (game.finished)
 	{
@@ -123,7 +160,6 @@ let play = async (game, time = 0) =>
 	console.log(`< ${lichess.origin}/${game.id}`)
 }
 
-let args = Deno.args.slice()
 let action = args.shift()
 
 let Analyser = () => ({analyse})
@@ -144,7 +180,7 @@ if (action === "origin")
 	origin = args.shift()
 	if (origin === undefined)
 		console.error("Unterminated 'origin' specification."),
-		Deno.exit(1)
+		exit(1)
 	action = args.shift()
 }
 
@@ -154,7 +190,7 @@ if (action === "token")
 	let means = args.shift()
 	if (means === undefined)
 		console.error("Unterminated 'token' specification."),
-		Deno.exit(1)
+		exit(1)
 	
 	if (means === "env")
 	{
@@ -162,16 +198,16 @@ if (action === "token")
 		
 		if (envName === undefined)
 			console.error("No environment variable name provided for the token."),
-			Deno.exit(1)
+			exit(1)
 		
-		token = Deno.env.get(envName)
+		token = env.get(envName)
 	}
 	else if (means === "given")
 	{
 		token = args.shift()
 		if (token === undefined)
 			console.error("No given token provided."),
-			Deno.exit(1)
+			exit(1)
 	}
 	else if (means === "prompt")
 	{
@@ -182,7 +218,7 @@ if (action === "token")
 }
 else
 {
-	token = Deno.env.get("lichess_token")
+	token = env.get("lichess_token")
 }
 
 let openings
@@ -192,9 +228,9 @@ if (action === "openings")
 	let path = args.shift()
 	if (path === undefined)
 		console.error("No given opening book path."),
-		Deno.exit(1)
+		exit(1)
 	
-	openings = OpeningBook(await Deno.readFile(path))
+	openings = OpeningBook(await readFile(path))
 	
 	action = args.shift()
 }
@@ -207,7 +243,7 @@ if (!lichess)
 {
 	console.error("Could not connect to Lichess.")
 	if (!token) console.error("Did you set up your token correctly?")
-	Deno.exit(1)
+	exit(1)
 }
 
 let stockfishLevels = "12345678".split("")
@@ -241,7 +277,7 @@ if (action === "start")
 		console.log(`> ${lichess.origin}/${game.id}`)
 	else
 		console.error("The game could not be started."),
-		Deno.exit(1)
+		exit(1)
 	
 	await play(game)
 }
@@ -253,14 +289,14 @@ else if (action === "continue")
 	if (id === undefined)
 		console.error("The game id is missing."),
 		console.error("Specify a game id for the bot to continue playing it."),
-		Deno.exit(1)
+		exit(1)
 	
 	console.log("Continuing game...")
 	let game = await lichess.getGame(id)
 	if (!game)
 		console.error("The game could not be continued."),
 		console.error("Is the game id you provided correct?"),
-		Deno.exit(1)
+		exit(1)
 	
 	lichess.declineChallenges("later")
 	
@@ -322,7 +358,7 @@ else if (action === "wait")
 				console.log(`> ${lichess.origin}/${game.id}`)
 			else
 				console.error(`A game '${opponent.name}' could not be started.`),
-				Deno.exit(1)
+				exit(1)
 			await play(game, 15000)
 		}
 	})()
@@ -376,17 +412,17 @@ else if (action === "resign")
 	if (id === undefined)
 		console.error("The game id is missing."),
 		console.error("Specify a game id for the bot to resign."),
-		Deno.exit(1)
+		exit(1)
 	
 	let game = await lichess.getGame(id)
 	if (!game)
 		console.error("The game could not be resigned."),
 		console.error("Is the game id you provided correct?"),
-		Deno.exit(1)
+		exit(1)
 	
 	if (!await game.resign())
 		console.error("The game could not be resigned."),
-		Deno.exit(1)
+		exit(1)
 	
 	console.log("The game was resigned succesfully.")
 }
@@ -401,7 +437,7 @@ else
 {
 	if (action) console.error(`Unknown action '${action}'.`)
 	else console.error("You need to specify an action: 'wait', 'wait play', 'start', 'continue', 'resign', or 'idle'")
-	Deno.exit(1)
+	exit(1)
 }
 
-Deno.exit()
+exit()

@@ -13,14 +13,7 @@ let createController = type =>
 	let push = (...values) =>
 	{
 		if (values.length === 0) return
-		
-		if (isFinished())
-		{
-			console.error("Tried pushing an element to a finished stream controller, finalizing process.")
-			Deno.exit(-1)
-		}
-		
-		if (finished) throw new Error()
+		if (isFinished() || finished) throw new Error()
 		
 		if (type === "rewind") past.push(...values)
 		
