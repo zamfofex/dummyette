@@ -45,8 +45,6 @@ export let traverse = board =>
 			if (after & kings[0]) score += n * values.king
 		}
 		
-		let capture = after & any
-		
 		let color = bitboard.color[0]
 		let group = bitboard.group[0]
 		let other = bitboard.other[0]
