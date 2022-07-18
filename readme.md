@@ -1,17 +1,18 @@
 Dummyette
 ===
 
-[Lichess]: https://lichess.org
-[Dummyette]: https://lichess.org/@/Dummyette
-[Deno]: https://deno.land
-
-Dummyette is a [Lichess] bot. It is not that great at chess, but it is reasonably decent. It can win against [Maia1] most times, and sometimes also [Maia5]. It has also won against [Maia9] occasionally.
+[Dummyette]: <https://lichess.org/@/Dummyette>
+[play Dummyette]: <https://lichess.org/?user=Dummyette#friend>
+[Lichess]: <https://lichess.org>
+[Deno]: <https://deno.land>
 
 [Maia1]: <https://lichess.org/@/maia1>
 [Maia5]: <https://lichess.org/@/maia5>
 [Maia9]: <https://lichess.org/@/maia9>
 
-You might be able to [play Dummyette on Lichess][Dummyette] if you catch it online. Note that it will **only accept challenges that meet these criteria**:
+[Dummyette] is a [Lichess] bot. It is not that great at chess, but it is reasonably decent. It can win against [Maia1] most times, and sometimes also [Maia5]. It has also won against [Maia9] occasionally.
+
+You might be able to [play Dummyette] on Lichess if you catch it online. Note that it will **only accept challenges that meet these criteria**:
 
 - The game is not a variant. (Chess 960 and different starting positions are accepted, though!)
 - The time control is not bullet.
@@ -55,12 +56,10 @@ There are other projects directly related to Dummyette that don’t fit into thi
 - [Dummyette on Discord](https://gist.github.com/zamfofex/b9dc6375b3f4eb3798a536841ea7354d) <br>
   A Discord bot that uses Dummyette’s APIs to allow you to play chess on [Discord].
 - [Dummyette in your browser](https://gist.github.com/zamfofex/d478de89883e1629ce21de5367b9bfdd) <br>
-  Play Dummyette in your browser, no Deno required! (Only a simple HTTP server.)
+  Play Dummyette in your browser, no Deno required! (Only a simple HTTP file server.)
 - [UCI front end](https://gist.github.com/zamfofex/078a2bae37dbb60440093db30f816a63) <br>
   Simple (and currently partially incomplete) [UCI] front end for Dummyette, so that you can play Dummyette in your favorite chess GUI.
 
-[Ellie Moore]: <https://github.com/RedBedHed>
-[Charon]: <https://github.com/RedBedHed/Charon>
 [Discord]: <https://discord.com>
 [UCI]: <https://www.chessprogramming.org/UCI>
 
