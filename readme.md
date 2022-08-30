@@ -56,14 +56,17 @@ more stuff
 There are other projects directly related to Dummyette that don’t fit into this repository. Either because they are out of scope or because not as much effort was put into them. Still, they may be interesting, so they are listed below!
 
 - [Dummyette on Discord](https://gist.github.com/zamfofex/b9dc6375b3f4eb3798a536841ea7354d) <br>
-  A Discord bot that uses Dummyette’s APIs to allow you to play chess on [Discord].
+  A Discord bot that uses Dummyette’s library to allow you to play chess on [Discord].
 - [Dummyette in your browser](https://gist.github.com/zamfofex/d478de89883e1629ce21de5367b9bfdd) <br>
   Play Dummyette in your browser, no Deno required! (Only a simple HTTP file server.)
 - [UCI front end](https://gist.github.com/zamfofex/078a2bae37dbb60440093db30f816a63) <br>
   Simple (and currently partially incomplete) [UCI] front end for Dummyette, so that you can play Dummyette in your favorite chess GUI.
+- [PGN viewer](https://gist.github.com/zamfofex/6f157c522b1ea1cab39b6818a8b8a628) <br>
+  A [PGN] viewer widget using Dummyette’s library.
 
 [Discord]: <https://discord.com>
 [UCI]: <https://www.chessprogramming.org/UCI>
+[PGN]: <https://www.chessprogramming.org/Portable_Game_Notation>
 
 contributing
 ---
