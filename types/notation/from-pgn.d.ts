@@ -8,6 +8,7 @@ export type Delta =
 	after: Board,
 	comments: string[],
 	annotation: number,
+	variations: Delta[][],
 }
 
 export type Game =
@@ -21,3 +22,11 @@ export type Game =
 export let toGames:
 	((pgn: string|Iterable<string>) => Game[] | undefined) &
 	((pgn: AsyncIterable<string>) => LiveStream<Game>)
+
+export let toGame:
+	((pgn: string|Iterable<string>) => Game|undefined) &
+	((pgn: AsyncIterable<string>) => Promise<Game|undefined>)
+
+export let toFirstGame:
+	((pgn: string|Iterable<string>) => Game|undefined) &
+	((pgn: AsyncIterable<string>) => Promise<Game|undefined>)

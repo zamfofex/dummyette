@@ -159,12 +159,6 @@ function * lexG(produce)
 					if (char === undefined) break
 				}
 				
-				if (lexeme === undefined)
-				{
-					produce()
-					return
-				}
-				
 				produce(lexeme)
 				break
 			}
@@ -391,9 +385,46 @@ let toDelta = (node, board) =>
 	let move = board.moves.find(move => toSAN(move) === node.value.name)
 	if (!move) return
 	
-	let delta = {before: board, move, after: move.play(), comments, annotation}
+	let delta = {before: board, move, after: move.play(), comments, annotation, variations: []}
 	Object.freeze(delta)
 	return delta
+}
+
+let fromVariation = (delta0, nodes) =>
+{
+	let board = delta0.before
+	let delta
+	
+	let deltas = []
+	delta0.variations.push(deltas)
+	
+	for (let node of nodes)
+	{
+		if (node.type === "variation")
+		{
+			if (!delta) return
+			if (!fromVariation(delta, node.value)) return
+			continue
+		}
+		
+		delta = toDelta(node, board)
+		if (!delta) return
+		
+		deltas.push(delta)
+		board = delta.after
+	}
+	
+	Object.freeze(deltas)
+	
+	return true
+}
+
+let freezeVariations = variations =>
+{
+	Object.freeze(variations)
+	for (let deltas of variations)
+		for (let delta of deltas)
+			freezeVariations(delta.variations)
 }
 
 function * toGamesG(produce)
@@ -433,10 +464,15 @@ function * toGamesG(produce)
 					return
 				
 				case "variation":
-					// todo
+					if (deltas.length == 0 || !fromVariation(deltas[deltas.length - 1], node.value))
+					{
+						produce()
+						return
+					}
 					break
 				
 				case "move":
+				{
 					let delta = toDelta(node, board)
 					if (!delta)
 					{
@@ -446,6 +482,7 @@ function * toGamesG(produce)
 					board = delta.after
 					deltas.push(delta)
 					break
+				}
 			}
 			
 			node = yield
@@ -463,9 +500,23 @@ function * toGamesG(produce)
 		Object.freeze(tags)
 		Object.freeze(info)
 		Object.freeze(deltas)
+		for (let delta of deltas)
+			freezeVariations(delta.variations)
 		
 		produce(game)
 	}
+}
+
+function * toGameG(produce)
+{
+	let game = yield
+	if (!game || (yield)) produce()
+	else produce(game)
+}
+
+function * toFirstGameG(produce)
+{
+	produce(yield)
 }
 
 let applySync = (input, f) =>
@@ -538,14 +589,22 @@ let lexSync = pgn => applySync(flatSync(pgn), lexG)
 let tokeniseSync = pgn => applySync(lexSync(pgn), tokeniseG)
 let parseSync = pgn => applySync(tokeniseSync(pgn), parseG)
 let toGamesSync = pgn => applySync(parseSync(pgn), toGamesG)
+let toGameSync = pgn => applySync(toGamesSync(pgn), toGameG)?.[0]
+let toFirstGameSync = pgn => applySync(toGamesSync(pgn), toFirstGameG)?.[0]
 
 let lexAsync = pgn => applyAsync(flatAsync(pgn), lexG)
 let tokeniseAsync = pgn => applyAsync(lexAsync(pgn), tokeniseG)
 let parseAsync = pgn => applyAsync(tokeniseAsync(pgn), parseG)
 let toGamesAsync = pgn => applyAsync(parseAsync(pgn), toGamesG)
+let toGameAsync = pgn => applyAsync(toGamesAsync(pgn), toGameG).first
+let toFirstGameAsync = pgn => applyAsync(toGamesAsync(pgn), toFirstGameG).first
 
-export let toGames = pgn =>
+let fromPGN = (fromPGNSync, fromPGNAsync) => pgn =>
 {
-	if (typeof pgn[Symbol.iterator] === "function") return toGamesSync(pgn)
-	if (typeof pgn[Symbol.asyncIterator] === "function") return toGamesAsync(pgn)
+	if (typeof pgn[Symbol.iterator] === "function") return fromPGNSync(pgn)
+	if (typeof pgn[Symbol.asyncIterator] === "function") return fromPGNAsync(pgn)
 }
+
+export let toGames = fromPGN(toGamesSync, toGamesAsync)
+export let toGame = fromPGN(toGameSync, toGameAsync)
+export let toFirstGame = fromPGN(toFirstGameSync, toFirstGameAsync)
