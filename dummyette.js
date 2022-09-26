@@ -40,7 +40,7 @@ export let analyse = board =>
 	let candidates = []
 	
 	for (let move of shuffle(board.moves))
-		candidates.push({move, score: traverse(serialize(move.play(), board))})
+		candidates.push({move, score: traverse(serialize(move.play()))})
 	
 	candidates.sort(compare)
 	candidates = candidates.map(({move}) => move)
@@ -94,7 +94,7 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 	for (let [i, move] of moves.entries())
 	{
 		let worker = workers[i % workers.length]
-		worker.postMessage([[id, move.name], serialize(move.play(), board)])
+		worker.postMessage([[id, move.name], serialize(move.play())])
 		worker.addEventListener("message", receive)
 	}
 })
