@@ -26,7 +26,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 		return max
 	}
 	
-	let maxDepth = 4
+	let maxDepth = 3
 	let result = negamax(maxDepth)
 	result[0] *= -1
 	result[1] = maxDepth - result[1]
