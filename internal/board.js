@@ -215,8 +215,6 @@ let move = (moves, self, other, bitboards, f) =>
 	}
 }
 
-let values = [1, 3.2, 3.3, 5, 9, 59999]
-
 let createBitboards = () => new BigUint64Array(174)
 
 let separate = bitboards =>
@@ -252,10 +250,8 @@ let separate = bitboards =>
 
 export let Board = (bitboards, whiteTurn) =>
 {
-	let whiteScore = 0
-	let blackScore = 0
-	
-	let allBitboards = separate(bitboards)
+	let originalBitboards = separate(bitboards)
+	let allBitboards = originalBitboards
 	
 	let whitePieces = 0n
 	let blackPieces = 0n
@@ -271,13 +267,6 @@ export let Board = (bitboards, whiteTurn) =>
 				
 				if (i % 2 === 0) whitePieces |= bitboard
 				else blackPieces |= bitboard
-				
-				let value = values[Math.floor(i / 2)]
-				if (value !== values[5])
-				{
-					if (i % 2 === 0) whiteScore += value
-					else blackScore += value
-				}
 			}
 		}
 		allBitboards[i] = bitboards.subarray(0, count)
@@ -371,8 +360,6 @@ export let Board = (bitboards, whiteTurn) =>
 						bitboards[j] = 0n
 						n = i + j
 						m = k
-						if (whiteTurn) blackScore -= values[k]
-						else whiteScore -= values[k]
 						break
 					}
 				}
@@ -388,16 +375,12 @@ export let Board = (bitboards, whiteTurn) =>
 			let queens
 			if (whiteTurn)
 			{
-				whiteScore += 9
-				blackScore -= 1
 				let i = whiteQueens.byteOffset / 8
 				whiteQueens = bitboards.subarray(i, i + whiteQueens.length + 1)
 				queens = whiteQueens
 			}
 			else
 			{
-				blackScore += 9
-				whiteScore -= 1
 				let i = blackQueens.byteOffset / 8
 				blackQueens = bitboards.subarray(i, i + blackQueens.length + 1)
 				queens = blackQueens
@@ -440,35 +423,21 @@ export let Board = (bitboards, whiteTurn) =>
 		{
 			bitboards[j] = after
 			if (whiteTurn)
-			{
-				blackScore += values[k]
 				blackPieces |= after
-			}
 			else
-			{
-				whiteScore += values[k]
 				whitePieces |= after
-			}
 		}
 		
 		if (promotion)
 		{
 			if (whiteTurn)
-			{
-				whiteScore -= 9
-				blackScore += 1
 				whiteQueens = whiteQueens.subarray(0, whiteQueens.length - 1)
-			}
 			else
-			{
-				blackScore -= 9
-				whiteScore += 1
 				blackQueens = blackQueens.subarray(0, blackQueens.length - 1)
-			}
 		}
 	}
 	
-	let result = {getMoves, play, unplay, get whiteScore() { return whiteScore }, get blackScore() { return blackScore }}
+	let result = {getMoves, play, unplay, get whiteTurn() { return whiteTurn }, bitboards: originalBitboards}
 	Object.freeze(result)
 	return result
 }

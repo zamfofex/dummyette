@@ -1,36 +1,201 @@
 import {Board, Bitboards} from "./board.js"
 
+let table = (n, white, black) =>
+{
+	let score = 0
+	let whiteTable = tables[n][0]
+	let blackTable = tables[n][1]
+	for (let n of white) score += whiteTable.get(n)
+	for (let n of black) score -= blackTable.get(n)
+	return score
+}
+
 export let traverse = ({bitboards, whiteTurn}) =>
 {
 	let board = Board(bitboards, whiteTurn)
 	
-	let negamax = depth =>
+	let evaluate = i =>
 	{
-		let score = board.whiteScore - board.blackScore
-		if (Math.abs(score) > 5000) return [-Infinity, depth]
+		let score = 0
+		for (let i = 0 ; i < 5 ; i++)
+			score += table(i, board.bitboards[i * 2], board.bitboards[i * 2 + 1])
 		
-		if (depth === 0)
-		{
-			if (whiteTurn !== (maxDepth % 2 === 0)) score *= -1
-			return [score]
-		}
+		if (!board.whiteTurn) score *= -1
+		if (score < -5000) return -10000 * (depth - i + 1)
+		return score
+	}
+	
+	let quiesce = (i, alpha, beta) =>
+	{
+		let score = evaluate(i)
+		if (score < -5000) return score
+		if (i === -qdepth) return score
 		
-		let max = [-Infinity]
+		if (score >= beta) return beta
+		if (alpha < score) alpha = score
+		
 		for (let move of board.getMoves())
 		{
 			let token = board.play(move)
-			let [score, depth2] = negamax(depth - 1)
-			if (-score > max[0]) max = [-score, depth2]
+			if (token[0] === undefined)
+			{
+				board.unplay(move, token)
+				continue
+			}
+			
+			let score = -quiesce(i - 1, alpha, beta)
 			board.unplay(move, token)
+			
+			if (score >= beta) return beta
+			if (score > alpha) alpha = score
 		}
-		return max
+		return alpha
 	}
 	
-	let maxDepth = 3
-	let result = negamax(maxDepth)
-	result[0] *= -1
-	result[1] = maxDepth - result[1]
-	return result
+	let negamax = (i, alpha, beta) =>
+	{
+		let score = evaluate(i)
+		if (score < -5000) return score
+		if (i === 0) return quiesce(i, alpha, beta)
+		
+		for (let move of board.getMoves())
+		{
+			let token = board.play(move)
+			let score = -negamax(i - 1, -beta, -alpha)
+			board.unplay(move, token)
+			
+			if (score >= beta) return beta
+			if (score > alpha) alpha = score
+		}
+		return alpha
+	}
+	
+	let depth = 3
+	let qdepth = 3
+	
+	let result = -negamax(depth, -Infinity, Infinity)
+	return [result, 0]
 }
 
 export let serialize = board => ({bitboards: Bitboards(board), whiteTurn: board.turn === "white"})
+
+// tables from: <https://www.chessprogramming.org/Simplified_Evaluation_Function>
+
+let pawnTable =
+[
+	[0, 0, 0, 0],
+	[50, 50, 50, 50],
+	[30, 20, 10, 10],
+	[25, 10, 5, 5],
+	[20, 0, 0, 0],
+	[0, -10, -5, 5],
+	[-20, 10, 10, 5],
+	[0, 0, 0, 0],
+]
+
+let knightTable =
+[
+	[20, 15, 0, -30],
+	[15, 10, 5, -30],
+	[5, 0, -20, -40],
+	[-30, -30, -40, -50],
+]
+
+let bishopTable =
+[
+	[-10, -10, -10, -20],
+	[0, 0, 0, -10],
+	[10, 5, 0, -10],
+	[10, 5, 5, -10],
+	[10, 10, 0, -10],
+	[10, 10, 10, -10],
+	[0, 0, 5, -10],
+	[-10, -10, -10, -20],
+]
+
+let rookTable =
+[
+	[0, 0, 0, 0],
+	[10, 10, 10, 5],
+	[0, 0, 0, -5],
+	[0, 0, 0, -5],
+	[0, 0, 0, -5],
+	[0, 0, 0, -5],
+	[0, 0, 0, -5],
+	[5, 0, 0, 0],
+]
+
+let queenTable =
+[
+	[5, 5, 0, -5],
+	[5, 5, 0, -10],
+	[0, 0, 0, -10],
+	[-5, -10, -10, -20],
+]
+
+let kingMiddleGameTable =
+[
+	[-50, -40, -40, -30],
+	[-50, -40, -40, -30],
+	[-50, -40, -40, -30],
+	[-50, -40, -40, -30],
+	[-40, -30, -30, -20],
+	[-20, -20, -20, -10],
+	[0, 0, 20, 20],
+	[0, 10, 30, 20],
+]
+
+// todo: This table is currently unused.
+let kingEndGameTable =
+[
+	[40, 30, -10, -30],
+	[30, 20, -10, -30],
+	[0, 0, -30, -30],
+	[-30, -30, -30, -50],
+]
+
+let tableScores = [[100, pawnTable], [320, knightTable], [330, bishopTable], [5, rookTable], [9, queenTable], [0, kingMiddleGameTable], [0, kingEndGameTable]]
+
+for (let [score, table] of tableScores)
+{
+	for (let array of table)
+	{
+		for (let i of array.keys())
+			array[i] += score,
+			array[i] /= 100
+		
+		let others = [...array]
+		others.reverse()
+		array.unshift(...others)
+	}
+	
+	if (table.length === 4)
+	{
+		let others = [...table]
+		others.reverse()
+		table.unshift(...others)
+	}
+}
+
+let tables = []
+
+for (let [score, table] of tableScores)
+{
+	let array = []
+	tables.push(array)
+	for (let i of [0, 1])
+	{
+		let map = new Map()
+		array.push(map)
+		map.set(0n, 0)
+		
+		for (let x = 0 ; x < 8 ; x++)
+		for (let y = 0 ; y < 8 ; y++)
+		{
+			let y0 = y
+			if (i === 0) y0 = 7 - y
+			let score = table[y0][x]
+			map.set(1n << BigInt(x + y * 8), score)
+		}
+	}
+}
