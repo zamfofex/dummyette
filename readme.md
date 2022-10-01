@@ -8,11 +8,7 @@ Dummyette
 [Bun]: <https://bun.sh>
 [Node]: <https://nodejs.org>
 
-[Maia1]: <https://lichess.org/@/maia1>
-[Maia5]: <https://lichess.org/@/maia5>
-[Maia9]: <https://lichess.org/@/maia9>
-
-[Dummyette] is a [Lichess] bot. It is not that great at chess, but it is reasonably decent. It can win against [Maia1] most times, and sometimes also [Maia5]. It has also won against [Maia9] occasionally.
+[Dummyette] is a [Lichess] bot. It is not that great at chess, but it is reasonably decent. Dummyette as a project is also a chess library and Lichess API library that can be used independently of the bot.
 
 You might be able to [play Dummyette] on Lichess if you catch it online. Note that it will **only accept challenges that meet these criteria**:
 
@@ -30,8 +26,6 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
   The AI algorithm used to rate the quality of moves in a position.
 - [`chess.js`](chess.js) [[reference](documentation/chess.md) | [tutorial](examples/chess.md)] <br>
   Utilities for interacting with chess boards and finding valid moves.
-- ~~[`fast-chess.js`](fast-chess.js)~~ [deprecated] [[reference](documentation/fast-chess.md)] <br>
-  Limited utilities for interacting with mutable chess boards (for performance).
 - [`lichess.js`](lichess.js) [[reference](documentation/lichess.md) | [tutorial](examples/lichess.md)] <br>
   Interface for interacting with Lichess through its bot API.
 - [`openings.js`](openings.js) [[reference](documentation/openings.md) | [tutorial](examples/openings.md)] <br>

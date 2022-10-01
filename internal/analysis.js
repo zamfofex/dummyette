@@ -73,8 +73,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 	let depth = 2
 	let qdepth = 3
 	
-	let result = -search(depth, -Infinity, Infinity)
-	return [result, 0]
+	return -search(depth, -Infinity, Infinity)
 }
 
 export let serialize = board => ({bitboards: Bitboards(board), whiteTurn: board.turn === "white"})

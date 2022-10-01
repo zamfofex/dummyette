@@ -20,8 +20,6 @@ export type Lichess =
 	getGames: () => Promise<Game[]>,
 	StockfishGame: (level: Level, color: Color) => Promise<Game|undefined>,
 	challenge: (username: string, options?: {rated?: boolean, time?: TimeControl|string, color?: Color}) => Promise<Game|undefined>,
-	rated: boolean,
-	chat: Chat,
 	getUsernameGameIDs: (username: string) => Promise<ID[]>,
 	getBotUsernames: () => Promise<string[]>,
 }
@@ -65,6 +63,8 @@ export type Game =
 	resign: () => Promise<number>,
 	boards: RewindStream<Board>,
 	history: RewindStream<HistoryEntry>,
+	rated: boolean,
+	chat: Chat,
 }
 
 export type Chat =

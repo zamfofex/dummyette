@@ -1,5 +1,5 @@
 import {Lichess} from "./lichess.js"
-import {AsyncAnalyser, analyse} from "./dummyette.js"
+import {AsyncAnalyser} from "./dummyette.js"
 import {OpeningBook} from "./openings.js"
 import * as messages from "./internal/flavoring.js"
 
@@ -31,6 +31,9 @@ else if (typeof global !== "undefined")
 		exit: process.exit,
 		readFile: fsp.readFile,
 	}
+	
+	if (typeof fetch === "undefined")
+		globalThis.fetch = (await import("node-fetch")).default
 }
 else
 {
@@ -60,7 +63,7 @@ let play = async (game, time = 0) =>
 		await game.chat.send(messages2[Math.floor(Math.random() * messages2.length)])
 	}
 	
-	let analyser = Analyser()
+	let analyser = AsyncAnalyser()
 	
 	let color = game.color
 	if (color === null)
@@ -162,14 +165,13 @@ let play = async (game, time = 0) =>
 
 let action = args.shift()
 
-let Analyser = () => ({analyse})
-
 if (action === "async")
 {
 	let options = {}
 	if (/^[0-9]+$/.test(args[0]))
 		options.workers = Number(args.shift())
-	Analyser = () => AsyncAnalyser(options)
+	else
+		console.warn("Note: Using a bare 'async' specifier (without a thread count) is a deprecated and might be removed in the future, as its behavior is now the default (it cannot be turned off).")
 	
 	action = args.shift()
 }

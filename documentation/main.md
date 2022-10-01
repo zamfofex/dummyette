@@ -101,9 +101,9 @@ parallelization <br> the `async` specifier
 deno run -A .../dummyette/main.js async "$worker_count" ...
 ~~~
 
-By default, the bot will perform move analyses synchronously on the main thread. This can be changed by using the `async` specifier.
+By default, the bot will perform move analyses using at most as many workers as there are CPU cores in the runtime. This can be changed by using the `async` specifier.
 
-The maximum number of workers used can be given, but it can also be elided. If it is elided, the number of cores in the CPU will be used to determine how many workers to use.
+Currently, for backwards compatibility, specifying `async` without a worker count is allowed, but has no effect. This is deprecated and might be removed in the future.
 
 changing the base Lichess URL <br> the `origin` specifier
 ---
@@ -127,7 +127,7 @@ opening book <br> the `openings` specifier
 ---
 
 ~~~
-deno run -A .../dummyette/main.js openings "$openings_path" ...
+deno run -A .../dummyette/main.js openings "$openings_file_name" ...
 ~~~
 
 By default, no opening book is used. One can be specified using the `openings` specifier. An opening book is a Polyglot `.bin` file that the bot will use for openings.
@@ -140,12 +140,12 @@ The `async`, `origin`, `token` and `openings` specifiers must appear in that spe
 required Deno permissions
 ---
 
-The only permission that is always required to run the bot is `--allow-net=lichess.org` (or conversely the origin of the base URL specified, if provided with the `origin` specifier). However, note that `--allow-env=lichess_token` might also be required if a different means of identifying the token is not provided.
+The only permissions that are always required to run the bot are `--allow-net=lichess.org` (or conversely the origin of the base URL specified, if provided with the `origin` specifier) and either an `--allow-read` or an `--allow-net` permission to the bot’s directory (depending on whether it is stored locally or has been run from HTTP) so that the workers can be started appropriately.
+
+However, note that `--allow-env=lichess_token` might also be required if a different means of identifying the token is not provided.
 
 ~~~
 deno run --allow-net=lichess.org .../dummyette/main.js token prompt wait
 ~~~
 
 It is also necessary to provide the `--allow-read` permission to the opening book file if it is specified.
-
-When using the `async` specifier, it is also necessary to give `--allow-read` or `--allow-net` permission to the bot’s directory (depending on whether it is stored locally or has been run from HTTP) so that the workers can be started appropriately.

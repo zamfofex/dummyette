@@ -42,7 +42,7 @@ export let analyse = board =>
 	for (let move of shuffle(board.moves))
 		candidates.push({move, score: traverse(serialize(move.play()))})
 	
-	candidates.sort(compare)
+	candidates.sort(({score: a}, {score: b}) => b - a)
 	candidates = candidates.map(({move}) => move)
 	
 	Object.freeze(candidates)
@@ -66,8 +66,8 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 		
 		if (candidates.length === length)
 		{
-			candidates.sort(compare)
-			candidates = candidates.map(({move: [id, name], score: [score]}) => ({score, move: board.Move(name)}))
+			candidates.sort(({score: a}, {score: b}) => b - a)
+			candidates = candidates.map(({move: [id, name], score}) => ({score, move: board.Move(name)}))
 			
 			Object.freeze(candidates)
 			resolve(candidates)
@@ -98,19 +98,6 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 		worker.addEventListener("message", receive)
 	}
 })
-
-let compare = ({score: [a, i]}, {score: [b, j]}) =>
-{
-	let result = b - a
-	if (Number.isNaN(result))
-	{
-		if (a > 0)
-			return i - j
-		else
-			return j - i
-	}
-	return result
-}
 
 let shuffle = moves =>
 {

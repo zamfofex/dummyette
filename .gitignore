@@ -3,6 +3,7 @@
 
 !/readme.md
 !/license.md
+!/package.json
 !/documentation
 !/examples
 !/types
@@ -12,7 +13,6 @@
 !/main.js
 !/dummyette.js
 !/chess.js
-!/fast-chess.js
 !/lichess.js
 !/streams.js
 !/openings.js
@@ -26,7 +26,6 @@
 !/types/main.d.ts
 !/types/dummyette.d.ts
 !/types/chess.d.ts
-!/types/fast-chess.d.ts
 !/types/lichess.d.ts
 !/types/streams.d.ts
 !/types/openings.d.ts
@@ -40,7 +39,6 @@
 !/documentation/main.md
 !/documentation/dummyette.md
 !/documentation/chess.md
-!/documentation/fast-chess.md
 !/documentation/lichess.md
 !/documentation/streams.md
 !/documentation/openings.md

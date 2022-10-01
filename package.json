@@ -1,0 +1,12 @@
+{
+	"name": "dummyette",
+	"version": "0.0.0",
+	"description": "A chess bot + Lichess API and chess library",
+	"keywords": ["bot", "chess-engine", "chess", "lichess-api", "lichess", "chess-ai", "chess-bot", "deno", "denoland", "lichess-bot"],
+	"homepage": "https://lichess.org/@/Dummyette",
+	"bugs": "https://github.com/zamfofex/dummyette/issues",
+	"license": "0BSD",
+	"repository": "https://github.com/zamfofex/dummyette",
+	"optionalDependencies": {"node-fetch": "*"},
+	"type": "module"
+}
