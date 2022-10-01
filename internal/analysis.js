@@ -17,7 +17,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 	let evaluate = i =>
 	{
 		let score = 0
-		for (let i = 0 ; i < 5 ; i++)
+		for (let i = 0 ; i < 6 ; i++)
 			score += table(i, board.bitboards[i * 2], board.bitboards[i * 2 + 1])
 		
 		if (!board.whiteTurn) score *= -1
@@ -43,7 +43,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 				continue
 			}
 			
-			let score = -quiesce(i - 1, alpha, beta)
+			let score = -quiesce(i - 1, -beta, -alpha)
 			board.unplay(move, token)
 			
 			if (score >= beta) return beta
@@ -154,7 +154,7 @@ let kingEndGameTable =
 	[-30, -30, -30, -50],
 ]
 
-let tableScores = [[100, pawnTable], [320, knightTable], [330, bishopTable], [5, rookTable], [9, queenTable], [0, kingMiddleGameTable], [0, kingEndGameTable]]
+let tableScores = [[100, pawnTable], [320, knightTable], [330, bishopTable], [5, rookTable], [9, queenTable], [59999, kingMiddleGameTable], [0, kingEndGameTable]]
 
 for (let [score, table] of tableScores)
 {
