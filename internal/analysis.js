@@ -52,7 +52,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 		return alpha
 	}
 	
-	let negamax = (i, alpha, beta) =>
+	let search = (i, alpha, beta) =>
 	{
 		let score = evaluate(i)
 		if (score < -5000) return score
@@ -61,7 +61,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 		for (let move of board.getMoves())
 		{
 			let token = board.play(move)
-			let score = -negamax(i - 1, -beta, -alpha)
+			let score = -search(i - 1, -beta, -alpha)
 			board.unplay(move, token)
 			
 			if (score >= beta) return beta
@@ -73,7 +73,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 	let depth = 3
 	let qdepth = 3
 	
-	let result = -negamax(depth, -Infinity, Infinity)
+	let result = -search(depth, -Infinity, Infinity)
 	return [result, 0]
 }
 
