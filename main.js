@@ -63,10 +63,10 @@ let play = async (game, time = 0) =>
 		await game.chat.send(messages2[Math.floor(Math.random() * messages2.length)])
 	}
 	
-	let analyser = AsyncAnalyser()
+	let analyser = AsyncAnalyser(analyserOptions)
 	
 	let color = game.color
-	if (color === null)
+	if (!color)
 		console.error("The game could not be played because the bot is not partaking in it."),
 		exit(1)
 	
@@ -165,11 +165,11 @@ let play = async (game, time = 0) =>
 
 let action = args.shift()
 
+let analyserOptions = {}
 if (action === "async")
 {
-	let options = {}
 	if (/^[0-9]+$/.test(args[0]))
-		options.workers = Number(args.shift())
+		analyserOptions.workers = Number(args.shift())
 	else
 		console.warn("Note: Using a bare 'async' specifier (without a thread count) is a deprecated and might be removed in the future, as its behavior is now the default (it cannot be turned off).")
 	

@@ -42,7 +42,7 @@ export let analyse = board =>
 	for (let move of shuffle(board.moves))
 		candidates.push({move, score: traverse(serialize(move.play()))})
 	
-	candidates.sort(({score: a}, {score: b}) => b - a)
+	candidates.sort((a, b) => b.score - a.score)
 	candidates = candidates.map(({move}) => move)
 	
 	Object.freeze(candidates)
@@ -66,7 +66,7 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 		
 		if (candidates.length === length)
 		{
-			candidates.sort(({score: a}, {score: b}) => b - a)
+			candidates.sort((a, b) => b.score - a.score)
 			candidates = candidates.map(({move: [id, name], score}) => ({score, move: board.Move(name)}))
 			
 			Object.freeze(candidates)
@@ -93,8 +93,15 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 	let count = 0
 	for (let [i, move] of moves.entries())
 	{
+		let board = move.play()
+		if (board.draw)
+		{
+			candidates.push({move, score: 0})
+			continue
+		}
+		
 		let worker = workers[i % workers.length]
-		worker.postMessage([[id, move.name], serialize(move.play())])
+		worker.postMessage([[id, move.name], serialize(board)])
 		worker.addEventListener("message", receive)
 	}
 })
