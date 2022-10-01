@@ -154,7 +154,7 @@ let kingEndGameTable =
 	[-30, -30, -30, -50],
 ]
 
-let tableScores = [[100, pawnTable], [320, knightTable], [330, bishopTable], [5, rookTable], [9, queenTable], [59999, kingMiddleGameTable], [0, kingEndGameTable]]
+let tableScores = [[100, pawnTable], [320, knightTable], [330, bishopTable], [500, rookTable], [900, queenTable], [5999900, kingMiddleGameTable], [0, kingEndGameTable]]
 
 for (let [score, table] of tableScores)
 {
