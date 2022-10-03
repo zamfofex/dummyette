@@ -13,7 +13,7 @@ table of contents
 introduction
 ---
 
-This module contains functions to convert values from `chess.js` to SAN.
+This module contains functions to parse PGN games.
 
 `toGames(string)`, `toGames(stream)`
 ---
@@ -26,7 +26,7 @@ Note that there is a significant difference between those cases: If an asynchron
 
 The resulting game array will be consisted of objects containing `game.info` (with the tag pairs as an object), `game.tags` (with the tag pairs as a list of entries), `game.result` (either `"1-0"`, `"0-1"`, `"1/2-1/2"`, or `"*"`), and `game.deltas` (an array of deltas).
 
-A *delta* is an object containing `delta.move` (a move played in the game), `delta.before` (the board before the move was played), `delta.after` (the board after the move was played), `delta.annotation` the numeric annotation associated with the move (or `0` is there was none), `delta.comments` (an array of comments associated with the move), and `delta.variations` (an array containing alternate lines from recursive annotation variations).
+A *delta* is an object containing `delta.move` (a move played in the game), `delta.before` (the board before the move was played), `delta.after` (the board after the move was played), `delta.annotation` (the numeric annotation associated with the move or `0` is there was none), `delta.comments` (an array of comments associated with the move), and `delta.variations` (an array containing alternate lines from recursive annotation variations).
 
 `toGame(string)`, `await toGame(stream)`
 ---
