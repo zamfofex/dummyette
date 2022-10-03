@@ -1,7 +1,8 @@
 import {Lichess} from "./lichess.js"
 import {AsyncAnalyser} from "./dummyette.js"
-import {OpeningBook} from "./openings.js"
 import * as messages from "./internal/flavoring.js"
+import {toGames} from "./notation/from-pgn.js"
+import {sameBoard} from "./chess.js"
 
 let runtime
 
@@ -52,9 +53,7 @@ let endArgs = () =>
 	}
 }
 
-let rest = time => new Promise(resolve => setTimeout(resolve, time))
-
-let play = async (game, time = 0) =>
+let play = async game =>
 {
 	let chat = async messages =>
 	{
@@ -81,29 +80,25 @@ let play = async (game, time = 0) =>
 	
 	let t0 = performance.now()
 	
-	if (openings)
+	outer:
+	for await (let board of game.boards.slice(game.boards.length - 1))
 	{
-		for await (let board of game.boards.slice(game.boards.length - 1))
+		if (board.turn !== color) continue
+		
+		for (let {deltas} of openingGames)
+		for (let {before, move} of deltas)
 		{
-			if (board.turn !== color) continue
-			
-			let moves = openings.lookup(board)
-			if (moves.length === 0) break
-			
-			moves = moves.map(({name, weight}) => ({name, weight: Math.random() ** (1 / weight)}))
-			moves.sort((a, b) => b.weight - a.weight)
-			
-			let t = performance.now()
-			if (t - t0 < time) await rest(time - t + t0)
-			t0 = performance.now()
-			
-			if (!await game.play(moves[0].name))
+			if (!sameBoard(board, before)) continue
+			if (!await game.play(move.name))
 			{
-				console.error(`Opening move ${moves[0].name} was not played successfully.`)
+				console.error(`Opening move ${move.name} was not played successfully.`)
 				await game.resign()
-				break
+				break outer
 			}
+			continue outer
 		}
+		
+		break
 	}
 	
 	let average = 0
@@ -131,13 +126,13 @@ let play = async (game, time = 0) =>
 		
 		if (score < average && (messageIndex <= 0 || status !== "losing"))
 		{
-			messageIndex = 4
+			messageIndex = 6
 			status = "losing"
 			await chat(messages.losing)
 		}
 		if (score > average && (messageIndex <= 0 || status !== "winning"))
 		{
-			messageIndex = 4
+			messageIndex = 6
 			status = "winning"
 			await chat(messages.winning)
 		}
@@ -146,10 +141,6 @@ let play = async (game, time = 0) =>
 		if (Number.isFinite(score))
 			average *= 2 / 3,
 			average += score / 3
-		
-		let t = performance.now()
-		if (t - t0 < time) await rest(time - t + t0)
-		t0 = performance.now()
 		
 		if (!await game.play(move.name))
 		{
@@ -204,17 +195,15 @@ if (action === "token")
 		
 		token = env.get(envName)
 	}
-	else if (means === "given")
+	if (means === "given")
 	{
 		token = args.shift()
 		if (token === undefined)
 			console.error("No given token provided."),
 			exit(1)
 	}
-	else if (means === "prompt")
-	{
+	if (means === "prompt")
 		token = prompt("Specify your Lichess bot account token:", "")
-	}
 	
 	action = args.shift()
 }
@@ -223,19 +212,28 @@ else
 	token = env.get("lichess_token")
 }
 
-let openings
-
 if (action === "openings")
 {
-	let path = args.shift()
-	if (path === undefined)
-		console.error("No given opening book path."),
-		exit(1)
+	let fileName = args.shift()
 	
-	openings = OpeningBook(await readFile(path))
+	console.warn("The 'openings' specifier is deprecated and might be removed in the future.")
+	
+	if (fileName === undefined)
+		console.error("No given opening book file name."),
+		exit(1)
 	
 	action = args.shift()
 }
+
+let pgn = await fetch(new URL("openings.pgn", import.meta.url))
+if (!pgn.ok)
+	console.error("Inbuilt openings could not be fetched."),
+	exit(1)
+
+let openingGames = toGames(await pgn.text())
+if (!openingGames)
+	console.error("Inbuilt openings could not be parsed."),
+	exit(1)
 
 let options = {token}
 if (origin !== undefined) options.origin = origin
@@ -361,7 +359,7 @@ else if (action === "wait")
 			else
 				console.error(`A game '${opponent.name}' could not be started.`),
 				exit(1)
-			await play(game, 15000)
+			await play(game)
 		}
 	})()
 	

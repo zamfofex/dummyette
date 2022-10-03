@@ -11,10 +11,10 @@ table of contents
 - the `continue` action
 - the `wait` action
 - the `wait play` action
-- parallelization — the `async` specifier
+- worker count — the `async` specifier
 - changing the base Lichess URL — the `origin` specifier
 - specifying the access token — the `token` specifier
-- opening book — the `openings` specifier
+- ~~opening book — the `openings` specifier~~
 - specifier ordering
 - required Deno permissions
 
@@ -94,7 +94,7 @@ The player usernames will follow the same format as for the `play` action, and t
 
 If no username is specified, it will continue starting new games against Stockfish level 1 in a loop.
 
-parallelization <br> the `async` specifier
+worker count <br> the `async` specifier
 ---
 
 ~~~
@@ -123,14 +123,14 @@ By default, the Lichess access token is identified through the `lichess_token` e
 - `deno run -A .../dummyette/main.js token given "$token" ...` — uses the given argument as the token.
 - `deno run -A .../dummyette/main.js token prompt ...` — prompts for the token on stdin.
 
-opening book <br> the `openings` specifier
+~~opening book <br> the `openings` specifier~~
 ---
 
 ~~~
 deno run -A .../dummyette/main.js openings "$openings_file_name" ...
 ~~~
 
-By default, no opening book is used. One can be specified using the `openings` specifier. An opening book is a Polyglot `.bin` file that the bot will use for openings.
+This speficier is deprecated and has no effect. It might be removed in the future.
 
 specifier ordering
 ---

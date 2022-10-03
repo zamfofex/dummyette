@@ -9,6 +9,7 @@
 !/types
 !/internal
 !/internal/*.js
+!/openings.pgn
 
 !/main.js
 !/dummyette.js
