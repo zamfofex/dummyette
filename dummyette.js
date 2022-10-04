@@ -2,8 +2,19 @@
 /// <reference types="./types/dummyette.d.ts" />
 
 import {traverse, serialize} from "./internal/analysis.js"
+import {toGames} from "./notation/from-pgn.js"
+import {sameBoard} from "./chess.js"
 
 let registry = new FinalizationRegistry(f => f())
+
+let pgn = await fetch(new URL("openings.pgn", import.meta.url))
+if (!pgn.ok)
+	console.warn("Openings could not be fetched.")
+
+let openingGames = toGames(await pgn.text())
+if (!openingGames)
+	console.warn("Openings could not be parsed."),
+	openingGames = []
 
 export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 {
@@ -68,6 +79,17 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 		{
 			candidates.sort((a, b) => b.score - a.score)
 			candidates = candidates.map(({move: [id, name], score}) => ({score, move: board.Move(name)}))
+			
+			outer:
+			for (let {deltas} of openingGames)
+			for (let {before, move} of deltas)
+			{
+				if (!sameBoard(board, before)) continue
+				let i = candidates.findIndex(({move: {name}}) => name === move.name)
+				let [evaluation] = candidates.splice(i, 1)
+				candidates.unshift(evaluation)
+				break outer
+			}
 			
 			Object.freeze(candidates)
 			resolve(candidates)

@@ -1,8 +1,6 @@
 import {Lichess} from "./lichess.js"
 import {AsyncAnalyser} from "./dummyette.js"
 import * as messages from "./internal/flavoring.js"
-import {toGames} from "./notation/from-pgn.js"
-import {sameBoard} from "./chess.js"
 
 let runtime
 
@@ -78,38 +76,13 @@ let play = async game =>
 	
 	if (game.boards.length === 0) await chat(messages.start)
 	
-	let t0 = performance.now()
-	
-	outer:
-	for await (let board of game.boards.slice(game.boards.length - 1))
-	{
-		if (board.turn !== color) continue
-		
-		for (let {deltas} of openingGames)
-		for (let {before, move} of deltas)
-		{
-			if (!sameBoard(board, before)) continue
-			if (!await game.play(move.name))
-			{
-				console.error(`Opening move ${move.name} was not played successfully.`)
-				await game.resign()
-				break outer
-			}
-			continue outer
-		}
-		
-		break
-	}
-	
 	let average = 0
 	let messageIndex = 0
 	let status
 	
 	for await (let board of game.boards.slice(game.boards.length - 1))
 	{
-		if (board.turn !== color) continue
-		let evaluations = await analyser.evaluate(board)
-		if (evaluations.length === 0)
+		if (board.moves.length === 0)
 		{
 			if (board.checkmate)
 			{
@@ -121,6 +94,9 @@ let play = async game =>
 			
 			break
 		}
+		
+		if (board.turn !== color) continue
+		let evaluations = await analyser.evaluate(board)
 		
 		let {score, move} = evaluations[0]
 		
@@ -224,16 +200,6 @@ if (action === "openings")
 	
 	action = args.shift()
 }
-
-let pgn = await fetch(new URL("openings.pgn", import.meta.url))
-if (!pgn.ok)
-	console.error("Inbuilt openings could not be fetched."),
-	exit(1)
-
-let openingGames = toGames(await pgn.text())
-if (!openingGames)
-	console.error("Inbuilt openings could not be parsed."),
-	exit(1)
 
 let options = {token}
 if (origin !== undefined) options.origin = origin
