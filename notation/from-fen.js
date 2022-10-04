@@ -25,7 +25,7 @@ export let toBoard = string =>
 	while (true)
 	{
 		let ch = string[i++]
-		if (i > string.length) return
+		if (i >= string.length) return
 		
 		let cp = ch.codePointAt()
 		let skip = 0
@@ -35,7 +35,7 @@ export let toBoard = string =>
 			skip += cp - 0x30
 			
 			ch = string[i++]
-			if (i > string.length) return
+			if (i >= string.length) return
 			cp = ch.codePointAt()
 		}
 		rank.length += skip
@@ -86,7 +86,7 @@ export let toBoard = string =>
 		while (string[i] !== " ")
 		{
 			let ch = string[i++]
-			if (i > string.length) return
+			if (i >= string.length) return
 			if (ch !== "K" && ch !== "Q" && ch !== "k" && ch !== "q") return
 			if (castling.has(ch)) return
 			castling.add(ch)
@@ -107,12 +107,12 @@ export let toBoard = string =>
 		while (string[i] !== " ")
 		{
 			position += string[i++]
-			if (i > string.length) return
+			if (i >= string.length) break
 		}
 		
 		enPassant = Position(position)
 		if (enPassant.rank === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
-		if (enPassant.rank === 5) enPassant = Position(enPassant.x, enPassant.y - 1)
+		if (enPassant.rank === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
 	}
 	
 	let board = EmptyBoard(width, height)
