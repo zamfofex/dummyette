@@ -118,7 +118,7 @@ let evaluateAsync = (board, workers) => new Promise(resolve =>
 		let board = move.play()
 		if (board.draw)
 		{
-			candidates.push({move, score: 0})
+			candidates.push({move: [id, move], score: 0})
 			continue
 		}
 		
