@@ -755,38 +755,3 @@ let isValid = board =>
 	if (!position) return true
 	return !attacked(board, position.x, position.y, color)
 }
-
-export let Game = (...entries) =>
-{
-	let boards = [standardBoard]
-	let moves = []
-	
-	for (let move of entries)
-	{
-		let board = boards[boards.length - 1]
-		move = board.Move(move)
-		if (!move) return
-		moves.push(move)
-		boards.push(move.play())
-	}
-	
-	let finished = boards[boards.length - 1].moves.length === 0
-	let ongoing = !finished
-	
-	let deltas = []
-	for (let move of moves)
-	{
-		let delta = {before: move.before, move, after: move.play()}
-		Object.freeze(delta)
-		deltas.push(delta)
-	}
-	
-	let game = {boards, moves, deltas, finished, ongoing}
-	
-	Object.freeze(boards)
-	Object.freeze(moves)
-	Object.freeze(deltas)
-	Object.freeze(game)
-	
-	return game
-}

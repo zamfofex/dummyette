@@ -141,13 +141,6 @@ export type Board =
 	moves: Move[],
 }
 
-export type Game =
-{
-	boards: Board[],
-	moves: Move[],
-	deltas: {move: Move, before: Board, after: Board}[],
-}
-
 // --- // --- //
 
 export let values: Values
@@ -195,5 +188,3 @@ export let standardBoard: Board
 export let emptyBoard: Board
 export let EmptyBoard: (width?: number, height?: number) => Board|undefined
 export let Board960: (() => Board) & ((n: number) => Board|undefined)
-
-export let Game: (...moves: Moveish[]) => Game|undefined

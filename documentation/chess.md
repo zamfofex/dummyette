@@ -64,11 +64,6 @@ table of contents
   - `move.before`
   - `board.play(...moves)`
   - `board.moves`
-- games
-  - `Game(...moves)`
-  - `game.boards`
-  - `game.moves`
-  - `game.deltas`
 
 introduction
 ---
@@ -394,33 +389,3 @@ If any of the moves is not valid, this will return `undefined`, otherwise it’l
 ---
 
 This will be an array containing all the valid move objects for the position this board is in.
-
-`Game(...moves)`
----
-
-Creates a new game from the given moves. The moves can be given as a string in UCI format, or as move objects.
-
-Moves must be valid for the board formed after playing the immediately preceeding move.
-
-The first move must be valid on `standardBoard`.
-
-A game is just a grouped sequence of moves that might have occurred in a game between two players.
-
-`game.boards`
----
-
-This will be the boards that happened in this game. This includes the initial position (`standardBoard`) followed by the boards after playing each move.
-
-`game.moves`
----
-
-This will be the moves played in this game. These will all be move objects rather than strings.
-
-`game.deltas`
----
-
-This is an array that contains information about changes in the board over time.
-
-- `delta.before` is the board before a move was played.
-- `delta.after` is the board after the move was played.
-- `delta.move` is the move that caused the change.
