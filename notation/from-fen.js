@@ -111,8 +111,8 @@ export let toBoard = string =>
 		}
 		
 		enPassant = Position(position)
-		if (enPassant.rank === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
-		else if (enPassant.rank === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
+		if (enPassant.y === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
+		else if (enPassant.y === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
 	}
 	
 	let board = EmptyBoard(width, height)
