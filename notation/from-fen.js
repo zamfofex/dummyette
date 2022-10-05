@@ -125,16 +125,17 @@ export let toBoard = string =>
 	if (enPassant)
 	{
 		enPassant = board.Position(enPassant)
+		if (!enPassant) return
+		if (board.at(enPassant)?.type !== "pawn") return
 		board = board.set(enPassant, "passing")
 	}
 	
 	for (let x = 0 ; x < board.width ; x++)
 	{
-		if (board.at(x, 1)?.type !== "pawn") return
-		if (board.at(x, board.height - 2)?.type !== "pawn") return
-		
-		board = board.set(x, 1, "initial")
-		board = board.set(x, board.height - 2, "initial")
+		if (board.at(x, 1)?.type === "pawn")
+			board = board.set(x, 1, "initial")
+		if (board.at(x, board.height - 2)?.type === "pawn")
+			board = board.set(x, board.height - 2, "initial")
 	}
 	
 	let whiteKing = board.getKingPosition("white")
