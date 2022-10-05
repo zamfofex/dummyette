@@ -25,7 +25,7 @@ export let toBoard = string =>
 	while (true)
 	{
 		let ch = string[i++]
-		if (i >= string.length) return
+		if (i > string.length) return
 		
 		let cp = ch.codePointAt()
 		let skip = 0
@@ -35,7 +35,7 @@ export let toBoard = string =>
 			skip += cp - 0x30
 			
 			ch = string[i++]
-			if (i >= string.length) return
+			if (i > string.length) return
 			cp = ch.codePointAt()
 		}
 		rank.length += skip
@@ -86,8 +86,8 @@ export let toBoard = string =>
 		while (string[i] !== " ")
 		{
 			let ch = string[i++]
-			if (i >= string.length) return
-			if (ch !== "K" && ch !== "Q" && ch !== "k" && ch !== "q") return
+			if (i > string.length) return
+			if (!/^[a-zA-Z]$/.test(ch)) return
 			if (castling.has(ch)) return
 			castling.add(ch)
 		}
@@ -111,8 +111,8 @@ export let toBoard = string =>
 		}
 		
 		enPassant = Position(position)
-		if (enPassant.rank === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
 		if (enPassant.rank === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
+		else if (enPassant.rank === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
 	}
 	
 	let board = EmptyBoard(width, height)
@@ -122,18 +122,26 @@ export let toBoard = string =>
 	for (let [x, piece] of rank.entries())
 		board = board.put(x, y, piece)
 	
-	if (enPassant) board = board.set(enPassant, "passing")
+	if (enPassant)
+	{
+		enPassant = board.Position(enPassant)
+		board = board.set(enPassant, "passing")
+	}
 	
 	for (let x = 0 ; x < board.width ; x++)
 	{
-		if (board.at(x, 1)?.type === "pawn")
-			board = board.set(x, 1, "initial")
-		if (board.at(x, board.height - 2)?.type === "pawn")
-			board = board.set(x, board.height - 2, "initial")
+		if (board.at(x, 1)?.type !== "pawn") return
+		if (board.at(x, board.height - 2)?.type !== "pawn") return
+		
+		board = board.set(x, 1, "initial")
+		board = board.set(x, board.height - 2, "initial")
 	}
 	
 	let whiteKing = board.getKingPosition("white")
 	let blackKing = board.getKingPosition("black")
+	
+	if (!whiteKing) return
+	if (!blackKing) return
 	
 	let possibilities =
 	[
@@ -144,11 +152,12 @@ export let toBoard = string =>
 	for (let [n, side, rook, position] of possibilities)
 	{
 		if (!castling.has(side)) continue
+		if (width > 8) continue
 		
 		board = board.set(position, "initial")
 		
 		let {x, y} = position
-		let rx = null
+		let rx
 		while (true)
 		{
 			x += n
@@ -157,7 +166,38 @@ export let toBoard = string =>
 			if (board.at(x, y) === rook)
 				rx = x
 		}
-		if (rx !== null) board = board.set(rx, y, "initial")
+		if (rx === undefined) return
+		board = board.set(rx, y, "initial")
+	}
+	
+	for (let file of castling)
+	{
+		if (width <= 8)
+		{
+			if (file === "K") continue
+			if (file === "Q") continue
+			if (file === "k") continue
+			if (file === "q") continue
+		}
+		
+		let king
+		let rook
+		
+		let white = file === file.toUpperCase()
+		if (white)
+			file = file.toLowerCase(),
+			king = whiteKing,
+			rook = pieces.whiteRook
+		else
+			king = blackKing,
+			rook = pieces.blackRook
+		
+		board = board.set(king, "initial")
+		
+		let position = board.Position(file.codePointAt() - 0x61, king.y)
+		if (!position) return
+		if (board.at(position) !== rook) return
+		board = board.set(position, "initial")
 	}
 	
 	return board
