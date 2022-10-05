@@ -249,7 +249,7 @@ let createGame = async ({origin, headers}, username, id) =>
 		.flatMap(moves => handle(moves))
 	
 	let moveNames = history.map(({moveName}) => moveName)
-	let boards = RewindJoinStream([standardBoard], history.map(({board}) => board))
+	let boards = RewindJoinStream([board], history.map(({board}) => board))
 	
 	boards.last.then(board =>
 	{
