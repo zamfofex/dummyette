@@ -111,6 +111,7 @@ export let toBoard = string =>
 		}
 		
 		enPassant = Position(position)
+		if (!enPassant) return
 		if (enPassant.y === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
 		else if (enPassant.y === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
 	}
