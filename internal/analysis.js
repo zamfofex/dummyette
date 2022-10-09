@@ -87,7 +87,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 		return alpha
 	}
 	
-	let depth = 3
+	let depth = 2
 	let qdepth = 3
 	
 	return -search(depth, -Infinity, Infinity)
