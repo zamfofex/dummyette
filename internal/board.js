@@ -250,8 +250,7 @@ let separate = bitboards =>
 
 export let Board = (bitboards, whiteTurn) =>
 {
-	let originalBitboards = separate(bitboards)
-	let allBitboards = originalBitboards
+	let allBitboards = separate(bitboards)
 	
 	let whitePieces = 0n
 	let blackPieces = 0n
@@ -431,13 +430,15 @@ export let Board = (bitboards, whiteTurn) =>
 		if (promotion)
 		{
 			if (whiteTurn)
+				whiteQueens[whiteQueens.length - 1] = 0n,
 				whiteQueens = whiteQueens.subarray(0, whiteQueens.length - 1)
 			else
+				blackQueens[blackQueens.length - 1] = 0n,
 				blackQueens = blackQueens.subarray(0, blackQueens.length - 1)
 		}
 	}
 	
-	let result = {getMoves, play, unplay, get whiteTurn() { return whiteTurn }, bitboards: originalBitboards}
+	let result = {getMoves, play, unplay, get whiteTurn() { return whiteTurn }, bitboards: allBitboards}
 	Object.freeze(result)
 	return result
 }

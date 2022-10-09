@@ -14,6 +14,23 @@ export let traverse = ({bitboards, whiteTurn}) =>
 {
 	let board = Board(bitboards, whiteTurn)
 	
+	// extend queen bitboards by the number of pawns on the board
+	// - board.bitboards[8] (white queens)
+	// - board.bitboards[0] (white pawns)
+	// - board.bitboards[9] (black queens)
+	// - board.bitboards[1] (black pawns)
+	
+	board.bitboards[8] = new BigUint64Array(
+		board.bitboards[8].buffer,
+		board.bitboards[8].byteOffset,
+		board.bitboards[8].length + board.bitboards[0].length,
+	)
+	board.bitboards[9] = new BigUint64Array(
+		board.bitboards[9].buffer,
+		board.bitboards[9].byteOffset,
+		board.bitboards[9].length + board.bitboards[1].length,
+	)
+	
 	let evaluate = i =>
 	{
 		let score = 0
@@ -70,7 +87,7 @@ export let traverse = ({bitboards, whiteTurn}) =>
 		return alpha
 	}
 	
-	let depth = 2
+	let depth = 3
 	let qdepth = 3
 	
 	return -search(depth, -Infinity, Infinity)
