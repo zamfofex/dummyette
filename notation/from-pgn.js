@@ -5,12 +5,14 @@ import {standardBoard} from "../chess.js"
 import {fromFEN, toSAN} from "../notation.js"
 import {LiveController, LiveStream} from "../streams.js"
 
+let eof = Symbol("EOF")
+
 function * lexG(produce)
 {
 	let char = yield
 	while (true)
 	{
-		if (char === undefined) break
+		if (char === eof) break
 		
 		switch (char)
 		{
@@ -20,7 +22,7 @@ function * lexG(produce)
 				while (true)
 				{
 					char = yield
-					if (char === undefined) break
+					if (char === eof) break
 					if (char === "\r") break
 					if (char === "\n") break
 					lexeme += char
@@ -36,9 +38,9 @@ function * lexG(produce)
 				while (true)
 				{
 					char = yield
-					if (char === undefined)
+					if (char === eof)
 					{
-						produce()
+						produce(eof)
 						return
 					}
 					
@@ -62,7 +64,7 @@ function * lexG(produce)
 					while (true)
 					{
 						char = yield
-						if (char === undefined) break
+						if (char === eof) break
 						if (char === "\r") break
 						if (char === "\n") break
 						lexeme += char
@@ -78,14 +80,21 @@ function * lexG(produce)
 				while (true)
 				{
 					char = yield
-					if (char === undefined)
+					if (char === eof)
 					{
-						produce()
+						produce(eof)
 						return
 					}
 					
 					let ch = char
 					if (ch === "\\") char = yield
+					
+					if (char === eof)
+					{
+						produce(eof)
+						return
+					}
+					
 					lexeme += char
 					if (ch === '"') break
 				}
@@ -108,7 +117,7 @@ function * lexG(produce)
 				while (true)
 				{
 					char = yield
-					if (char === undefined) break
+					if (char === eof) break
 					let cp = char.codePointAt()
 					if (cp < 0x30) break
 					if (cp > 0x39) break
@@ -116,7 +125,7 @@ function * lexG(produce)
 				}
 				if (lexeme === "$")
 				{
-					produce()
+					produce(eof)
 					return
 				}
 				produce(lexeme)
@@ -156,7 +165,7 @@ function * lexG(produce)
 					
 					lexeme += char
 					char = yield
-					if (char === undefined) break
+					if (char === eof) break
 				}
 				
 				produce(lexeme)
@@ -171,7 +180,7 @@ function * tokeniseG(produce)
 	while (true)
 	{
 		let value = yield
-		if (value === undefined) return
+		if (value === eof) return
 		switch (value[0])
 		{
 			case ";":
@@ -213,7 +222,7 @@ function * skipComment()
 	while (true)
 	{
 		let token = yield
-		if (token === undefined) return
+		if (token === eof) return eof
 		if (token.type === "comment") continue
 		return token
 	}
@@ -232,9 +241,9 @@ function * parseG(produce)
 	let token = yield
 	while (true)
 	{
-		if (token === undefined)
+		if (token === eof)
 		{
-			if (variations.length !== 0) produce()
+			if (variations.length !== 0) produce(eof)
 			return
 		}
 		
@@ -249,35 +258,35 @@ function * parseG(produce)
 		switch (token.type)
 		{
 			default:
-				produce()
+				produce(eof)
 				return
 			
 			case "[":
 			{
 				if (variations.length !== 0)
 				{
-					produce()
+					produce(eof)
 					return
 				}
 				
 				let key = yield * skipComment()
-				if (key === undefined || key.type !== "symbol" && key.type !== "integer")
+				if (key === eof || key.type !== "symbol" && key.type !== "integer")
 				{
-					produce()
+					produce(eof)
 					return
 				}
 				
 				let value = yield * skipComment()
-				if (value === undefined || value.type !== "string")
+				if (value === eof || value.type !== "string")
 				{
-					produce()
+					produce(eof)
 					return
 				}
 				
 				let close = yield * skipComment()
-				if (close === undefined || close.type !== "]")
+				if (close === eof || close.type !== "]")
 				{
-					produce()
+					produce(eof)
 					return
 				}
 				
@@ -291,9 +300,9 @@ function * parseG(produce)
 				while (true)
 				{
 					token = yield * skipComment()
-					if (token === undefined)
+					if (token === eof)
 					{
-						produce()
+						produce(eof)
 						return
 					}
 					if (token.type !== ".") break
@@ -301,7 +310,7 @@ function * parseG(produce)
 				
 				if (token.type !== "symbol")
 				{
-					produce()
+					produce(eof)
 					return
 				}
 				
@@ -317,7 +326,7 @@ function * parseG(produce)
 				while (true)
 				{
 					token = yield
-					if (token === undefined) break
+					if (token === eof) break
 					if (token.type !== "comment") break
 					comments.push(token.value)
 				}
@@ -341,7 +350,7 @@ function * parseG(produce)
 					while (true)
 					{
 						token = yield
-						if (token === undefined) break
+						if (token === eof) break
 						if (token.type !== "comment") break
 						comments.push(token.value)
 					}
@@ -360,7 +369,7 @@ function * parseG(produce)
 			{
 				if (variations.length === 0)
 				{
-					produce()
+					produce(eof)
 					return
 				}
 				let value = variations.pop()
@@ -432,11 +441,16 @@ function * toGamesG(produce)
 	while (true)
 	{
 		let node = yield
-		if (node === undefined) return
+		if (node === eof)
+		{
+			produce()
+			return
+		}
 		
 		let tags = []
 		let info = {}
 		let deltas = []
+		let invalid = false
 		
 		while (node.type === "tag")
 		{
@@ -445,7 +459,7 @@ function * toGamesG(produce)
 			tags.push(tag)
 			info[tag[0]] = tag[1]
 			node = yield
-			if (!node)
+			if (node === eof)
 			{
 				produce()
 				return
@@ -464,33 +478,49 @@ function * toGamesG(produce)
 					return
 				
 				case "variation":
-					if (deltas.length == 0 || !fromVariation(deltas[deltas.length - 1], node.value))
+					if (deltas.length == 0)
 					{
 						produce()
 						return
 					}
+					if (!invalid && !fromVariation(deltas[deltas.length - 1], node.value))
+					{
+						invalid = true
+					}
+					
 					break
 				
 				case "move":
 				{
-					let delta = toDelta(node, board)
-					if (!delta)
+					if (!invalid)
 					{
-						produce()
-						return
+						let delta = toDelta(node, board)
+						if (delta)
+						{
+							board = delta.after
+							deltas.push(delta)
+						}
+						else
+						{
+							invalid = true
+						}
 					}
-					board = delta.after
-					deltas.push(delta)
 					break
 				}
 			}
 			
 			node = yield
-			if (!node)
+			if (node === eof)
 			{
 				produce()
 				return
 			}
+		}
+		
+		if (invalid)
+		{
+			produce()
+			continue
 		}
 		
 		let result = node.value
@@ -510,13 +540,15 @@ function * toGamesG(produce)
 function * toGameG(produce)
 {
 	let game = yield
-	if (!game || (yield)) produce()
-	else produce(game)
+	if (game === eof || !game || (yield) !== eof) game = undefined
+	produce(game)
 }
 
 function * toFirstGameG(produce)
 {
-	produce(yield)
+	let game = yield
+	if (game === eof) game = undefined
+	produce(game)
 }
 
 let applySync = (input, f) =>
@@ -524,25 +556,19 @@ let applySync = (input, f) =>
 	if (input === undefined) return
 	
 	let result = []
-	let invalid = false
 	
-	let g = f(value =>
-	{
-		if (value === undefined) invalid = true
-		else result.push(value)
-	})
+	let g = f(value => result.push(value))
 	g.next()
 	
 	for (let value of input)
 	{
+		if (value === eof) break
 		let {done} = g.next(value)
-		if (invalid) return
 		if (done) return result
 	}
 	while (true)
 	{
-		let {done} = g.next()
-		if (invalid) return
+		let {done} = g.next(eof)
 		if (done) return result
 	}
 }
@@ -551,25 +577,21 @@ let applyAsync = (input, f) =>
 {
 	let controller = LiveController()
 	
-	let finished = false
-	
-	let g = f(value =>
-	{
-		if (value === undefined || controller.tryPush(value)) finished = true
-	})
+	let g = f(value => controller.tryPush(value))
 	g.next()
 	
 	;(async () =>
 	{
 		for await (let value of input)
 		{
+			if (value === eof) break
 			let {done} = g.next(value)
-			if (finished || done) return
+			if (done) return
 		}
 		while (true)
 		{
-			let {done} = g.next()
-			if (finished || done) return
+			let {done} = g.next(eof)
+			if (done) return
 		}
 	})().then(() => controller.finish())
 	

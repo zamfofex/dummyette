@@ -20,8 +20,8 @@ export type Game =
 }
 
 export let toGames:
-	((pgn: string|Iterable<string>) => Game[] | undefined) &
-	((pgn: AsyncIterable<string>) => LiveStream<Game>)
+	((pgn: string|Iterable<string>) => (Game|undefined)[]) &
+	((pgn: AsyncIterable<string>) => LiveStream<Game|undefined>)
 
 export let toGame:
 	((pgn: string|Iterable<string>) => Game|undefined) &
