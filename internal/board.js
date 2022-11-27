@@ -215,7 +215,7 @@ let move = (moves, self, other, bitboards, f) =>
 	}
 }
 
-let createBitboards = () => new BigUint64Array(174)
+let createBitboards = () => new BigUint64Array(96)
 
 let separate = bitboards =>
 {
@@ -223,20 +223,20 @@ let separate = bitboards =>
 	let slice = n => bitboards.subarray(i, i += n)
 	
 	let whitePawns = slice(8)
-	let whiteKnights = slice(20)
-	let whiteBishops = slice(20)
-	let whiteRooks = slice(20)
-	let whiteQueens = slice(18)
+	let whiteKnights = slice(10)
+	let whiteBishops = slice(10)
+	let whiteRooks = slice(10)
+	let whiteQueens = slice(9)
 	let whiteKings = slice(1)
 	
 	let blackPawns = slice(8)
-	let blackKnights = slice(20)
-	let blackBishops = slice(20)
-	let blackRooks = slice(20)
-	let blackQueens = slice(18)
+	let blackKnights = slice(10)
+	let blackBishops = slice(10)
+	let blackRooks = slice(10)
+	let blackQueens = slice(9)
 	let blackKings = slice(1)
 	
-	if (i !== bitboards.length) throw new Error(`${i} !== ${bitboards.length}`)
+	if (i !== bitboards.length) throw new Error(`${i} != ${bitboards.length}`)
 	
 	return [
 		whitePawns, blackPawns,
@@ -321,7 +321,6 @@ export let Board = (bitboards, whiteTurn) =>
 				blackPawns,
 				blackKnights,
 				blackBishops,
-				
 				blackRooks,
 				blackQueens,
 				blackKings,
