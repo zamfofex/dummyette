@@ -441,11 +441,7 @@ function * toGamesG(produce)
 	while (true)
 	{
 		let node = yield
-		if (node === eof)
-		{
-			produce()
-			return
-		}
+		if (node === eof) return
 		
 		let tags = []
 		let info = {}
