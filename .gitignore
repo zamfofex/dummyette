@@ -9,6 +9,8 @@
 !/types
 !/internal
 !/internal/*.js
+!/internal/tests
+!/internal/tests/*.js
 !/openings.pgn
 
 !/main.js
