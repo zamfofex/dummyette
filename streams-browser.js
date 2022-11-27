@@ -61,3 +61,26 @@ let joinBuffers = buffers =>
 	
 	return result
 }
+
+export let fromBrowserStream = browserStream =>
+{
+	let {stream, push, finish, isFinished} = LiveController()
+	
+	let reader = browserStream.getReader()
+	
+	; (async () =>
+	{
+		let buffers = []
+		while (true)
+		{
+			let {done, value} = await reader.read()
+			if (done) break
+			if (isFinished()) { reader.cancel() ; return }
+			push(value)
+		}
+		
+		finish()
+	})()
+	
+	return stream
+}

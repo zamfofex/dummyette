@@ -6,12 +6,18 @@ table of contents
 
 - introduction
 - WHATWG stream to `LiveStream`
+  - `fromBrowserStream(browserStream)`
   - `splitBrowserStream(browserStream, separator)`
 
 introduction
 ---
 
 This module is meant to allow for `LiveStream` and `RewindStream` objects to interoperate with WHATWG streams by converting to and from them.
+
+`fromBrowserStream(browserStream)`
+---
+
+Converts a WHATWG stream to a `LiveStream` with the same values.
 
 `splitBrowserStream(browserStream, separator)`
 ---
