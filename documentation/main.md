@@ -14,7 +14,6 @@ table of contents
 - worker count — the `async` specifier
 - changing the base Lichess URL — the `origin` specifier
 - specifying the access token — the `token` specifier
-- ~~opening book — the `openings` specifier~~
 - specifier ordering
 - required Deno permissions
 
@@ -103,8 +102,6 @@ deno run -A .../dummyette/main.js async "$worker_count" ...
 
 By default, the bot will perform move analyses using at most as many workers as there are CPU cores in the runtime. This can be changed by using the `async` specifier.
 
-Currently, for backwards compatibility, specifying `async` without a worker count is allowed, but has no effect. This is deprecated and might be removed in the future.
-
 changing the base Lichess URL <br> the `origin` specifier
 ---
 
@@ -122,15 +119,6 @@ By default, the Lichess access token is identified through the `lichess_token` e
 - `deno run -A .../dummyette/main.js token env "$name" ...` — uses the environment variable with the given name as the token.
 - `deno run -A .../dummyette/main.js token given "$token" ...` — uses the given argument as the token.
 - `deno run -A .../dummyette/main.js token prompt ...` — prompts for the token on stdin.
-
-~~opening book <br> the `openings` specifier~~
----
-
-~~~
-deno run -A .../dummyette/main.js openings "$openings_file_name" ...
-~~~
-
-This speficier is deprecated and has no effect. It might be removed in the future.
 
 specifier ordering
 ---

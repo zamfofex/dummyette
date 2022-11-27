@@ -60,8 +60,6 @@ let play = async game =>
 		await game.chat.send(messages2[Math.floor(Math.random() * messages2.length)])
 	}
 	
-	let analyser = AsyncAnalyser(analyserOptions)
-	
 	let color = game.color
 	if (!color)
 		console.error("The game could not be played because the bot is not partaking in it."),
@@ -137,11 +135,11 @@ if (action === "async")
 {
 	if (/^[0-9]+$/.test(args[0]))
 		analyserOptions.workers = Number(args.shift())
-	else
-		console.warn("Note: Using a bare 'async' specifier (without a thread count) is a deprecated and might be removed in the future, as its behavior is now the default (it cannot be turned off).")
 	
 	action = args.shift()
 }
+
+let analyser = AsyncAnalyser(analyserOptions)
 
 let origin
 if (action === "origin")
@@ -154,7 +152,11 @@ if (action === "origin")
 }
 
 let token
-if (action === "token")
+if (action !== "token")
+{
+	token = env.get("lichess_token")
+}
+else
 {
 	let means = args.shift()
 	if (means === undefined)
@@ -180,23 +182,6 @@ if (action === "token")
 	}
 	if (means === "prompt")
 		token = prompt("Specify your Lichess bot account token:", "")
-	
-	action = args.shift()
-}
-else
-{
-	token = env.get("lichess_token")
-}
-
-if (action === "openings")
-{
-	let fileName = args.shift()
-	
-	console.warn("The 'openings' specifier is deprecated and might be removed in the future.")
-	
-	if (fileName === undefined)
-		console.error("No given opening book file name."),
-		exit(1)
 	
 	action = args.shift()
 }
@@ -307,7 +292,7 @@ else if (action === "wait")
 	{
 		if (!opponents) return
 		
-		if (games.length > 2)
+		if (games.length > 8)
 		{
 			console.log("Too many ongoing games, waiting for their completion...")
 			await Promise.all(games.map(game => game.history.last))
