@@ -15,6 +15,10 @@ let openingGames = toGames(await pgn.text())
 if (!openingGames)
 	console.warn("Openings could not be parsed."),
 	openingGames = []
+if (!openingGames.every(Boolean))
+	console.warn("Some openings could not be parsed.")
+
+openingGames = openingGames.filter(Boolean)
 
 export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 {
