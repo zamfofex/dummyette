@@ -35,16 +35,20 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 		workers = null
 	}
 	
-	let ready = Promise.all(workers.map(worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))))
-	
-	let evaluate = board => ready.then(() => evaluateAsync(board, workers))
-	let analyse = board => evaluate(board).then(moves => Object.freeze(moves?.map(({move}) => move)))
-	
-	registry.register(evaluate, terminate)
-	
-	let result = {analyse, evaluate}
-	Object.freeze(result)
-	return result
+	// note: theses declarations need to be in their own scope.
+	// note: this is to avoid them being added to the closure of 'terminate'.
+	{
+		let ready = Promise.all(workers.map(worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))))
+		
+		let evaluate = board => ready.then(() => evaluateAsync(board, workers))
+		let analyse = board => evaluate(board).then(moves => Object.freeze(moves?.map(({move}) => move)))
+		
+		registry.register(evaluate, terminate)
+		
+		let result = {analyse, evaluate}
+		Object.freeze(result)
+		return result
+	}
 }
 
 export let analyse = board =>

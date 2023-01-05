@@ -10,6 +10,9 @@ let table = (n, white, black) =>
 	return score
 }
 
+let depth = 2
+let qdepth = 3
+
 export let traverse = ({bitboards, whiteTurn}) =>
 {
 	let board = Board(bitboards, whiteTurn)
@@ -87,9 +90,6 @@ export let traverse = ({bitboards, whiteTurn}) =>
 		return alpha
 	}
 	
-	let depth = 2
-	let qdepth = 3
-	
 	return -search(depth, -Infinity, Infinity)
 }
 
@@ -161,7 +161,7 @@ let kingMiddleGameTable =
 	[0, 10, 30, 20],
 ]
 
-// todo: This table is currently unused.
+// todo: this table is currently unused.
 let kingEndGameTable =
 [
 	[40, 30, -10, -30],
