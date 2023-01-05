@@ -35,7 +35,7 @@ export let AsyncAnalyser = ({workers = navigator.hardwareConcurrency} = {}) =>
 		workers = null
 	}
 	
-	// note: theses declarations need to be in their own scope.
+	// note: these declarations need to be in their own scope.
 	// note: this is to avoid them being added to the closure of 'terminate'.
 	{
 		let ready = Promise.all(workers.map(worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))))
