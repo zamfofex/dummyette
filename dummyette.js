@@ -115,21 +115,21 @@ let evaluateAsync = (board, workers, depth = 2, moves = shuffle(board.moves)) =>
 			evaluations.sort((a, b) => b.score - a.score)
 			evaluations = evaluations.map(({move: [id, name], score}) => ({score, move: board.Move(name)}))
 			
-			let book
-			outer:
+			let openingEvaluations = []
 			for (let {deltas} of openingGames)
 			for (let {before, move} of deltas)
 			{
 				if (!sameBoard(board, before)) continue
 				let i = evaluations.findIndex(({move: {name}}) => name === move.name)
+				if (i === -1) continue
 				let [evaluation] = evaluations.splice(i, 1)
-				evaluations.unshift(evaluation)
-				book = true
-				break outer
+				openingEvaluations.push(evaluation)
 			}
 			
+			evaluations.unshift(...shuffle(openingEvaluations))
+			
 			Object.freeze(evaluations)
-			resolve({evaluations, book})
+			resolve({evaluations, book: openingEvaluations.length !== 0})
 			
 			for (let worker of workers)
 				worker.removeEventListener("message", receive)
