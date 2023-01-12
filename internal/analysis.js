@@ -10,11 +10,10 @@ let table = (n, white, black) =>
 	return score
 }
 
-let depth = 2
-let qdepth = 3
-
-export let traverse = ({bitboards, whiteTurn}) =>
+export let traverse = ({bitboards, whiteTurn}, depth) =>
 {
+	let qdepth = 3
+	
 	let board = Board(bitboards, whiteTurn)
 	
 	// extend queen bitboards by the number of pawns on the board

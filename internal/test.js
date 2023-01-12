@@ -1,1 +1,1 @@
-import "tests/perft.js"
+import "./tests/perft.js"

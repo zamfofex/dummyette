@@ -65,6 +65,8 @@ export type Game =
 	history: RewindStream<HistoryEntry>,
 	rated: boolean,
 	chat: Chat,
+	whiteTime: number|undefined,
+	blackTime: number|undefined,
 }
 
 export type Chat =

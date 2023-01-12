@@ -8,12 +8,13 @@ export type Evaluation =
 
 export type AsyncAnalyser =
 {
-	analyse: (board: Board) => Promise<Move[]>,
-	evaluate: (board: Board) => Promise<Evaluation[]>,
+	analyse: (board: Board, options?: {time?: number}) => Promise<Move[]>,
+	evaluate: (board: Board, options?: {time?: number}) => Promise<Evaluation[]>,
 }
 
 // --- // --- //
 
-export let analyse: (board: Board) => Move[]
+export let analyse: (board: Board, options?: {workers?: number, time?: number}) => Promise<Move[]>
+export let evaluate: (board: Board, options?: {workers?: number, time?: number}) => Promise<Evaluation[]>
 
-export let AsyncAnalyser: (options?: {workers: number}) => AsyncAnalyser
+export let AsyncAnalyser: (options?: {workers?: number}) => AsyncAnalyser

@@ -94,25 +94,45 @@ let play = async game =>
 		}
 		
 		if (board.turn !== color) continue
-		let evaluations = await analyser.evaluate(board)
 		
+		let count = 0
+		for (let y = 0 ; y < board.width ; y++)
+		for (let x = 0 ; x < board.height ; x++)
+			if (board.at(x, y)) count++
+		
+		let options = {}
+		
+		if (game.whiteTime !== undefined)
+		{
+			let min
+			if (color === "white") min = game.whiteTime / 4
+			if (color === "black") min = game.blackTime / 4
+			
+			let time = Math.log(min + 1) * 96 / count
+			time = Math.max(time, Math.min(min, 6))
+			
+			console.log(time)
+			options.time = time
+		}
+		
+		let evaluations = await analyser.evaluate(board, options)
 		let {score, move} = evaluations[0]
 		
-		if (score < average && (messageIndex <= 0 || status !== "losing"))
+		if (score < average && (messageIndex >= 6 || status === "winning"))
 		{
-			messageIndex = 6
+			messageIndex = 0
 			status = "losing"
 			await chat(messages.losing)
 		}
-		if (score > average && (messageIndex <= 0 || status !== "winning"))
+		if (score > average && (messageIndex >= 6 || status === "losing"))
 		{
-			messageIndex = 6
+			messageIndex = 
 			status = "winning"
 			await chat(messages.winning)
 		}
-		messageIndex--
+		messageIndex++
 		
-		if (Number.isFinite(score))
+		if (Math.abs(score) < 900)
 			average *= 2 / 3,
 			average += score / 3
 		
@@ -133,9 +153,15 @@ let action = args.shift()
 let analyserOptions = {}
 if (action === "async")
 {
-	if (/^[0-9]+$/.test(args[0]))
-		analyserOptions.workers = Number(args.shift())
+	let workerCount = args.shift()
+	if (workerCount === undefined)
+		console.error("Unterminated 'async' specification."),
+		exit(1)
+	if (!/^[0-9]+$/.test(workerCount))
+		console.error("The 'async' specifier must be given a positive integer."),
+		exit(1)
 	
+	analyserOptions.workers = Number(workerCount)
 	action = args.shift()
 }
 

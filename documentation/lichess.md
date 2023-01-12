@@ -184,6 +184,11 @@ These will be a `RewindStream` of the names of all the moves that have occured i
 
 These two properties are aliases, `game.moveNames` is the same as `game.moves`.
 
+`game.whiteTime`, `game.blackTime`
+---
+
+These properties will each be the number of seconds left for the player of the respective color. If the game’s time control is unlimited or correspondence, these properties will be `undefined`.
+
 `game.turn`
 ---
 

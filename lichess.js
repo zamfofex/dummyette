@@ -240,9 +240,21 @@ let createGame = async ({origin, headers}, username, id) =>
 		}
 	}
 	
+	let clock
+	let time = performance.now()
+	
 	let history = RewindJoinStream([full.state], gameEvents)
 		.filter(event => event.type === "gameState")
-		.flatMap(event => [{moves: event.moves}, {done: !["created", "started"].includes(event.status)}])
+		.flatMap(event =>
+		{
+			if (clock)
+			{
+				time = performance.now()
+				clock.white = event.wtime
+				clock.black = event.btime
+			}
+			return [{moves: event.moves}, {done: !["created", "started"].includes(event.status)}]
+		})
 		.takeWhile(({done}) => !done)
 		.map(({moves}) => moves)
 		.filter(Boolean)
@@ -292,6 +304,17 @@ let createGame = async ({origin, headers}, username, id) =>
 	let chat = {send}
 	Object.freeze(chat)
 	
+	if (full.clock) clock = {white: full.clock.initial, black: full.clock.initial}
+	
+	let getTime = color =>
+	{
+		if (!clock) return
+		let t = clock[color]
+		if (boards.length < 2) return t / 1000
+		if (board.turn === color) t -= (performance.now() - time)
+		return Math.max(0, t) / 1000
+	}
+	
 	let game =
 	{
 		id,
@@ -305,6 +328,8 @@ let createGame = async ({origin, headers}, username, id) =>
 		get turn() { return board.turn },
 		get finished() { return status !== "ongoing" },
 		get ongoing() { return status === "ongoing" },
+		get whiteTime() { return getTime("white") },
+		get blackTime() { return getTime("black") },
 	}
 	
 	Object.freeze(game)

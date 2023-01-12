@@ -1,5 +1,5 @@
-import {standardBoard} from "../chess.js"
-import {fromFEN} from "../notation.js"
+import {standardBoard} from "../../chess.js"
+import {fromFEN} from "../../notation.js"
 
 let perft = (n, board) =>
 {
