@@ -70,4 +70,9 @@ Any kind of contribution is welcome! Among other things, *programming, reporting
 license
 ---
 
-[0BSD © zamfofex](license.md)
+[GNU][GPL] [AGPL] ([v3][AGPLv3] [or later][GPLv3+]) © zamfofex 2021, 2022, 2023
+
+[GPL]: <https://www.gnu.org/licenses/>
+[AGPL]: <https://www.gnu.org/licenses/why-affero-gpl.html>
+[AGPLv3]: <https://www.gnu.org/licenses/agpl-3.0>
+[GPLv3+]: <https://www.gnu.org/licenses/gpl-faq.html#VersionThreeOrLater>

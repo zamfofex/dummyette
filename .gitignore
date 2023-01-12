@@ -2,7 +2,6 @@
 !/.gitignore
 
 !/readme.md
-!/license.md
 !/package.json
 !/documentation
 !/examples
