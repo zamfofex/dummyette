@@ -108,10 +108,10 @@ let play = async game =>
 			if (color === "white") min = game.whiteTime / 4
 			if (color === "black") min = game.blackTime / 4
 			
-			let time = Math.log(min + 1) * 96 / count
-			time = Math.max(time, Math.min(min, 6))
+			let time = Math.log(min + 1) * 240 / count
+			time = Math.min(time, 60)
+			time = Math.max(time, Math.min(min * 0.75, 6))
 			
-			console.log(time)
 			options.time = time
 		}
 		
