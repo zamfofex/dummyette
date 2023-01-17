@@ -1,10 +1,14 @@
 import {Board, Bitboards} from "./board.js"
 
-let table = (n, white, black) =>
+let table = (n, board) =>
 {
-	let score = 0
+	let white = board.bitboards[n * 2]
+	let black = board.bitboards[n * 2 + 1]
+	
 	let whiteTable = tables[n][0]
 	let blackTable = tables[n][1]
+	
+	let score = 0
 	for (let n of white) score += whiteTable.get(n)
 	for (let n of black) score -= blackTable.get(n)
 	return score
@@ -37,7 +41,7 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 	{
 		let score = 0
 		for (let i = 0 ; i < 6 ; i++)
-			score += table(i, board.bitboards[i * 2], board.bitboards[i * 2 + 1])
+			score += table(i, board)
 		
 		if (!board.whiteTurn) score *= -1
 		if (score < -5000) return -10000 * (depth - i + 1)
@@ -48,7 +52,7 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 	{
 		let score = evaluate(i)
 		if (score < -5000) return score
-		if (i === -qdepth) return score
+		if (i === 0) return score
 		
 		if (score >= beta) return beta
 		if (alpha < score) alpha = score
@@ -68,14 +72,13 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 			if (score >= beta) return beta
 			if (score > alpha) alpha = score
 		}
+		
 		return alpha
 	}
 	
 	let search = (i, alpha, beta) =>
 	{
-		let score = evaluate(i)
-		if (score < -5000) return score
-		if (i === 0) return quiesce(i, alpha, beta)
+		if (i === 0) return quiesce(qdepth, alpha, beta)
 		
 		for (let move of board.getMoves())
 		{
@@ -83,9 +86,10 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 			let score = -search(i - 1, -beta, -alpha)
 			board.unplay(move, token)
 			
-			if (score >= beta) return beta
-			if (score > alpha) alpha = score
+			if (score >= beta[0]) return beta
+			if (score > alpha[0]) alpha = score
 		}
+		
 		return alpha
 	}
 	
