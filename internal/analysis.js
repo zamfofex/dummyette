@@ -86,8 +86,8 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 			let score = -search(i - 1, -beta, -alpha)
 			board.unplay(move, token)
 			
-			if (score >= beta[0]) return beta
-			if (score > alpha[0]) alpha = score
+			if (score >= beta) return beta
+			if (score > alpha) alpha = score
 		}
 		
 		return alpha
