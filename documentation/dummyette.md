@@ -28,7 +28,7 @@ Creates an analyser that can perform the analysis in parallel using multiple wor
 
 This function tries to find the best moves available on a given chess board. It completely fails at that, but it tries at least! It will return a promise that resolves to an array containing all valid moves for the board in order of quality, from best to worst.
 
-The `time` argument is optional, and it will cause for the analyses to perform iterative deepening, such that the promise resolves roughly after the given amount of time (in seconds). It may exceed the given time, however, most likely, it will resolve under the given threshold.
+The `time` argument is optional, and it will have a sensible default (currently 60 seconds, but that is subject to change across versions). The analysis performs iterative deepening, such that the promise resolves roughly after the given amount of time (in seconds). It may exceed the given time, however, most likely, it will resolve under the given threshold.
 
 `await analyser.evaluate(board, {time})`
 

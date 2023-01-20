@@ -1,49 +1,21 @@
-import {Board, Bitboards} from "./board.js"
-
-let table = (n, board) =>
+let table = (i, n) =>
 {
-	let white = board.bitboards[n * 2]
-	let black = board.bitboards[n * 2 + 1]
-	
-	let whiteTable = tables[n][0]
-	let blackTable = tables[n][1]
-	
-	let score = 0
-	for (let n of white) score += whiteTable.get(n)
-	for (let n of black) score -= blackTable.get(n)
-	return score
+	if (n === 0) return 0
+	let table = tables[(n >>> 4) - 1][(n & 0x0F) - 1]
+	return table[i]
 }
 
-export let traverse = ({bitboards, whiteTurn}, depth) =>
+export let traverse = (board, depth) =>
 {
 	let qdepth = 3
-	
-	let board = Board(bitboards, whiteTurn)
-	
-	// extend queen bitboards by the number of pawns on the board
-	// - board.bitboards[8] (white queens)
-	// - board.bitboards[0] (white pawns)
-	// - board.bitboards[9] (black queens)
-	// - board.bitboards[1] (black pawns)
-	
-	board.bitboards[8] = new BigUint64Array(
-		board.bitboards[8].buffer,
-		board.bitboards[8].byteOffset,
-		board.bitboards[8].length + board.bitboards[0].length,
-	)
-	board.bitboards[9] = new BigUint64Array(
-		board.bitboards[9].buffer,
-		board.bitboards[9].byteOffset,
-		board.bitboards[9].length + board.bitboards[1].length,
-	)
 	
 	let evaluate = i =>
 	{
 		let score = 0
-		for (let i = 0 ; i < 6 ; i++)
-			score += table(i, board)
+		for (let i = 0 ; i < 64 ; i++)
+			score += table(i, board.array[i])
 		
-		if (!board.whiteTurn) score *= -1
+		if (!board.turn[0]) score *= -1
 		if (score < -5000) return -10000 * (depth - i + 1)
 		return score
 	}
@@ -57,17 +29,11 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 		if (score >= beta) return beta
 		if (alpha < score) alpha = score
 		
-		for (let move of board.getMoves())
+		for (let play of board.getCaptures())
 		{
-			let token = board.play(move)
-			if (token[0] === undefined)
-			{
-				board.unplay(move, token)
-				continue
-			}
-			
+			let unplay = play()
 			let score = -quiesce(i - 1, -beta, -alpha)
-			board.unplay(move, token)
+			unplay()
 			
 			if (score >= beta) return beta
 			if (score > alpha) alpha = score
@@ -80,11 +46,11 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 	{
 		if (i === 0) return quiesce(qdepth, alpha, beta)
 		
-		for (let move of board.getMoves())
+		for (let play of board.getMoves())
 		{
-			let token = board.play(move)
+			let unplay = play()
 			let score = -search(i - 1, -beta, -alpha)
-			board.unplay(move, token)
+			unplay()
 			
 			if (score >= beta) return beta
 			if (score > alpha) alpha = score
@@ -95,8 +61,6 @@ export let traverse = ({bitboards, whiteTurn}, depth) =>
 	
 	return -search(depth, -Infinity, Infinity)
 }
-
-export let serialize = board => ({bitboards: Bitboards(board), whiteTurn: board.turn === "white"})
 
 // tables from: <https://www.chessprogramming.org/Simplified_Evaluation_Function>
 
@@ -198,23 +162,22 @@ for (let [score, table] of tableScores)
 
 let tables = []
 
-for (let [score, table] of tableScores)
+for (let [score, table0] of tableScores)
 {
 	let array = []
 	tables.push(array)
-	for (let i of [0, 1])
+	for (let i of [1, -1])
 	{
-		let map = new Map()
-		array.push(map)
-		map.set(0n, 0)
+		let table = []
+		array.push(table)
 		
 		for (let x = 0 ; x < 8 ; x++)
 		for (let y = 0 ; y < 8 ; y++)
 		{
 			let y0 = y
-			if (i === 0) y0 = 7 - y
-			let score = table[y0][x]
-			map.set(1n << BigInt(x + y * 8), score)
+			if (i === 1) y0 = 7 - y
+			let score = table0[y0][x]
+			table[x + y * 8] = score * i
 		}
 	}
 }

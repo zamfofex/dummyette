@@ -1,20 +1,30 @@
 /// <reference path="./types/dummyette.d.ts" />
 /// <reference types="./types/dummyette.d.ts" />
 
-import {serialize} from "./internal/analysis.js"
+import {MutableBoard} from "./internal/fast-chess.js"
 import {toGames} from "./notation/from-pgn.js"
 import {sameBoard} from "./chess.js"
 
 let registry = new FinalizationRegistry(f => f())
 
 let pgn = await fetch(new URL("openings.pgn", import.meta.url))
-if (!pgn.ok)
-	console.warn("Openings could not be fetched.")
+let openingGames
 
-let openingGames = toGames(await pgn.text())
-if (!openingGames)
-	console.warn("Openings could not be parsed."),
+if (pgn.ok)
+{
+	openingGames = toGames(await pgn.text())
+	if (!openingGames)
+	{
+		console.warn("Openings could not be parsed.")
+		openingGames = []
+	}
+}
+else
+{
+	console.warn("Openings could not be fetched.")
 	openingGames = []
+}
+
 if (!openingGames.every(Boolean))
 	console.warn("Some openings could not be parsed.")
 
@@ -28,8 +38,10 @@ export let AsyncAnalyser = ({workers: workerCount = navigator.hardwareConcurrenc
 	
 	let workers = Array(workerCount).fill().map(() => new Worker(new URL("internal/worker.js", import.meta.url), {type: "module"}))
 	
-	let terminate = () =>
+	let promises = new Set()
+	let terminate = async () =>
 	{
+		await Promise.all(promises)
 		for (let worker of workers)
 			worker.terminate()
 	}
@@ -40,48 +52,19 @@ export let AsyncAnalyser = ({workers: workerCount = navigator.hardwareConcurrenc
 		let ready = Promise.all(workers.map(worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))))
 		
 		let analyse = (board, options = {}) => evaluate(board).then(evaluations => Object.freeze(evaluations?.map(({move}) => move)))
-		let evaluate = async (board, {time} = {}) =>
+		let evaluate = (board, {time = 60} = {}) =>
 		{
-			await ready
-			
-			if (time !== undefined)
+			let promise = ready.then(() =>
 			{
-				time = Number(time)
-				if (!Number.isFinite(time)) return
-				if (time < 0) return
-				time *= 1000
-				time += performance.now()
-			}
+				let openingEvaluations = prioritizeOpenings(board)
+				if (openingEvaluations) return openingEvaluations
+				return evaluateAsync(board, workers, time)
+			})
 			
-			if (board.moves.length <= 1)
-			{
-				let result = await evaluateAsync(board, workers, 0)
-				return result.evaluations
-			}
+			promise.finally(() => promises.delete(promise))
+			promises.add(promise)
 			
-			if (time === undefined)
-			{
-				let result = await evaluateAsync(board, workers)
-				return result.evaluations
-			}
-			
-			let moves = shuffle(board.moves)
-			let i = 0
-			let previousTime = performance.now()
-			while (true)
-			{
-				let start = performance.now()
-				let result = await evaluateAsync(board, workers, i++, moves)
-				let now = performance.now()
-				let ellapsed = now - start
-				
-				if (result.book) return result.evaluations
-				if (now > time) return result.evaluations
-				if (result.evaluations[0].score > 900) return result.evaluations
-				
-				moves = result.evaluations.slice(0, Math.floor(Math.exp(-i) * 64 + 4)).map(({move}) => move)
-				if (ellapsed * 32 > time - now) return result.evaluations
-			}
+			return promise
 		}
 		
 		registry.register(evaluate, terminate)
@@ -93,15 +76,65 @@ export let AsyncAnalyser = ({workers: workerCount = navigator.hardwareConcurrenc
 }
 
 export let analyse = (board, options = {}) => evaluate(board, options).then(evaluations => Object.freeze(evaluations?.map(({move}) => move)))
-export let evaluate = async (board, {workers = navigator.hardwareConcurrency, time} = {}) => AsyncAnalyser({workers}).evaluate(board, {time})
+export let evaluate = (board, {workers = navigator.hardwareConcurrency, time = 60} = {}) => AsyncAnalyser({workers}).evaluate(board, {time})
 
-let i = 0
+let prioritizeOpenings = board =>
+{
+	let moves = new Set()
+	
+	for (let {deltas} of openingGames)
+	for (let {before, move} of deltas)
+	{
+		if (!sameBoard(board, before)) continue
+		moves.add(board.Move(move))
+	}
+	
+	if (moves.size === 0) return
+	
+	let otherMoves = new Set(board.moves)
+	for (let move of moves) otherMoves.delete(move)
+	
+	let evaluations = [...shuffle([...moves]), ...shuffle([...otherMoves])].map(move => ({move, score: 0}))
+	Object.freeze(evaluations)
+	return evaluations
+}
 
-let evaluateAsync = (board, workers, depth = 2, moves = shuffle(board.moves)) => new Promise(resolve =>
+let evaluateAsync = async (board, workers, time) =>
 {
 	if (board.width !== 8) return
 	if (board.height !== 8) return
 	
+	time = Number(time)
+	if (!Number.isFinite(time)) return
+	if (time < 0) return
+	time *= 1000
+	time += performance.now()
+	
+	if (board.moves.length <= 1)
+		return evaluate0(board, workers, 0)
+	
+	let moves = shuffle(board.moves)
+	let i = 0
+	let previousTime = performance.now()
+	while (true)
+	{
+		let start = performance.now()
+		let evaluations = await evaluate0(board, workers, i++, moves)
+		let now = performance.now()
+		let ellapsed = now - start
+		
+		if (now > time) return evaluations
+		if (evaluations[0].score > 900) return evaluations
+		
+		moves = evaluations.map(({move}) => move)
+		if (ellapsed * 32 > time - now) return evaluations
+	}
+}
+
+let i = 0
+
+let evaluate0 = (board, workers, depth, moves = shuffle(board.moves)) => new Promise(resolve =>
+{
 	let id = i++
 	
 	let receive = ({data: state}) =>
@@ -115,21 +148,8 @@ let evaluateAsync = (board, workers, depth = 2, moves = shuffle(board.moves)) =>
 			evaluations.sort((a, b) => b.score - a.score)
 			evaluations = evaluations.map(({move: [id, name], score}) => ({score, move: board.Move(name)}))
 			
-			let openingEvaluations = []
-			for (let {deltas} of openingGames)
-			for (let {before, move} of deltas)
-			{
-				if (!sameBoard(board, before)) continue
-				let i = evaluations.findIndex(({move: {name}}) => name === move.name)
-				if (i === -1) continue
-				let [evaluation] = evaluations.splice(i, 1)
-				openingEvaluations.push(evaluation)
-			}
-			
-			evaluations.unshift(...shuffle(openingEvaluations))
-			
 			Object.freeze(evaluations)
-			resolve({evaluations, book: openingEvaluations.length !== 0})
+			resolve(evaluations)
 			
 			for (let worker of workers)
 				worker.removeEventListener("message", receive)
@@ -142,7 +162,7 @@ let evaluateAsync = (board, workers, depth = 2, moves = shuffle(board.moves)) =>
 	{
 		let evaluations = []
 		Object.freeze(evaluations)
-		resolve({evaluations})
+		resolve(evaluations)
 		return
 	}
 	
@@ -164,7 +184,7 @@ let evaluateAsync = (board, workers, depth = 2, moves = shuffle(board.moves)) =>
 		}
 		
 		let worker = workers[i % workers.length]
-		worker.postMessage([[id, move.name], serialize(board), depth])
+		worker.postMessage([[id, move.name], MutableBoard(board).serialize(), depth])
 		worker.addEventListener("message", receive)
 	}
 })
