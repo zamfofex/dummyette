@@ -1,49 +1,51 @@
 /// <reference path="../types/notation/to-san.d.ts" />
 /// <reference types="../types/notation/to-san.d.ts" />
 
+import {isLowCastling, isHighCastling, capturedPiece, isCheck, isCheckmate, promotionPiece} from "../variants/chess.js"
+
 let shortNames = {pawn: "", knight: "N", bishop: "B", rook: "R", queen: "Q", king: "K"}
 
 export let fromMove = move =>
 {
 	let board = move.before
 	
-	if (board.width > 26) return
-	if (board.height > 9) return
-	
-	let piece = move.piece
-	let captured = move.captured
+	if (board.storage.geometry.info.width > 26) return
 	
 	let resultingBoard = move.play()
 	
 	let checkmark = ""
-	if (resultingBoard.check)
+	if (isCheck(resultingBoard))
 		checkmark = "+"
-	if (resultingBoard.checkmate)
+	if (isCheckmate(resultingBoard))
 		checkmark = "#"
 	
-	if (move.rook)
-	{
-		if (move.rook.from.x < move.from.x)
-			return "O-O-O" + checkmark
-		else
-			return "O-O" + checkmark
-	}
+	if (isLowCastling(move))
+		return "O-O-O" + checkmark
+	if (isHighCastling(move))
+		return "O-O" + checkmark
+	
+	let promotion = promotionPiece(move)
+	let movement = move.movements[0]
+	
+	let piece = movement.piece
+	let captured = capturedPiece(move)
 	
 	let fileAmbiguity
 	let rankAmbiguity
 	let ambiguity
-	if (!move.promotion)
+	
+	if (!promotion)
 	{
 		for (let other of board.moves)
 		{
 			if (other !== move)
-			if (other.to.name === move.to.name)
-			if (other.piece === piece)
+			if (other.movements[0].to === movement.to)
+			if (other.movements[0].piece === piece)
 			{
 				ambiguity = true
-				if (other.from.file === move.from.file)
+				if (other.movements[0].from.file === movement.from.file)
 					fileAmbiguity = true
-				if (other.from.rank === move.from.rank)
+				if (other.movements[0].from.rank === movement.from.rank)
 					rankAmbiguity = true
 			}
 		}
@@ -53,24 +55,23 @@ export let fromMove = move =>
 	
 	if (piece.type === "pawn" && captured)
 	{
-		name += move.from.file
+		name += movement.from.file
 	}
 	else if (ambiguity)
 	{
 		if (!fileAmbiguity)
-			name += move.from.file
+			name += movement.from.file
 		else if (!rankAmbiguity)
-			name += move.from.rank
+			name += movement.from.rank
 		else
-			name += move.from.name
+			name += movement.from.name
 	}
 	
 	if (captured) name += "x"
 	
-	name += move.to.name
+	name += movement.to.name
 	
-	if (move.promotion)
-		name += "=" + shortNames[move.promotion.type]
+	if (promotion) name += "=" + shortNames[promotion.type]
 	
 	return name + checkmark
 }

@@ -1,6 +1,7 @@
 import {Lichess} from "./lichess.js"
 import {AsyncAnalyser} from "./dummyette.js"
 import * as messages from "./internal/flavoring.js"
+import {isCheckmate} from "./variants/chess.js"
 
 let runtime
 
@@ -78,27 +79,11 @@ let play = async game =>
 	let messageIndex = 0
 	let status
 	
-	for await (let board of game.boards.slice(game.boards.length - 1))
+	let board = await game.handleBoards(async board =>
 	{
-		if (board.moves.length === 0)
-		{
-			if (board.checkmate)
-			{
-				if (board.turn === color)
-					await chat(messages.lost)
-				else
-					await chat(messages.won)
-			}
-			
-			break
-		}
-		
-		if (board.turn !== color) continue
-		
 		let count = 0
-		for (let y = 0 ; y < board.width ; y++)
-		for (let x = 0 ; x < board.height ; x++)
-			if (board.at(x, y)) count++
+		for (let position of board.storage.geometry.positions)
+			if (board.storage.at(position)) count++
 		
 		let options = {}
 		
@@ -115,8 +100,7 @@ let play = async game =>
 			options.time = time
 		}
 		
-		let evaluations = await analyser.evaluate(board, options)
-		let {score, move} = evaluations[0]
+		let [{score, move}] = await analyser.evaluate(board, options)
 		
 		if (score < average && (messageIndex >= 6 || status === "winning"))
 		{
@@ -136,11 +120,21 @@ let play = async game =>
 			average *= 2 / 3,
 			average += score / 3
 		
-		if (!await game.play(move.name))
+		if (!await game.play(move))
 		{
 			console.error(`Move ${move.name} was not played successfully.`)
 			await game.resign()
-			break
+		}
+	})
+	
+	if (board.moves.length === 0)
+	{
+		if (isCheckmate(board))
+		{
+			if (board.state.turn === color)
+				await chat(messages.lost)
+			else
+				await chat(messages.won)
 		}
 	}
 	

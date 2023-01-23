@@ -34,21 +34,18 @@ export let deserialize = ({turn, array}) => createBoard(turn, array)
 
 export let MutableBoard = board =>
 {
-	if (board.width !== 8) return
-	if (board.height !== 8) return
-	
 	let array = new Uint8Array(64)
 	
 	for (let x = 0 ; x < 8 ; x++)
 	for (let y = 0 ; y < 8 ; y++)
 	{
-		let piece = board.at(x, y)
+		let piece = board.storage.at(x, y)
 		if (!piece) continue
 		let {color, type} = piece
 		array[x + y * 8] = colors[color] | types[type]
 	}
 	
-	return createBoard([board.turn === "white"], array)
+	return createBoard([board.state.turn === "white"], array)
 }
 
 let createMove = (moves, captures, turn, array, x, y, x1, y1) =>

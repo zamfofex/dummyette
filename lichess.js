@@ -1,10 +1,10 @@
 /// <reference path="./types/lichess.d.ts" />
 /// <reference types="./types/lichess.d.ts" />
 
-import {Color, standardBoard, other, King, Rook} from "./chess.js"
+import {Color, standardBoard, King, Rook, isCheckmate, isStalemate} from "./variants/chess.js"
 import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"
-import {fromFEN} from "./notation.js"
+import {fromFEN, fromSAN, toUCI} from "./notation.js"
 
 export let Lichess = async options =>
 {
@@ -163,19 +163,8 @@ export let Lichess = async options =>
 	return lichess
 }
 
-let castling =
-[
-	["e1c1", "e1a1", "white", "e1", "a1"],
-	["e1g1", "e1h1", "white", "e1", "h1"],
-	["e8c8", "e8a8", "black", "e8", "a8"],
-	["e8g8", "e8h8", "black", "e8", "h8"],
-]
-
 let createGame = async ({origin, headers}, username, id) =>
 {
-	let toLichessName = new Map()
-	let fromLichessName = new Map()
-	
 	let gameEvents = await streamURL(headers, `${origin}/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
 	gameEvents = RewindJoinStream(gameEvents)
@@ -186,16 +175,25 @@ let createGame = async ({origin, headers}, username, id) =>
 		return response.ok
 	}
 	
+	let game =
+	{
+		get board() { return board },
+		get status() { return status },
+		get turn() { return board.state.turn },
+		get finished() { return status !== "ongoing" },
+		get ongoing() { return status === "ongoing" },
+		get whiteTime() { return getTime("white") },
+		get blackTime() { return getTime("black") },
+	}
+	
 	let n = 0
 	let handle = async function * (names)
 	{
 		names = names.split(" ").slice(n)
 		for (let name of names)
 		{
-			name = fromLichessName.get(name) ?? name
-			
-			let turn = board.turn
-			board = board.play(name)
+			let turn = board.state.turn
+			board = fromSAN(board, name)?.play()
 			if (!board)
 			{
 				console.error(`Unexpected move in game: ${name}`)
@@ -203,7 +201,7 @@ let createGame = async ({origin, headers}, username, id) =>
 				return
 			}
 			
-			let result = {moveName: name, move: name, board, turn, moveNumber: Math.floor(n / 2)}
+			let result = {game, moveName: name, move: name, board, turn, moveNumber: Math.floor(n / 2)}
 			Object.freeze(result)
 			n++
 			yield result
@@ -218,6 +216,7 @@ let createGame = async ({origin, headers}, username, id) =>
 	
 	let {white: {id: whiteUsername}, black: {id: blackUsername}, initialFen, rated} = full
 	
+	let chess960 = false
 	if (initialFen !== "startpos")
 	{
 		board = fromFEN(initialFen)
@@ -226,17 +225,6 @@ let createGame = async ({origin, headers}, username, id) =>
 			console.error(`Unexpected starting position: ${initialFen}`)
 			await resign()
 			return
-		}
-		
-		for (let [name, lichessName, color, kingPosition, rookPosition] of castling)
-		{
-			if (board.at(kingPosition) !== King(color)) continue
-			if (board.at(rookPosition) !== Rook(color)) continue
-			if (board.get(kingPosition) !== "initial") continue
-			if (board.get(rookPosition) !== "initial") continue
-			
-			toLichessName.set(name, lichessName)
-			fromLichessName.set(lichessName, name)
 		}
 	}
 	
@@ -265,35 +253,37 @@ let createGame = async ({origin, headers}, username, id) =>
 	
 	boards.last.then(board =>
 	{
-		if (board.moves.length === 0)
-			if (board.checkmate)
-				status = "checkmate"
-			else
-				status = "draw"
-		else
-			status = "aborted"
+		status = "aborted"
+		if (isCheckmate(board)) status = "checkmate"
+		if (isStalemate(board)) status = "draw"
 	})
 	
 	if (full.state.moves) await boards.at(full.state.moves.split(" ").length)
 	
-	let play = async (...names) =>
+	let color
+	if (whiteUsername === username) color = "white"
+	if (blackUsername === username) color = "black"
+	
+	let nextBoard = async () =>
+	{
+		if (game.finished) return
+		return boards.slice(boards.length - 1).find(board => board.state.turn === color)
+	}
+	
+	let play = async (...moves) =>
 	{
 		let played = 0
-		for (let name of names)
+		for (let move of moves)
 		{
-			name = String(name)
-			if (!/^[a-z0-9]+$/.test(name)) break
-			name = toLichessName.get(name) ?? name
-			let response = await fetch(`${origin}/api/bot/game/${id}/move/${name}`, {method: "POST", headers})
+			let board = await nextBoard()
+			move = board.Move(move)
+			if (!move) break
+			let response = await fetch(`${origin}/api/bot/game/${id}/move/${toUCI(move, chess960)}`, {method: "POST", headers})
 			if (!response.ok) break
 			played++
 		}
 		return played
 	}
-	
-	let color = null
-	if (whiteUsername === username) color = "white"
-	if (blackUsername === username) color = "black"
 	
 	let send = async message =>
 	{
@@ -311,26 +301,31 @@ let createGame = async ({origin, headers}, username, id) =>
 		if (!clock) return
 		let t = clock[color]
 		if (boards.length < 2) return t / 1000
-		if (board.turn === color) t -= (performance.now() - time)
+		if (board.state.turn === color) t -= (performance.now() - time)
 		return Math.max(0, t) / 1000
 	}
 	
-	let game =
+	let handleBoards = async f =>
 	{
-		id,
+		for await (let board of boards.slice(boards.length - 1))
+		{
+			if (isCheckmate(board)) return board
+			if (board.state.turn !== color) continue
+			await f(board)
+		}
+		
+		return boards.last
+	}
+	
+	Object.assign(game,
+	{
+		id, rated,
 		moveNames, moves: moveNames,
 		history, boards, chat,
-		play, resign,
 		blackUsername, whiteUsername,
-		color, rated,
-		get board() { return board },
-		get status() { return status },
-		get turn() { return board.turn },
-		get finished() { return status !== "ongoing" },
-		get ongoing() { return status === "ongoing" },
-		get whiteTime() { return getTime("white") },
-		get blackTime() { return getTime("black") },
-	}
+	})
+	
+	if (color) Object.assign(game, {play, resign, color, nextBoard, handleBoards})
 	
 	Object.freeze(game)
 	return game

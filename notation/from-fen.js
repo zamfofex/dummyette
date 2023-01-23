@@ -1,12 +1,14 @@
 /// <reference path="../types/notation/from-fen.d.ts" />
 /// <reference types="../types/notation/from-fen.d.ts" />
 
-import {pieces, Position, EmptyBoard} from "../chess.js"
+import * as chess from "../variants/chess.js"
+import {Board} from "../variants/chess.js"
+import {SquareStorage} from "../variants.js"
 
 let fromShortNames =
 {
-	P: pieces.whitePawn, N: pieces.whiteKnight, B: pieces.whiteBishop, R: pieces.whiteRook, Q: pieces.whiteQueen, K: pieces.whiteKing,
-	p: pieces.blackPawn, n: pieces.blackKnight, b: pieces.blackBishop, r: pieces.blackRook, q: pieces.blackQueen, k: pieces.blackKing,
+	P: chess.whitePawn, N: chess.whiteKnight, B: chess.whiteBishop, R: chess.whiteRook, Q: chess.whiteQueen, K: chess.whiteKing,
+	p: chess.blackPawn, n: chess.blackKnight, b: chess.blackBishop, r: chess.blackRook, q: chess.blackQueen, k: chess.blackKing,
 }
 
 export let toBoard = string =>
@@ -93,7 +95,9 @@ export let toBoard = string =>
 		}
 	}
 	
-	let enPassant
+	let storage = SquareStorage(width, height)
+	let geometry = storage.geometry
+	let state = {turn}
 	
 	if (string[i++] !== " ") return
 	
@@ -110,66 +114,56 @@ export let toBoard = string =>
 			if (i >= string.length) break
 		}
 		
-		enPassant = Position(position)
-		if (!enPassant) return
-		if (enPassant.y === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
-		else if (enPassant.y === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
+		let passing = geometry.Position(position)
+		if (!passing) return
+		if (passing.y === height - 3) passing = geometry.Position(passing.x, passing.y - 1)
+		else if (passing.y === 2) passing = geometry.Position(passing.x, passing.y + 1)
+		if (passing) state.passing = [passing.name]
 	}
-	
-	let board = EmptyBoard(width, height)
-	board = board.flip(turn)
 	
 	for (let [y, rank] of ranks.entries())
 	for (let [x, piece] of rank.entries())
-		board = board.put(x, y, piece)
+		storage = storage.put(x, y, piece)
 	
-	if (enPassant)
-	{
-		enPassant = board.Position(enPassant)
-		if (!enPassant) return
-		if (board.at(enPassant)?.type !== "pawn") return
-		board = board.set(enPassant, "passing")
-	}
-	
-	for (let x = 0 ; x < board.width ; x++)
-	{
-		if (board.at(x, 1)?.type === "pawn")
-			board = board.set(x, 1, "initial")
-		if (board.at(x, board.height - 2)?.type === "pawn")
-			board = board.set(x, board.height - 2, "initial")
-	}
-	
-	let whiteKing = board.getKingPosition("white")
-	let blackKing = board.getKingPosition("black")
+	let whiteKing = geometry.positions.find(position => storage.at(position) === chess.whiteKing)
+	let blackKing = geometry.positions.find(position => storage.at(position) === chess.blackKing)
 	
 	if (!whiteKing) return
 	if (!blackKing) return
 	
 	let possibilities =
 	[
-		[1, "K", pieces.whiteRook, whiteKing], [-1, "Q", pieces.whiteRook, whiteKing],
-		[1, "k", pieces.blackRook, blackKing], [-1, "q", pieces.blackRook, blackKing],
+		[1, "K", chess.whiteRook, whiteKing], [-1, "Q", chess.whiteRook, whiteKing],
+		[1, "k", chess.blackRook, blackKing], [-1, "q", chess.blackRook, blackKing],
 	]
 	
-	for (let [n, side, rook, position] of possibilities)
+	let whiteCastling = []
+	let blackCastling = []
+	
+	if (width <= 8)
 	{
-		if (!castling.has(side)) continue
-		if (width > 8) continue
-		
-		board = board.set(position, "initial")
-		
-		let {x, y} = position
-		let rx
-		while (true)
+		for (let [n, side, rook, position] of possibilities)
 		{
-			x += n
-			if (x < 0) break
-			if (x >= board.width) break
-			if (board.at(x, y) === rook)
-				rx = x
+			if (!castling.has(side)) continue
+			
+			let {x, y} = position
+			let rx
+			while (true)
+			{
+				x += n
+				if (x < 0) break
+				if (x >= geometry.info.width) break
+				if (storage.at(x, y) === rook)
+					rx = x
+			}
+			if (rx === undefined) return
+			let rookPosition = geometry.Position(rx, y)
+			if (!rookPosition) return
+			if (rook.color === "white")
+				whiteCastling.push(rookPosition.name)
+			else
+				blackCastling.push(rookPosition.name)
 		}
-		if (rx === undefined) return
-		board = board.set(rx, y, "initial")
 	}
 	
 	for (let file of castling)
@@ -189,18 +183,23 @@ export let toBoard = string =>
 		if (white)
 			file = file.toLowerCase(),
 			king = whiteKing,
-			rook = pieces.whiteRook
+			rook = chess.whiteRook
 		else
 			king = blackKing,
-			rook = pieces.blackRook
+			rook = chess.blackRook
 		
-		board = board.set(king, "initial")
-		
-		let position = board.Position(file.codePointAt() - 0x61, king.y)
+		let position = geometry.Position(file.codePointAt() - 0x61, king.y)
 		if (!position) return
-		if (board.at(position) !== rook) return
-		board = board.set(position, "initial")
+		if (storage.at(position)?.color === "white")
+			whiteCastling.push(rookPosition.name)
+		else
+			blackCastling.push(rookPosition.name)
 	}
 	
-	return board
+	whiteCastling.sort()
+	blackCastling.sort()
+	if (whiteCastling.length !== 0) state.whiteCastling = whiteCastling
+	if (blackCastling.length !== 0) state.blackCastling = blackCastling
+	
+	return Board({storage, state})
 }

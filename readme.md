@@ -24,12 +24,12 @@ As a project, Dummyette is separated into a couple modules, each specialized in 
   The command line interface entrypoint of the bot.
 - [`dummyette.js`](dummyette.js) [[reference](documentation/dummyette.md) | [tutorial](examples/dummyette.md)] <br>
   The AI algorithm used to rate the quality of moves in a position.
-- [`chess.js`](chess.js) [[reference](documentation/chess.md) | [tutorial](examples/chess.md)] <br>
-  Utilities for interacting with chess boards and finding valid moves.
+- [`variants.js`](variants.js) [[reference](documentation/variants.md) | [tutorial](examples/variants.md)] <br>
+  Library for representing board games and chess variants.
+- [`variants/chess.js`](variants/chess.js) [[reference](documentation/variants/chess.md) | [tutorial](examples/variants/chess.md)] <br>
+  Implementation of the rules of chess using the `variants.js` module.
 - [`lichess.js`](lichess.js) [[reference](documentation/lichess.md) | [tutorial](examples/lichess.md)] <br>
   Interface for interacting with Lichess through its bot API.
-- [`openings.js`](openings.js) [[reference](documentation/openings.md) | [tutorial](examples/openings.md)] <br>
-  Parsing Polyglot `.bin` opening books.
 - [`notation.js`](notation.js) [[reference](documentation/notation.md) | [tutorial](examples/notation.md)] <br>
   Converting `chess.js` datatypes to/from string formats.
 - [`streams.js`](streams.js) [[reference](documentation/streams.md) | [tutorial](examples/streams.md) (slightly incomplete)] <br>

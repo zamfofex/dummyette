@@ -1,8 +1,8 @@
 /// <reference path="../types/notation/from-pgn.d.ts" />
 /// <reference types="../types/notation/from-pgn.d.ts" />
 
-import {standardBoard} from "../chess.js"
-import {fromFEN, toSAN} from "../notation.js"
+import {standardBoard} from "../variants/chess.js"
+import {fromFEN, fromSAN} from "../notation.js"
 import {LiveController, LiveStream} from "../streams.js"
 
 let eof = Symbol("EOF")
@@ -391,7 +391,7 @@ let toDelta = (node, board) =>
 	let annotation = node.value.annotation
 	Object.freeze(comments)
 	
-	let move = board.moves.find(move => toSAN(move) === node.value.name)
+	let move = fromSAN(board, node.value.name)
 	if (!move) return
 	
 	let delta = {before: board, move, after: move.play(), comments, annotation, variations: []}
@@ -560,12 +560,12 @@ let applySync = (input, f) =>
 	{
 		if (value === eof) break
 		let {done} = g.next(value)
-		if (done) return result
+		if (done) return Object.freeze(result)
 	}
 	while (true)
 	{
 		let {done} = g.next(eof)
-		if (done) return result
+		if (done) return Object.freeze(result)
 	}
 }
 

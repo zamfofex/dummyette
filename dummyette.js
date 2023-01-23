@@ -3,7 +3,8 @@
 
 import {MutableBoard} from "./internal/fast-chess.js"
 import {toGames} from "./notation/from-pgn.js"
-import {sameBoard} from "./chess.js"
+import {sameBoard} from "./variants.js"
+import {isStalemate, isCheckmate} from "./variants/chess.js"
 
 let registry = new FinalizationRegistry(f => f())
 
@@ -101,8 +102,8 @@ let prioritizeOpenings = board =>
 
 let evaluateAsync = async (board, workers, time) =>
 {
-	if (board.width !== 8) return
-	if (board.height !== 8) return
+	if (board.storage.geometry.info.width !== 8) return
+	if (board.storage.geometry.info.height !== 8) return
 	
 	time = Number(time)
 	if (!Number.isFinite(time)) return
@@ -172,12 +173,12 @@ let evaluate0 = (board, workers, depth, moves = shuffle(board.moves)) => new Pro
 	for (let [i, move] of moves.entries())
 	{
 		let board = move.play()
-		if (board.draw)
+		if (isStalemate(board))
 		{
 			evaluations.push({move: [id, move], score: 0})
 			continue
 		}
-		if (board.checkmate)
+		if (isCheckmate(board))
 		{
 			evaluations.push({move: [id, move], score: 5000000})
 			continue
