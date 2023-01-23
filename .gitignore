@@ -17,13 +17,16 @@
 !/chess.js
 !/lichess.js
 !/streams.js
-!/notation.js
 !/streams-browser.js
+!/notation.js
 !/notation
 !/notation/to-san.js
 !/notation/from-fen.js
 !/notation/from-pgn.js
 !/notation/from-san.js
+!/variants.js
+!/variants
+!/variants/chess.js
 
 !/types/main.d.ts
 !/types/dummyette.d.ts
