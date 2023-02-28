@@ -1,4 +1,14 @@
-import {Rules, MoveGenerator, TurnRules, SquareGeometry, Storage, Board as VariantBoard} from "../variants.js"
+import {
+	Rules,
+	MoveGenerator,
+	TurnRules,
+	SquareGeometry,
+	Storage,
+	Board as VariantBoard,
+	UniquenessRules,
+	ExistenceRules,
+}
+from "../variants.js"
 
 export let types = ["pawn", "knight", "bishop", "rook", "queen", "king"]
 export let colors = ["white", "black"]
@@ -243,7 +253,24 @@ export let PromotionRules = (rules, piece, pieces, {y = -1} = {}) =>
 		{
 			let to = storage.geometry.Position({x, y: y1})
 			if (result.storage.at(to) !== piece) continue
-			moves = moves.flatMap(move => pieces.map(piece => ({...move, movements: [...move.movements, {to, piece}]})))
+			
+			let j
+			for (let i = move.movements.length - 1 ; i >= 0 ; i++)
+			{
+				if (move.movements[i].to === to)
+				{
+					j = i
+					break
+				}
+			}
+			
+			moves = moves.flatMap(move => pieces.map(piece =>
+			{
+				let movements = move.movements.slice()
+				if (j === undefined) movements.push({to, piece})
+				else movements[j] = {...movements[j], piece}
+				return {...move, movements}
+			}))
 		}
 		
 		return moves
@@ -312,34 +339,6 @@ export let CheckRules = (rules, [...pieces]) =>
 			return true
 		},
 	})
-
-export let ExistenceRules = piece => Rules(
-{
-	isValid: storage =>
-	{
-		for (let position of storage.geometry.positions)
-			if (storage.at(position) === piece)
-				return true
-		return false
-	},
-})
-
-export let UniquenessRules = piece => Rules(
-{
-	isValid: storage =>
-	{
-		let count = 0
-		for (let position of storage.geometry.positions)
-		{
-			if (storage.at(position) === piece)
-				count++
-			if (count > 1) return false
-		}
-		return true
-	},
-})
-
-export let RoyaltyRules = (rules, pieces) => Rules(CheckRules(rules, pieces), ...pieces.map(piece => ExistenceRules(piece)), ...pieces.map(piece => UniquenessRules(piece)))
 
 export let EnPassantRules = (rules, piece, otherPiece, n = 1, name = "passing") =>
 {
@@ -612,56 +611,58 @@ let checkRules = Rules(
 	},
 })
 
-let whitePawnRules = WhitePawnRules(whitePawn, {pieces: [whiteQueen, whiteRook, whiteBishop, whiteKnight, whiteKing]})
-let blackPawnRules = BlackPawnRules(blackPawn, {pieces: [blackQueen, blackRook, blackBishop, blackKnight, blackKing]})
+export let whitePawnRules = WhitePawnRules(whitePawn, {pieces: [whiteQueen, whiteRook, whiteBishop, whiteKnight, whiteKing]})
+export let blackPawnRules = BlackPawnRules(blackPawn, {pieces: [blackQueen, blackRook, blackBishop, blackKnight, blackKing]})
 
-let whiteKnightRules = KnightRules(whiteKnight)
-let blackKnightRules = KnightRules(blackKnight)
+export let whiteKnightRules = KnightRules(whiteKnight)
+export let blackKnightRules = KnightRules(blackKnight)
 
-let whiteBishopRules = BishopRules(whiteBishop)
-let blackBishopRules = BishopRules(blackBishop)
+export let whiteBishopRules = BishopRules(whiteBishop)
+export let blackBishopRules = BishopRules(blackBishop)
 
-let whiteRookRules = RookRules(whiteRook)
-let blackRookRules = RookRules(blackRook)
+export let whiteRookRules = RookRules(whiteRook)
+export let blackRookRules = RookRules(blackRook)
 
-let whiteQueenRules = QueenRules(whiteQueen)
-let blackQueenRules = QueenRules(blackQueen)
+export let whiteQueenRules = QueenRules(whiteQueen)
+export let blackQueenRules = QueenRules(blackQueen)
 
-let whiteKingRules = KingRules(whiteKing)
-let blackKingRules = KingRules(blackKing)
+export let whiteKingRules = KingRules(whiteKing)
+export let blackKingRules = KingRules(blackKing)
 
-let whitePieceRules0 = Rules(whitePawnRules, whiteKnightRules, whiteBishopRules, whiteRookRules, whiteQueenRules, whiteKingRules)
-let blackPieceRules0 = Rules(blackPawnRules, blackKnightRules, blackBishopRules, blackRookRules, blackQueenRules, blackKingRules)
+export let simpleWhitePieceRules = Rules(whitePawnRules, whiteKnightRules, whiteBishopRules, whiteRookRules, whiteQueenRules, whiteKingRules)
+export let simpleBlackPieceRules = Rules(blackPawnRules, blackKnightRules, blackBishopRules, blackRookRules, blackQueenRules, blackKingRules)
 
 let AttackPredicate = piece => storage => !isAttacked(storage, storage.geometry.positions.find(position => storage.at(position) === piece))
 
 let whitePieceCastlingRules = CastlingRules(whiteKing, whiteRook, "whiteCastling", AttackPredicate(whiteKing))
 let blackPieceCastlingRules = CastlingRules(blackKing, blackRook, "blackCastling", AttackPredicate(blackKing))
 
-let whitePieceRules1 = Rules(whitePieceRules0, whitePieceCastlingRules)
-let blackPieceRules1 = Rules(blackPieceRules0, blackPieceCastlingRules)
+let whitePieceRules0 = Rules(simpleWhitePieceRules, whitePieceCastlingRules)
+let blackPieceRules0 = Rules(simpleBlackPieceRules, blackPieceCastlingRules)
 
-let whitePieceRules2 = EnPassantRules(whitePieceRules1, whitePawn, blackPawn)
-let blackPieceRules2 = EnPassantRules(blackPieceRules1, blackPawn, whitePawn, -1)
+export let whitePieceRules = EnPassantRules(whitePieceRules0, whitePawn, blackPawn)
+export let blackPieceRules = EnPassantRules(blackPieceRules0, blackPawn, whitePawn, -1)
 
-let WhiteCastlingRevocation = rules => CastlingRevocationRules(rules, whiteKing, whiteRook, "whiteCastling")
-let BlackCastlingRevocation = rules => CastlingRevocationRules(rules, blackKing, blackRook, "blackCastling")
-let ChessCastlingRevocation = rules => WhiteCastlingRevocation(BlackCastlingRevocation(rules))
+export let WhiteCastlingRevocationRules = rules => CastlingRevocationRules(rules, whiteKing, whiteRook, "whiteCastling")
+export let BlackCastlingRevocationRules = rules => CastlingRevocationRules(rules, blackKing, blackRook, "blackCastling")
+export let ChessCastlingRevocationRules = rules => WhiteCastlingRevocationRules(BlackCastlingRevocationRules(rules))
 
-let pieceRules = ChessCastlingRevocation(
+export let pieceRules = ChessCastlingRevocationRules(
 	TurnRules({},
-		{color: "white", rules: whitePieceRules2},
-		{color: "black", rules: blackPieceRules2},
+		{color: "white", rules: whitePieceRules},
+		{color: "black", rules: blackPieceRules},
 	),
 )
 
-let royaltyRules =
+export let RoyaltyRules = piece => Rules(
+	ExistenceRules(piece),
+	UniquenessRules(piece),
+)
+
+export let royaltyRules =
 	Rules(
-		checkRules,
-		ExistenceRules(whiteKing),
-		ExistenceRules(blackKing),
-		UniquenessRules(whiteKing),
-		UniquenessRules(blackKing),
+		RoyaltyRules(whiteKing),
+		RoyaltyRules(blackKing),
 	)
 
 let knownStateKeys = ["turn", "passing", "whiteCastling", "blackCastling"]
@@ -770,7 +771,7 @@ export let Board960 = (n = Math.floor(Math.random() * 960)) =>
 }
 
 export let geometry = SquareGeometry(8)
-export let rules = Rules(pieceRules, royaltyRules, disallowUnknownStateKeys, disallowUnknownPieces)
+export let rules = Rules(pieceRules, checkRules, royaltyRules, disallowUnknownStateKeys, disallowUnknownPieces)
 
 export let standardBoard = Board960(518)
 export let {storage, state} = standardBoard
@@ -779,7 +780,14 @@ export let Board = ({storage: storage0 = storage, state: state0 = state} = {}) =
 
 let shortNames = {pawn: "p", knight: "n", bishop: "b", rook: "r", queen: "q", king: "k"}
 
-export let toASCII = (storage, color = "white") =>
+let toStandardShortName = piece =>
+{
+	let name = shortNames[piece.type]
+	if (piece.color === "white") name = name.toUpperCase()
+	return name
+}
+
+export let toASCII = (storage, color = "white", toShortName = toStandardShortName) =>
 {
 	let ascii = []
 	for (let y0 = 0 ; y0 < storage.geometry.info.height ; y0++)
@@ -794,10 +802,8 @@ export let toASCII = (storage, color = "white") =>
 			else x = storage.geometry.info.width - 1 - x
 			
 			let piece = storage.at({x, y})
-			let name
-			if (piece) name = shortNames[piece.type]
-			else name = " "
-			if (piece?.color === "white") name = name.toUpperCase()
+			let name = piece === undefined ? " " : toShortName(piece) ?? "?"
+			name = String(name)
 			rank.push(name)
 		}
 		ascii.push(rank.join(" "))
@@ -841,7 +847,6 @@ export let capturedPiece = move =>
 
 export let promotionPiece = move =>
 {
-	if (move.movements.length !== 2) return false
-	if (isEnPassant(move)) return false
-	return move.movements[1].piece
+	if (move.movements.length !== 1) return
+	return move.movements[0].piece
 }

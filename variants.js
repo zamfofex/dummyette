@@ -450,12 +450,48 @@ export let TurnRules = ({name = "turn"}, ...specifications) =>
 			.filterMoves((move, storage, state) => state[name] === color)
 			.mapMoves(move => ({...move, state: {...move.state, [name]: next}}))
 		
-		let isValid = (storage, state) => state[name] !== color || rules.isValid(storage, state)
-		
-		rulesets.push({...rules, isValid})
+		rulesets.push(rules)
 	}
 	
 	return Rules(...rulesets, {isValid: (storage, state) => colors.includes(state[name])})
+}
+
+export let ExistenceRules = piece => Rules(
+{
+	isValid: storage =>
+	{
+		for (let position of storage.geometry.positions)
+			if (storage.at(position) === piece)
+				return true
+		return false
+	},
+})
+
+export let UniquenessRules = piece => Rules(
+{
+	isValid: storage =>
+	{
+		let count = 0
+		for (let position of storage.geometry.positions)
+		{
+			if (storage.at(position) === piece)
+				count++
+			if (count > 1) return false
+		}
+		return true
+	},
+})
+
+let diffState = (a, b) =>
+{
+	let result = {}
+	for (let name of new Set([...Object.keys(a), ...Object.keys(b)]))
+	{
+		if (sameState(a[name], b[name])) continue
+		result[name] = b[name]
+	}
+	
+	return result
 }
 
 export let Board = ({storage, state, rules}) =>
@@ -497,7 +533,7 @@ let createBoard = (storage, state, rules) =>
 		
 		let moveMovements = []
 		
-		for (let {from, to, piece: promotion} of movements)
+		for (let {from, to, piece} of movements)
 		{
 			let part
 			if (!from)
@@ -507,20 +543,20 @@ let createBoard = (storage, state, rules) =>
 			else
 				part = from.name + to.name
 			
-			let piece
+			let moved
 			if (from)
 			{
-				piece = board.storage.at(from)
-				if (!promotion) promotion = piece
+				moved = board.storage.at(from)
+				if (!piece) piece = moved
 			}
 			
-			if (promotion !== piece) part += `[${promotion.name}]`
+			if (piece !== moved) part += `[${piece.name}]`
 			parts.push(part)
 			
 			let movement = {}
 			
-			if (piece !== undefined) movement.moved = piece
-			if (promotion !== undefined) movement.piece = promotion
+			if (moved !== undefined) movement.moved = moved
+			if (piece !== undefined && piece !== moved) movement.piece = piece
 			if (from) movement.from = from
 			if (to)
 			{
@@ -542,15 +578,15 @@ let createBoard = (storage, state, rules) =>
 		
 		while (moves.has(name)) name += "'"
 		
-		let move = {name, movements: moveMovements, play, before: board, state: moveState}
+		let move = {name, movements: moveMovements, play, before: board, state: diffState(state, result.state)}
 		
 		let deprecatedField = DeprecatedField(move, "move")
 		
 		deprecatedField("from", "use 'move.movements' instead", () => move.movements[0].from)
 		deprecatedField("to", "use 'move.movements' instead", () => move.movements[0].to)
 		deprecatedField("piece", "use 'move.movements' instead", () => move.movements[0].piece)
-		deprecatedField("rook", "use 'isCastling()' instead", () => { })
-		deprecatedField("promotion", "use 'promotionPiece()' instead", () => { })
+		deprecatedField("rook", "use 'isCastling(...)' instead", () => { })
+		deprecatedField("promotion", "use 'promotionPiece(...)' instead", () => { })
 		
 		Object.freeze(move)
 		return move
@@ -624,9 +660,8 @@ let createBoard = (storage, state, rules) =>
 	deprecatedFunction("contains", "use 'board.storage.geometry.positions.includes(...)' instead'", (...args) => board.storage.geometry.Position(...args) !== undefined)
 	deprecatedFunction("Position", "use 'board.storage.geometry.Position(...)' instead'", board.storage.geometry.Position)
 	deprecatedFunction("get", "use 'board.state' instead", () => { })
-	deprecatedFunction("set", "setting the state is not supported anymore", () => board)
+	deprecatedFunction("set", "use 'board.state' instead", () => { })
 	deprecatedFunction("put", "use 'board.storage.put(...)' instead", (...args) => Board({storage: storage.put(...args), state, rules}))
-	deprecatedFunction("flip", "use 'board.state' instead", () => { })
 	deprecatedFunction("delete", "use 'board.storage.delete(...)' instead", (...args) => Board({storage: storage.delete(...args), state, rules}))
 	deprecatedField("check", "use 'isCheck(board)' instead'", () => false)
 	deprecatedField("checkmate", "use 'isCheckmate(board) instead'", () => false)
@@ -634,8 +669,8 @@ let createBoard = (storage, state, rules) =>
 	deprecatedField("draw", "use 'isStalemate(board)' instead'", () => false)
 	deprecatedFunction("getScore", "use a 'for' loop instead", () => 0)
 	deprecatedField("score", "use a 'for' loop instead", () => 0)
-	deprecatedFunction("getKingPosition", "use a 'for' loop instead", () => { })
-	deprecatedFunction("toASCII", "use 'toASCII(board.storage, color)' instead", "???")
+	deprecatedFunction("getKingPosition", "use 'board.storage.geometry.positions.find(...)' instead", () => { })
+	deprecatedFunction("toASCII", "use 'toASCII(board.storage, color)' instead", () => "???")
 	deprecatedFunction("flip", "use 'board.state' instead", (turn = board.state.turn !== "white" ? "white" : "black") => Board({storage, state: {...board.state, turn}, rules}))
 	
 	Object.freeze(board)
