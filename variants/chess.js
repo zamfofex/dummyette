@@ -94,25 +94,26 @@ let createMoveGenerator = (createMoves, a, b, piece, {capturable = other => othe
 	
 	if (a === 0 && b === 0) return
 	
+	let deltas = []
+	
+	deltas.push([a, b])
+	if (a > 0) deltas.push([-a, b])
+	if (b > 0) deltas.push([a, -b])
+	if (a > 0 && b > 0) deltas.push([-a, -b])
+	
+	if (a !== b)
+	{
+		deltas.push([b, a])
+		if (a > 0) deltas.push([b, -a])
+		if (b > 0) deltas.push([-b, a])
+		if (a > 0 && b > 0) deltas.push([-b, -a])
+	}
+	
 	let getMoves = storage =>
 	{
 		let moves = []
-		
-		let addMoves = (x, y) => createMoves(moves, x, y, piece, capturable, storage)
-		
-		addMoves(a, b)
-		if (a > 0) addMoves(-a, b)
-		if (b > 0) addMoves(a, -b)
-		if (a > 0 && b > 0) addMoves(-a, -b)
-		
-		if (a !== b)
-		{
-			addMoves(b, a)
-			if (a > 0) addMoves(b, -a)
-			if (b > 0) addMoves(-b, a)
-			if (a > 0 && b > 0) addMoves(-b, -a)
-		}
-		
+		for (let [dx, dy] of deltas)
+			createMoves(moves, dx, dy, piece, capturable, storage)
 		Object.freeze(moves)
 		return moves
 	}
@@ -277,35 +278,129 @@ export let PromotionRules = (rules, piece, pieces, {y = -1} = {}) =>
 	})
 }
 
+export let EnPassantRules = (piece, otherPiece, dy, {name = "passing"} = {}) =>
+{
+	dy = Number(dy)
+	if (dy !== 1 && dy !== -1) return
+	
+	return Rules(
+	{
+		getMoves: (storage, state) =>
+		{
+			if (state[name] === undefined) return []
+			if (!(state[name] instanceof Array)) return []
+			
+			let moves = []
+			for (let position of state[name])
+			{
+				if (typeof position !== "string") continue
+				position = storage.geometry.Position(position)
+				if (!position) continue
+				
+				let {x, y} = position
+				
+				let a = storage.geometry.Position({x: x - 1, y})
+				let b = storage.geometry.Position({x: x + 1, y})
+				
+				if (a && storage.at(a) === piece)
+					moves.push({state: {[name]: undefined}, movements: [{from: a, to: {x, y: y + dy}}, {from: position}]})
+				if (b && storage.at(b) === piece)
+					moves.push({state: {[name]: undefined}, movements: [{from: b, to: {x, y: y + dy}}, {from: position}]})
+			}
+			
+			return moves
+		},
+		isValid: (storage, state) =>
+		{
+			if (state[name] === undefined) return true
+			if (!(state[name] instanceof Array)) return false
+			if (state[name].length === 0) return false
+			
+			for (let position of state[name])
+			{
+				if (typeof position !== "string") return false
+				position = storage.geometry.Position(position)
+				if (!position) return false
+				if (storage.at(position) !== otherPiece) return false
+			}
+			
+			return true
+		},
+	})
+}
+
+let EnPassantValidator = (piece, name) => (storage, state) =>
+{
+	if (state[name] === undefined) return true
+	if (!(state[name] instanceof Array)) return false
+	if (state[name].length === 0) return false
+	
+	for (let position of state[name])
+	{
+		if (typeof position !== "string") return false
+		position = storage.geometry.Position(position)
+		if (!position) return false
+		
+		let {x, y} = position
+		if (storage.at({x: x - 1, y}) !== piece)
+		if (storage.at({x: x + 1, y}) !== piece)
+			return false
+	}
+	
+	return true
+}
+
 export let RegularWhitePawnRules = piece => ForwardPawnRules(1, piece)
 export let RegularBlackPawnRules = piece => ForwardPawnRules(-1, piece)
 
-export let DoubleWhitePawnRules = piece => ForwardPawnRules(2, piece)
-export let DoubleBlackPawnRules = piece => ForwardPawnRules(-2, piece)
+export let DoubleWhitePawnRules = piece => ForwardPawnRules(2, piece).filterMoves(lowRanks)
+export let DoubleBlackPawnRules = piece => ForwardPawnRules(-2, piece).filterMoves(highRanks)
 
-export let InitialWhitePawnRules = piece => DoubleWhitePawnRules(piece).filterMoves(lowRanks)
-export let InitialBlackPawnRules = piece => DoubleBlackPawnRules(piece).filterMoves(highRanks)
+let setPassing = (otherPiece, name) => (move, storage) =>
+{
+	let to = move.movements[0].to
+	
+	if (storage.at({x: to.x - 1, y: to.y}) !== otherPiece)
+	if (storage.at({x: to.x + 1, y: to.y}) !== otherPiece)
+		return move
+	
+	return ({...move, state: {...move.state, [name]: [to.name]}})
+}
+
+export let InitialWhitePawnRules = (piece, otherPiece, {name = "passing"} = {}) =>
+	Rules(
+		DoubleWhitePawnRules(piece).mapMoves(setPassing(otherPiece, name)),
+		{isValid: EnPassantValidator(piece, name)},
+	)
+
+export let InitialBlackPawnRules = (piece, otherPiece, {name = "passing"} = {}) =>
+	Rules(
+		DoubleBlackPawnRules(piece).mapMoves(setPassing(otherPiece, name)),
+		{isValid: EnPassantValidator(piece, name)},
+	)
 
 export let WhitePawnCaptureRules = (piece, options = {}) => PawnCaptureRules(piece, 1, options)
 export let BlackPawnCaptureRules = (piece, options = {}) => PawnCaptureRules(piece, -1, options)
 
-export let WhitePawnRules = (piece, options = {}) =>
+export let WhitePawnRules = (piece, otherPiece, options = {}) =>
 	PromotionRules(
 		Rules(
 			RegularWhitePawnRules(piece),
-			InitialWhitePawnRules(piece),
+			InitialWhitePawnRules(piece, otherPiece, options),
 			WhitePawnCaptureRules(piece, options),
+			EnPassantRules(piece, otherPiece, 1, options),
 		),
 		piece,
 		options.pieces,
 	)
 
-export let BlackPawnRules = (piece, options = {}) =>
+export let BlackPawnRules = (piece, otherPiece, options = {}) =>
 	PromotionRules(
 		Rules(
 			RegularBlackPawnRules(piece),
-			InitialBlackPawnRules(piece),
+			InitialBlackPawnRules(piece, otherPiece, options),
 			BlackPawnCaptureRules(piece, options),
+			EnPassantRules(piece, otherPiece, -1, options),
 		),
 		piece,
 		options.pieces,
@@ -339,85 +434,6 @@ export let CheckRules = (rules, [...pieces]) =>
 			return true
 		},
 	})
-
-export let EnPassantRules = (rules, piece, otherPiece, n = 1, name = "passing") =>
-{
-	rules = Rules(rules)
-	if (!rules) return
-	
-	n = Number(n)
-	if (n !== 1 && n !== -1) return
-	
-	rules = rules.mapMoves((move, storage) =>
-	{
-		let passing = []
-		for (let {from, to, apply} of move.movements)
-		{
-			if (!from) continue
-			if (!to) continue
-			
-			if (storage.at(from) !== piece) continue
-			storage = apply(storage)
-			if (!storage) return
-			
-			if (to.y - from.y === 2 * n && from.x === to.x)
-			if (storage.at({x: to.x + 1, y: to.y}) === otherPiece || storage.at({x: to.x - 1, y: to.y}) === otherPiece)
-				passing.push(to.name)
-		}
-		
-		Object.freeze(passing)
-		if (passing.length === 0) passing = undefined
-		return {...move, state: {...move.state, [name]: passing}}
-	})
-	
-	return Rules(
-		rules,
-		{
-			isValid: (storage, state) =>
-			{
-				if (state[name] === undefined) return true
-				if (!(state[name] instanceof Array)) return false
-				if (state[name].length === 0) return false
-				
-				for (let position of state[name])
-				{
-					if (typeof position !== "string") return false
-					position = storage.geometry.Position(position)
-					if (!position) return false
-					if (storage.at(position) !== otherPiece) return false
-					
-					let {x, y} = position
-					if (storage.at({x: x - 1, y}) !== piece)
-					if (storage.at({x: x + 1, y}) !== piece)
-						return false
-				}
-				
-				return true
-			},
-			getMoves: (storage, state) =>
-			{
-				if (state[name] === undefined) return []
-				
-				let moves = []
-				for (let position of state.passing)
-				{
-					if (typeof position !== "string") continue
-					position = storage.geometry.Position(position)
-					if (!position) continue
-					if (storage.at(position) !== otherPiece) continue
-					
-					let {x, y} = position
-					if (storage.at({x: x - 1, y}) === piece)
-						moves.push({state: {[name]: undefined}, movements: [{from: {x: x - 1, y}, to: {x, y: y + n}}, {from: position}]})
-					if (storage.at({x: x + 1, y}) === piece)
-						moves.push({state: {[name]: undefined}, movements: [{from: {x: x + 1, y}, to: {x, y: y + n}}, {from: position}]})
-				}
-				
-				return moves
-			},
-		},
-	)
-}
 
 function * range(a, b)
 {
@@ -467,16 +483,12 @@ export let CastlingRules = (king, rook, name = "castling", isValid = () => true)
 					kingTo = {x: storage.geometry.info.width - 2, y: position.y},
 					rookTo = {x: storage.geometry.info.width - 3, y: position.y}
 				
-				let storage2 = storage.delete(position)?.delete(kingPosition)
+				let storage2 = storage.delete(position).delete(kingPosition)
 				
-				if (storage2)
+				for (let x of range(kingPosition.x, kingTo.x))
 				{
-					for (let x of range(kingPosition.x, kingTo.x))
-					{
-						storage2 = storage2.put({x, y: position.y}, king)
-						if (!storage2) break
-						if (!isValid(storage2, state)) continue outer
-					}
+					let storage = storage2.put({x, y: position.y}, king)
+					if (!isValid(storage, state)) continue outer
 				}
 				
 				let castling = [...state[name]]
@@ -520,7 +532,7 @@ export let CastlingRules = (king, rook, name = "castling", isValid = () => true)
 	}
 })
 
-export let CastlingRevocationRules = (rules, king, rook, name = "castling") => Rules(rules).mapMoves((move, storage, state) =>
+export let CastlingRevocationRules = (rules, king, rook, name = "castling") => Rules(rules)?.mapMoves((move, storage, state) =>
 {
 	for (let {from} of move.movements)
 		if (storage.at(from) === king)
@@ -611,8 +623,8 @@ let checkRules = Rules(
 	},
 })
 
-export let whitePawnRules = WhitePawnRules(whitePawn, {pieces: [whiteQueen, whiteRook, whiteBishop, whiteKnight, whiteKing]})
-export let blackPawnRules = BlackPawnRules(blackPawn, {pieces: [blackQueen, blackRook, blackBishop, blackKnight, blackKing]})
+export let whitePawnRules = WhitePawnRules(whitePawn, blackPawn, {pieces: [whiteQueen, whiteRook, whiteBishop, whiteKnight, whiteKing]})
+export let blackPawnRules = BlackPawnRules(blackPawn, whitePawn, {pieces: [blackQueen, blackRook, blackBishop, blackKnight, blackKing]})
 
 export let whiteKnightRules = KnightRules(whiteKnight)
 export let blackKnightRules = KnightRules(blackKnight)
@@ -629,30 +641,38 @@ export let blackQueenRules = QueenRules(blackQueen)
 export let whiteKingRules = KingRules(whiteKing)
 export let blackKingRules = KingRules(blackKing)
 
-export let simpleWhitePieceRules = Rules(whitePawnRules, whiteKnightRules, whiteBishopRules, whiteRookRules, whiteQueenRules, whiteKingRules)
-export let simpleBlackPieceRules = Rules(blackPawnRules, blackKnightRules, blackBishopRules, blackRookRules, blackQueenRules, blackKingRules)
+let simpleWhitePieceRules = Rules(whitePawnRules, whiteKnightRules, whiteBishopRules, whiteRookRules, whiteQueenRules, whiteKingRules)
+let simpleBlackPieceRules = Rules(blackPawnRules, blackKnightRules, blackBishopRules, blackRookRules, blackQueenRules, blackKingRules)
 
 let AttackPredicate = piece => storage => !isAttacked(storage, storage.geometry.positions.find(position => storage.at(position) === piece))
 
-let whitePieceCastlingRules = CastlingRules(whiteKing, whiteRook, "whiteCastling", AttackPredicate(whiteKing))
-let blackPieceCastlingRules = CastlingRules(blackKing, blackRook, "blackCastling", AttackPredicate(blackKing))
+export let whitePieceCastlingRules = CastlingRules(whiteKing, whiteRook, "whiteCastling", AttackPredicate(whiteKing))
+export let blackPieceCastlingRules = CastlingRules(blackKing, blackRook, "blackCastling", AttackPredicate(blackKing))
 
-let whitePieceRules0 = Rules(simpleWhitePieceRules, whitePieceCastlingRules)
-let blackPieceRules0 = Rules(simpleBlackPieceRules, blackPieceCastlingRules)
-
-export let whitePieceRules = EnPassantRules(whitePieceRules0, whitePawn, blackPawn)
-export let blackPieceRules = EnPassantRules(blackPieceRules0, blackPawn, whitePawn, -1)
+export let whitePieceRules = Rules(simpleWhitePieceRules, whitePieceCastlingRules)
+export let blackPieceRules = Rules(simpleBlackPieceRules, blackPieceCastlingRules)
 
 export let WhiteCastlingRevocationRules = rules => CastlingRevocationRules(rules, whiteKing, whiteRook, "whiteCastling")
 export let BlackCastlingRevocationRules = rules => CastlingRevocationRules(rules, blackKing, blackRook, "blackCastling")
 export let ChessCastlingRevocationRules = rules => WhiteCastlingRevocationRules(BlackCastlingRevocationRules(rules))
 
-export let pieceRules = ChessCastlingRevocationRules(
-	TurnRules({},
-		{color: "white", rules: whitePieceRules},
-		{color: "black", rules: blackPieceRules},
-	),
-)
+export let EnPassantRevocationRules = (rules, {name = "passing"} = {}) =>
+	Rules(rules)?.mapMoves((move, storage, state) =>
+	{
+		if (move.state[name]) return move
+		if (state[name] === undefined) return move
+		return {...move, state: {...move.state, [name]: undefined}}
+	})
+
+export let pieceRules =
+	EnPassantRevocationRules(
+		ChessCastlingRevocationRules(
+			TurnRules({},
+				{color: "white", rules: whitePieceRules},
+				{color: "black", rules: blackPieceRules},
+			),
+		),
+	)
 
 export let RoyaltyRules = piece => Rules(
 	ExistenceRules(piece),
@@ -848,5 +868,5 @@ export let capturedPiece = move =>
 export let promotionPiece = move =>
 {
 	if (move.movements.length !== 1) return
-	return move.movements[0].piece
+	return move.movements[0].promotion
 }

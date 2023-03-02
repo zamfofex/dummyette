@@ -56,7 +56,6 @@ if (/^[0-9]+$/.test(Deno.args[0]))
 
 for (let [name, board, ...counts] of expectations)
 {
-break
 	Deno.test(name, async test =>
 	{
 		for (let [n, count] of counts.entries())
@@ -77,7 +76,8 @@ break
 
 for (let [i, [fen, n, count]] of extra.entries())
 {
-	Deno.test({
+	Deno.test(
+	{
 		name: `Extra position ${i + 1}, ply ${n}: ${count}`,
 		ignore: count > max,
 		fn: () =>

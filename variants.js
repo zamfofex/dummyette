@@ -148,13 +148,8 @@ export let SquareGeometry = (width, height = width) =>
 	width = Number(width)
 	height = Number(height)
 	
-	if (!Number.isInteger(width))
-	if (width !== Infinity)
-		return
-	
-	if (!Number.isInteger(height))
-	if (height !== Infinity)
-		return
+	if (!Number.isInteger(width)) return
+	if (!Number.isInteger(height)) return
 	
 	if (width <= 0) return
 	if (height <= 0) return
@@ -177,7 +172,12 @@ export let SquareGeometry = (width, height = width) =>
 	return Geometry({Position, positions, info: {width, height}})
 }
 
-export let SquareStorage = (width, height = width) => Storage({geometry: SquareGeometry(width, height)})
+export let SquareStorage = (width, height = width) =>
+{
+	let geometry = SquareGeometry(width, height)
+	if (!geometry) return
+	return Storage({geometry})
+}
 
 let memoise = f =>
 {
@@ -201,7 +201,7 @@ let clone = (value, preserveUndefined) =>
 	
 	if (value instanceof Array)
 	{
-		value = value.map(value => clone(value, preserveUndefined))
+		value = value.map(value => clone(value))
 		Object.freeze(value)
 		return value
 	}
@@ -209,9 +209,10 @@ let clone = (value, preserveUndefined) =>
 	if (!primitiveTypes.includes(typeof value))
 	{
 		let result = {}
-		for (let [name, other] of Object.entries(value))
+		for (let name in value)
 		{
-			other = clone(other, preserveUndefined)
+			let other = value[name]
+			other = clone(other)
 			if (!preserveUndefined && other === undefined) continue
 			result[name] = other
 		}
@@ -355,14 +356,13 @@ export let MoveGenerator = (...generators) =>
 		if (!state) return
 		
 		let moves = []
+		
 		for (let getMoves of generators)
+		for (let move of getMoves(storage, state))
 		{
-			for (let move of getMoves(storage, state))
-			{
-				move = Move(move, storage.geometry)
-				if (!move) continue
-				moves.push(move)
-			}
+			move = Move(move, storage.geometry)
+			if (!move) continue
+			moves.push(move)
 		}
 		
 		Object.freeze(moves)
@@ -446,11 +446,14 @@ export let TurnRules = ({name = "turn"}, ...specifications) =>
 		let next = colors[(i + 1) % colors.length]
 		let color = colors[i]
 		
+		rules = Rules(rules)
+		if (!rules) return
+		
 		rules = rules
 			.filterMoves((move, storage, state) => state[name] === color)
 			.mapMoves(move => ({...move, state: {...move.state, [name]: next}}))
 		
-		rulesets.push(rules)
+		rulesets.push({getMoves: rules.getMoves, isValid: (storage, state) => state[name] === color ? rules.isValid(storage, state) : true})
 	}
 	
 	return Rules(...rulesets, {isValid: (storage, state) => colors.includes(state[name])})
@@ -555,8 +558,8 @@ let createBoard = (storage, state, rules) =>
 			
 			let movement = {}
 			
-			if (moved !== undefined) movement.moved = moved
-			if (piece !== undefined && piece !== moved) movement.piece = piece
+			if (moved !== undefined) movement.piece = moved
+			if (piece !== undefined && piece !== moved) movement.promotion = piece
 			if (from) movement.from = from
 			if (to)
 			{
