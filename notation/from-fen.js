@@ -1,16 +1,24 @@
 /// <reference path="../types/notation/from-fen.d.ts" />
 /// <reference types="../types/notation/from-fen.d.ts" />
 
-import {pieces, Position, EmptyBoard} from "../chess.js"
+import {Board, variant as chess} from "../variants/chess.js"
+import {Board as ChecklessBoard, variant as checkless} from "../variants/checkless-chess.js"
+import {whitePawn, whiteKnight, whiteBishop, whiteRook, whiteQueen, whiteKing} from "../variants/checkless-chess.js"
+import {blackPawn, blackKnight, blackBishop, blackRook, blackQueen, blackKing} from "../variants/checkless-chess.js"
+
+let variants = new Map([[chess, Board], [checkless, ChecklessBoard]])
 
 let fromShortNames =
 {
-	P: pieces.whitePawn, N: pieces.whiteKnight, B: pieces.whiteBishop, R: pieces.whiteRook, Q: pieces.whiteQueen, K: pieces.whiteKing,
-	p: pieces.blackPawn, n: pieces.blackKnight, b: pieces.blackBishop, r: pieces.blackRook, q: pieces.blackQueen, k: pieces.blackKing,
+	P: whitePawn, N: whiteKnight, B: whiteBishop, R: whiteRook, Q: whiteQueen, K: whiteKing,
+	p: blackPawn, n: blackKnight, b: blackBishop, r: blackRook, q: blackQueen, k: blackKing,
 }
 
-export let toBoard = string =>
+export let toBoard = (string, variant = chess) =>
 {
+	let Board = variants.get(variant)
+	if (!Board) return
+	
 	string = String(string)
 	string = [...string]
 	
@@ -103,73 +111,70 @@ export let toBoard = string =>
 	}
 	else
 	{
-		let position = ""
+		let name = ""
 		while (string[i] !== " ")
 		{
-			position += string[i++]
+			name += string[i++]
 			if (i >= string.length) break
 		}
 		
-		enPassant = Position(position)
-		if (!enPassant) return
-		if (enPassant.y === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
-		else if (enPassant.y === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
+		let match = name.match(/^([a-z]+)([1-9][0-9]*)$/)
+		if (!match) return
+		let [full, file, rank] = match
+		
+		let x = 0
+		let y = Number(rank) - 1
+		
+		for (let ch of file)
+			x *= 26,
+			x += parseInt(ch, 36) - 9
+		x--
+		
+		if (x >= width) return
+		if (y >= height) return
+		
+		if (turn === "white") y--
+		if (turn === "black") y++
+		
+		enPassant = {x, y}
 	}
 	
-	let board = EmptyBoard(width, height)
-	board = board.flip(turn)
+	let whiteKingY
+	let blackKingY
 	
-	for (let [y, rank] of ranks.entries())
-	for (let [x, piece] of rank.entries())
-		board = board.put(x, y, piece)
-	
-	if (enPassant)
+	for (let y = 0 ; y < height ; y++)
+	for (let x = 0 ; x < width ; x++)
 	{
-		enPassant = board.Position(enPassant)
-		if (!enPassant) return
-		if (board.at(enPassant)?.type !== "pawn") return
-		board = board.set(enPassant, "passing")
+		if (ranks[y][x] === whiteKing) whiteKingY = y
+		if (ranks[y][x] === blackKing) blackKingY = y
 	}
 	
-	for (let x = 0 ; x < board.width ; x++)
-	{
-		if (board.at(x, 1)?.type === "pawn")
-			board = board.set(x, 1, "initial")
-		if (board.at(x, board.height - 2)?.type === "pawn")
-			board = board.set(x, board.height - 2, "initial")
-	}
-	
-	let whiteKing = board.getKingPosition("white")
-	let blackKing = board.getKingPosition("black")
-	
-	if (!whiteKing) return
-	if (!blackKing) return
+	if (whiteKingY === undefined) return
+	if (blackKingY === undefined) return
 	
 	let possibilities =
 	[
-		[1, "K", pieces.whiteRook, whiteKing], [-1, "Q", pieces.whiteRook, whiteKing],
-		[1, "k", pieces.blackRook, blackKing], [-1, "q", pieces.blackRook, blackKing],
+		[-1, "K", whiteRook, whiteKing, width - 1, whiteKingY], [1, "Q", whiteRook, whiteKing, 0, whiteKingY],
+		[-1, "k", blackRook, blackKing, width - 1, blackKingY], [1, "q", blackRook, blackKing, 0, blackKingY],
 	]
 	
-	for (let [n, side, rook, position] of possibilities)
+	let castlingX = {white: [], black: []}
+	
+	if (width <= 8)
 	{
-		if (!castling.has(side)) continue
-		if (width > 8) continue
-		
-		board = board.set(position, "initial")
-		
-		let {x, y} = position
-		let rx
-		while (true)
+		for (let [n, side, rook, king, x, y] of possibilities)
 		{
-			x += n
-			if (x < 0) break
-			if (x >= board.width) break
-			if (board.at(x, y) === rook)
-				rx = x
+			if (!castling.has(side)) continue
+			
+			while (true)
+			{
+				if (ranks[y][x] === king) return
+				if (ranks[y][x] === rook) break
+				x += n
+			}
+			
+			castlingX[rook.color].push(x)
 		}
-		if (rx === undefined) return
-		board = board.set(rx, y, "initial")
 	}
 	
 	for (let file of castling)
@@ -188,19 +193,21 @@ export let toBoard = string =>
 		let white = file === file.toUpperCase()
 		if (white)
 			file = file.toLowerCase(),
-			king = whiteKing,
-			rook = pieces.whiteRook
+			king = whiteKingPosition,
+			rook = whiteRook
 		else
-			king = blackKing,
-			rook = pieces.blackRook
+			king = blackKingPosition,
+			rook = blackRook
 		
-		board = board.set(king, "initial")
+		let x = file.codePointAt() - 0x61
+		if (x < 0) return
+		if (x >= width) return
+		if (x >= 26) return
+		if (ranks[king.y][x] !== rook) return
 		
-		let position = board.Position(file.codePointAt() - 0x61, king.y)
-		if (!position) return
-		if (board.at(position) !== rook) return
-		board = board.set(position, "initial")
+		castlingX[rook.color].push(rx)
 	}
 	
-	return board
+	if (variant === checkless) castlingX = undefined
+	return Board(ranks, {turn, passing: enPassant?.x, castling: castlingX})
 }

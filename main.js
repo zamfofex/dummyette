@@ -1,6 +1,7 @@
 import {Lichess} from "./lichess.js"
 import {AsyncAnalyser} from "./dummyette.js"
 import * as messages from "./internal/flavoring.js"
+import {toSAN} from "./notation.js"
 
 let runtime
 
@@ -136,9 +137,9 @@ let play = async game =>
 			average *= 2 / 3,
 			average += score / 3
 		
-		if (!await game.play(move.name))
+		if (!await game.play(move))
 		{
-			console.error(`Move ${move.name} was not played successfully.`)
+			console.error(`Move ${toSAN(move)} was not played successfully.`)
 			await game.resign()
 			break
 		}

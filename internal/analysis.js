@@ -1,7 +1,7 @@
-let table = (i, n) =>
+let table = (i, piece) =>
 {
-	if (n === 0) return 0
-	let table = tables[(n >>> 4) - 1][(n & 0x0F) - 1]
+	if (!piece) return 0
+	let table = tables.get(piece.type).get(piece.color)
 	return table[i]
 }
 
@@ -12,10 +12,11 @@ export let traverse = (board, depth) =>
 	let evaluate = i =>
 	{
 		let score = 0
-		for (let i = 0 ; i < 64 ; i++)
-			score += table(i, board.array[i])
+		for (let y = 0 ; y < 8 ; y++)
+		for (let x = 0 ; x < 8 ; x++)
+			score += table(i, board.at({x, y}))
 		
-		if (!board.turn[0]) score *= -1
+		if (board.get("turn") === "black") score *= -1
 		if (score < -5000) return -10000 * (depth - i + 1)
 		return score
 	}
@@ -29,7 +30,7 @@ export let traverse = (board, depth) =>
 		if (score >= beta) return beta
 		if (alpha < score) alpha = score
 		
-		for (let play of board.getCaptures())
+		for (let play of board.getCaptureFunctions())
 		{
 			let unplay = play()
 			let score = -quiesce(i - 1, -beta, -alpha)
@@ -46,7 +47,7 @@ export let traverse = (board, depth) =>
 	{
 		if (i === 0) return quiesce(qdepth, alpha, beta)
 		
-		for (let play of board.getMoves())
+		for (let play of board.getMoveFunctions())
 		{
 			let unplay = play()
 			let score = -search(i - 1, -beta, -alpha)
@@ -137,7 +138,7 @@ let kingEndGameTable =
 	[-30, -30, -30, -50],
 ]
 
-let tableScores = [[100, pawnTable], [320, knightTable], [330, bishopTable], [500, rookTable], [900, queenTable], [5999900, kingMiddleGameTable], [0, kingEndGameTable]]
+let tableScores = [[100, pawnTable, "pawn"], [320, knightTable, "knight"], [330, bishopTable, "bishop"], [500, rookTable, "rook"], [900, queenTable, "queen"], [5999900, kingMiddleGameTable, "king"], [0, kingEndGameTable, "---"]]
 
 for (let [score, table] of tableScores)
 {
@@ -160,16 +161,16 @@ for (let [score, table] of tableScores)
 	}
 }
 
-let tables = []
+let tables = new Map()
 
-for (let [score, table0] of tableScores)
+for (let [score, table0, type] of tableScores)
 {
-	let array = []
-	tables.push(array)
-	for (let i of [1, -1])
+	let map = new Map()
+	tables.set(type, map)
+	for (let [i, color] of [[1, "white"], [-1, "black"]])
 	{
 		let table = []
-		array.push(table)
+		map.set(color, table)
 		
 		for (let x = 0 ; x < 8 ; x++)
 		for (let y = 0 ; y < 8 ; y++)

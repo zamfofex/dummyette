@@ -20,10 +20,21 @@
 !/openings.js
 !/notation.js
 !/streams-browser.js
+!/variants.js
+
 !/notation
 !/notation/to-san.js
+!/notation/from-san.js
 !/notation/from-fen.js
 !/notation/from-pgn.js
+!/notation/to-ascii.js
+!/notation/to-fen.js
+!/notation/to-uci.js
+
+!/variants
+!/variants/checkless-chess.js
+!/variants/checked-chess.js
+!/variants/chess.js
 
 !/types/main.d.ts
 !/types/dummyette.d.ts
@@ -31,10 +42,11 @@
 !/types/lichess.d.ts
 !/types/streams.d.ts
 !/types/openings.d.ts
-!/types/notation.d.ts
 !/types/streams-browser.d.ts
+!/types/notation.d.ts
 !/types/notation
 !/types/notation/to-san.d.ts
+!/types/notation/from-san.d.ts
 !/types/notation/from-fen.d.ts
 !/types/notation/from-pgn.d.ts
 
@@ -44,10 +56,11 @@
 !/documentation/lichess.md
 !/documentation/streams.md
 !/documentation/openings.md
-!/documentation/notation.md
 !/documentation/streams-browser.md
+!/documentation/notation.md
 !/documentation/notation
 !/documentation/notation/to-san.md
+!/documentation/notation/from-san.md
 !/documentation/notation/from-fen.md
 !/documentation/notation/from-pgn.md
 
@@ -57,5 +70,5 @@
 !/examples/lichess.md
 !/examples/streams.md
 !/examples/openings.md
-!/examples/notation.md
 !/examples/streams-browser.md
+!/examples/notation.md

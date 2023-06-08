@@ -1,9 +1,8 @@
 /// <reference path="./types/dummyette.d.ts" />
 /// <reference types="./types/dummyette.d.ts" />
 
-import {MutableBoard} from "./internal/fast-chess.js"
 import {toGames} from "./notation/from-pgn.js"
-import {sameBoard} from "./chess.js"
+import {toFEN, toSAN, fromSAN} from "./notation.js"
 
 let registry = new FinalizationRegistry(f => f())
 
@@ -85,8 +84,8 @@ let prioritizeOpenings = board =>
 	for (let {deltas} of openingGames)
 	for (let {before, move} of deltas)
 	{
-		if (!sameBoard(board, before)) continue
-		moves.add(board.Move(move))
+		if (toFEN(board) !== toFEN(before)) continue
+		moves.add(move)
 	}
 	
 	if (moves.size === 0) return
@@ -146,7 +145,7 @@ let evaluate0 = (board, workers, depth, moves = shuffle(board.moves)) => new Pro
 		if (evaluations.length === length)
 		{
 			evaluations.sort((a, b) => b.score - a.score)
-			evaluations = evaluations.map(({move: [id, name], score}) => ({score, move: board.Move(name)}))
+			evaluations = evaluations.map(({move: [id, name], score}) => ({score, move: fromSAN(board, name)}))
 			
 			Object.freeze(evaluations)
 			resolve(evaluations)
@@ -184,7 +183,7 @@ let evaluate0 = (board, workers, depth, moves = shuffle(board.moves)) => new Pro
 		}
 		
 		let worker = workers[i % workers.length]
-		worker.postMessage([[id, move.name], MutableBoard(board).serialize(), depth])
+		worker.postMessage([[id, toSAN(move)], toFEN(board), depth])
 		worker.addEventListener("message", receive)
 	}
 })

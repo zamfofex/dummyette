@@ -1,4 +1,4 @@
-import {standardBoard} from "../../chess.js"
+import {standardBoard} from "../../variants/chess.js"
 import {fromFEN} from "../../notation.js"
 
 let perft = (n, board) =>
@@ -8,6 +8,20 @@ let perft = (n, board) =>
 	let count = 0
 	for (let move of board.moves)
 		count += perft(n - 1, move.play())
+	return count
+}
+
+let perftM = (n, board) =>
+{
+	if (n === 0) return 1
+	
+	let count = 0
+	for (let play of board.getMoveFunctions())
+	{
+		let unplay = play()
+		count += perftM(n - 1, board)
+		unplay()
+	}
 	return count
 }
 
@@ -39,6 +53,23 @@ for (let [name, board, ...counts] of expectations)
 				fn: () =>
 				{
 					let count2 = perft(n, board)
+					if (count2 !== count) throw new Error(`wrong count: ${count2}`)
+				},
+			})
+		}
+	})
+	
+	Deno.test(name + " / Mutable", async test =>
+	{
+		for (let [n, count] of counts.entries())
+		{
+			await test.step(
+			{
+				name: `Ply ${n}: ${count}`,
+				ignore: count > max,
+				fn: () =>
+				{
+					let count2 = perftM(n, board.MutableBoard())
 					if (count2 !== count) throw new Error(`wrong count: ${count2}`)
 				},
 			})

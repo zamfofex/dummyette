@@ -1,10 +1,10 @@
 /// <reference path="./types/lichess.d.ts" />
 /// <reference types="./types/lichess.d.ts" />
 
-import {Color, standardBoard, other, King, Rook} from "./chess.js"
+import {Color, standardBoard, other} from "./variants/chess.js"
 import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"
-import {fromFEN} from "./notation.js"
+import {fromFEN, fromSAN, toUCI, toFEN} from "./notation.js"
 
 export let Lichess = async options =>
 {
@@ -173,9 +173,6 @@ let castling =
 
 let createGame = async ({origin, headers}, username, id) =>
 {
-	let toLichessName = new Map()
-	let fromLichessName = new Map()
-	
 	let gameEvents = await streamURL(headers, `${origin}/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
 	gameEvents = RewindJoinStream(gameEvents)
@@ -192,10 +189,9 @@ let createGame = async ({origin, headers}, username, id) =>
 		names = names.split(" ").slice(n)
 		for (let name of names)
 		{
-			name = fromLichessName.get(name) ?? name
-			
+			let move = fromSAN(board, name)
 			let turn = board.turn
-			board = board.play(name)
+			board = move?.play()
 			if (!board)
 			{
 				console.error(`Unexpected move in game: ${name}`)
@@ -216,7 +212,9 @@ let createGame = async ({origin, headers}, username, id) =>
 	let full = await gameEvents.first
 	if (full.type !== "gameFull") return
 	
-	let {white: {id: whiteUsername}, black: {id: blackUsername}, initialFen, rated} = full
+	let {white: {id: whiteUsername}, black: {id: blackUsername}, initialFen, rated, variant: {key: variant}} = full
+	
+	let chess960 = variant === "chess960" || variant === "fromPosition"
 	
 	if (initialFen !== "startpos")
 	{
@@ -226,17 +224,6 @@ let createGame = async ({origin, headers}, username, id) =>
 			console.error(`Unexpected starting position: ${initialFen}`)
 			await resign()
 			return
-		}
-		
-		for (let [name, lichessName, color, kingPosition, rookPosition] of castling)
-		{
-			if (board.at(kingPosition) !== King(color)) continue
-			if (board.at(rookPosition) !== Rook(color)) continue
-			if (board.get(kingPosition) !== "initial") continue
-			if (board.get(rookPosition) !== "initial") continue
-			
-			toLichessName.set(name, lichessName)
-			fromLichessName.set(lichessName, name)
 		}
 	}
 	
@@ -276,16 +263,21 @@ let createGame = async ({origin, headers}, username, id) =>
 	
 	if (full.state.moves) await boards.at(full.state.moves.split(" ").length)
 	
-	let play = async (...names) =>
+	let play = async (...moves) =>
 	{
 		let played = 0
-		for (let name of names)
+		for (let move of moves)
 		{
-			name = String(name)
-			if (!/^[a-z0-9]+$/.test(name)) break
-			name = toLichessName.get(name) ?? name
-			let response = await fetch(`${origin}/api/bot/game/${id}/move/${name}`, {method: "POST", headers})
+			if (typeof move === "string")
+			{
+				move = fromSAN(board, name)
+				if (!move) break
+			}
+			if (toFEN(move.before) !== toFEN(board)) break
+			let promise = history.at(history.length)
+			let response = await fetch(`${origin}/api/bot/game/${id}/move/${toUCI(move, chess960)}`, {method: "POST", headers})
 			if (!response.ok) break
+			await promise
 			played++
 		}
 		return played
@@ -343,7 +335,6 @@ let createChallenge = async (args, username, events, {id, rated, color, variant:
 	let accept = async () =>
 	{
 		let gamePromise = events.find(event => event.type === "gameStart" && event.game.id === id)
-		
 		let response = await fetch(`${origin}/api/challenge/${id}/accept`, {method: "POST", headers})
 		if (!response.ok) return
 		await gamePromise

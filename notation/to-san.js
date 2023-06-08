@@ -1,6 +1,8 @@
 /// <reference path="../types/notation/to-san.d.ts" />
 /// <reference types="../types/notation/to-san.d.ts" />
 
+import {getFile, getRank, toName} from "../variants/chess.js"
+
 let shortNames = {pawn: "", knight: "N", bishop: "B", rook: "R", queen: "Q", king: "K"}
 
 export let fromMove = move =>
@@ -10,15 +12,15 @@ export let fromMove = move =>
 	if (board.width > 26) return
 	if (board.height > 9) return
 	
-	let piece = move.piece
-	let captured = move.captured
+	let piece = board.at(move.from)
+	let captured = move.passing || board.at(move.to)
 	
-	let resultingBoard = move.play()
+	let after = move.play()
 	
 	let checkmark = ""
-	if (resultingBoard.check)
+	if (after.check)
 		checkmark = "+"
-	if (resultingBoard.checkmate)
+	if (after.checkmate)
 		checkmark = "#"
 	
 	if (move.rook)
@@ -37,13 +39,14 @@ export let fromMove = move =>
 		for (let other of board.moves)
 		{
 			if (other !== move)
-			if (other.to.name === move.to.name)
+			if (other.to.x === move.to.x)
+			if (other.to.y === move.to.y)
 			if (other.piece === piece)
 			{
 				ambiguity = true
-				if (other.from.file === move.from.file)
+				if (other.from.x === move.from.x)
 					fileAmbiguity = true
-				if (other.from.rank === move.from.rank)
+				if (other.from.y === move.from.y)
 					rankAmbiguity = true
 			}
 		}
@@ -58,16 +61,16 @@ export let fromMove = move =>
 	else if (ambiguity)
 	{
 		if (!fileAmbiguity)
-			name += move.from.file
+			name += getFile(move.from)
 		else if (!rankAmbiguity)
-			name += move.from.rank
+			name += getRank(move.from)
 		else
-			name += move.from.name
+			name += toName(move.from)
 	}
 	
 	if (captured) name += "x"
 	
-	name += move.to.name
+	name += toName(move.to)
 	
 	if (move.promotion)
 		name += "=" + shortNames[move.promotion.type]
