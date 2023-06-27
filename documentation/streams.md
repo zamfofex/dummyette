@@ -102,7 +102,7 @@ Filters some values out from the stream, returning a new stream without those va
 `stream.takeWhile(finished)`
 ---
 
-Finishes a stream preemptively. `finished` should be a function that decided whether the stream should end. The first value `finished` decides should end the stream will not be a on the resulting stream, and the resulting stream will be finished. If `finished` returns a promise, the value it resolves to will be used instead.
+Finishes a stream preemptively. `finished` should be a function that decided whether the stream should end. The first value `finished` decides should end the stream will not be on the resulting stream, and the resulting stream will be finished. If `finished` returns a promise, the value it resolves to will be used instead.
 
 `await stream.forEach(consume, {parallel})`
 ---

@@ -18,13 +18,13 @@ type SomeStream<T extends Type, Value> =
 	map: <Other>(transform: (value: Value) => Other|Promise<Other>, options?: {parallel: boolean}) => SomeStream<T, Other>,
 	filter: (keep: (value: Value) => boolean|Promise<boolean>, options?: {parallel: boolean}) => SomeStream<T, Value>,
 	takeWhile: (finished: (value: Value) => boolean|Promise<boolean>) => SomeStream<T, Value>,
-	forEach: (consume: (value: Value) => void, options?: {parallel: boolean}) => undefined,
-	flat: () => Value extends It<any> ? SomeStream<T, any> : never,
+	forEach: (consume: (value: Value) => void, options?: {parallel: boolean}) => Promise<undefined>,
+	flat: Value extends It<any> ? () => SomeStream<T, any> : never,
 	flatMap: <Other>(transform: (value: Value) => It<Other>|Promise<It<Other>>, options?: {parallel: boolean}) => SomeStream<T, Other>,
 	at: (index: number) => Promise<Value|undefined>,
-	first: Value|undefined,
-	last: Value|undefined,
-	find: (suitable: (value: Value) => boolean) => Value|undefined,
+	first: Promise<Value|undefined>,
+	last: Promise<Value|undefined>,
+	find: (suitable: (value: Value) => boolean) => Promise<Value|undefined>,
 	slice: (start?: number, length?: number) => SomeStream<T, Value>,
 	length: number,
 	reset: () => SomeStream<T, Value>,
@@ -33,14 +33,14 @@ type SomeStream<T extends Type, Value> =
 
 export type Type = "live"|"rewind"
 
-export type Controller<Value = any> = SomeController<Type, Value>
-export type Stream<Value = any> = SomeStream<Type, Value>
-
 export type LiveController<Value = any> = SomeController<"live", Value>
 export type RewindController<Value = any> = SomeController<"rewind", Value>
 
 export type LiveStream<Value = any> = SomeStream<"live", Value>
 export type RewindStream<Value = any> = SomeStream<"rewind", Value>
+
+export type Controller<Value = any> = LiveController<Value>|RewindController<Value>
+export type Stream<Value = any> = LiveStream<Value>|RewindStream<Value>
 
 // --- // --- //
 
