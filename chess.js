@@ -321,6 +321,15 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 		return ascii.join("\n")
 	}
 	
+	let getPositions = memoize(() =>
+	{
+		let positions = []
+		for (let x = 0 ; x < width ; x++)
+		for (let y = 0 ; y < height ; y++)
+			positions.push(createPosition(x, y))
+		return positions
+	})
+	
 	let board =
 	{
 		width, height,
@@ -341,6 +350,7 @@ let createBoard = (turn, array, {width = 8, height = 8, meta = Array(width * hei
 		get draw() { return isStalemate() },
 		get moves() { return getMoves() },
 		get score() { return getScore("white") },
+		get positions() { return getPositions() },
 	}
 	
 	Object.freeze(board)
@@ -510,14 +520,30 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 	{
 		if (piece.color === "white" && y1 === board.height - 1 || piece.color === "black" && y1 === 0)
 			replacements = [Queen, Rook, Bishop, Knight].map(f => f(piece.color))
-		
-		if (Math.abs(y1 - y) === 2)
+		else if (Math.abs(y1 - y) === 2)
 			meta = "passing"
 	}
 	
 	let extra = board => board
-	if (rook) extra = board => board.delete(rook.from).put(rook.to, rook.piece)
-	if (capturedPosition.y !== y1) extra = board => board.delete(capturedPosition)
+	
+	if (capturedPosition.y !== y1)
+		extra = board => board.delete(capturedPosition)
+	
+	if (rook)
+	{
+		extra = board => board.delete(rook.from).put(rook.to, rook.piece)
+	}
+	else if (piece.type === "king")
+	{
+		extra = board =>
+		{
+			let rook = Rook(piece.color)
+			let rookPositions = board.positions.filter(position => board.at(position) === rook)
+			for (let position of rookPositions)
+				board = board.set(position, undefined)
+			return board
+		}
+	}
 	
 	for (let replacement of replacements)
 	{
@@ -664,6 +690,7 @@ let getValidMoves = board =>
 		switch (piece.type)
 		{
 			case "pawn":
+			{
 				let dy = piece.color === "white" ? 1 : -1
 				let y1 = y + dy
 				for (let dx of [1, -1])
@@ -687,6 +714,7 @@ let getValidMoves = board =>
 					createMoves(board, moves, x, y, x + 1, y1, null, Position(x + 1, y))
 				
 				break
+			}
 			case "rook":
 				for (let [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0]])
 					createLineMoves(board, moves, x, y, dx, dy)
@@ -709,6 +737,7 @@ let getValidMoves = board =>
 					createLineMoves(board, moves, x, y, dx, dy)
 				break
 			case "king":
+			{
 				for (let [dx, dy] of [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0]])
 				{
 					let x1 = x + dx
@@ -740,6 +769,7 @@ let getValidMoves = board =>
 				}
 				
 				break
+			}
 		}
 	}
 	

@@ -41,6 +41,7 @@ table of contents
   - `board.atName(x, y)`, `board.atName(position)`
   - `board.contains(x, y)`, `board.contains(position)`
   - `board.Position(x, y)`, `board.Position(position)`
+  - `board.positions`
   - `board.get(x, y)`, `board.get(position)`
   - `board.set(x, y, meta)`, `board.put(x, y, piece, meta)`, `board.set(position, meta)`, `board.put(position, piece, meta)`
   - `board.flip(color)`
@@ -253,6 +254,11 @@ Determines if the given position is part of this board (i.e. it is in bounds), r
 ---
 
 Similar to `Position(...)`, but this will return `undefined` if the board does not contain the given position (i.e. it is out of bounds).
+
+`board.positions`
+---
+
+This is an array containing all of the positions in the board.
 
 `board.get(x, y)`, `board.get(position)`
 ---

@@ -113,6 +113,7 @@ export type Board =
 	
 	contains: (...position: PositionArguments) => boolean,
 	Position: (...position: PositionArguments) => Position|undefined,
+	positions: Position[],
 	
 	get: ((...position: PositionArguments) => Meta|undefined),
 	set:

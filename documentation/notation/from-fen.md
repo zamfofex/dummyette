@@ -11,7 +11,7 @@ table of contents
 introduction
 ---
 
-This module contains functions to convert values from `chess.js` to SAN.
+This module contains functions to convert to values from `chess.js` from FEN.
 
 `toBoard(string)`
 ---
