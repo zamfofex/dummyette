@@ -179,6 +179,6 @@ export let pieces: PieceObject
 
 export let Position: (...args: PositionArguments) => Position|undefined
 
-export let Board: (storage: Storageish, options?: {turn?: Color, width?: number, height?: number, castling?: Castlingish, passing?: Position) => Board|undefined
+export let Board: (storage: Storageish, options?: {turn?: Color, width?: number, height?: number, castling?: Castlingish, passing?: Position}) => Board|undefined
 export let standardBoard: Board
 export let Board960: (() => Board) & ((n: number) => Board|undefined)
