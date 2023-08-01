@@ -84,8 +84,6 @@ export type Position = {x: number, y: number, file: string, rank: string, name: 
 export type Positionish = {x: number, y: number} | string
 type PositionArguments = [Positionish]|[number, number]
 
-export type Meta = string|null
-
 export type Moveish = Move|string
 
 export type Move =
@@ -101,6 +99,15 @@ export type Move =
 	before: Board,
 }
 
+export type Storage = Piece[]
+export type Storageish = Iterable<Pieceish>|Iterator<Pieceish>
+
+type Castling0 = Position[]
+type Castlingish0 = Iterable<Positionish>|Iterator<Positionish>
+
+type Castling = {white: Castling0, black: Castling0}
+type Castlingish = {white: Castlingish0, black: Castlingish0}
+
 export type Board =
 {
 	width: number,
@@ -108,38 +115,25 @@ export type Board =
 	
 	turn: Color,
 	
-	at: (...position: PositionArguments) => Piece|null|undefined,
-	atName: (...position: PositionArguments) => Piece|null|undefined,
+	at: (...position: PositionArguments) => Piece|undefined,
 	
 	contains: (...position: PositionArguments) => boolean,
 	Position: (...position: PositionArguments) => Position|undefined,
 	positions: Position[],
-	
-	get: ((...position: PositionArguments) => Meta|undefined),
-	set:
-		((position: Positionish, piece: Piece|null, meta?: Meta) => Board|undefined) &
-		((x: number, y: number, piece: Piece|null, meta?: Meta) => Board|undefined),
-	delete: (...position: PositionArguments) => Board|undefined,
-	
-	flip: (color?: Color) => Board,
 	
 	check: boolean,
 	checkmate: boolean,
 	stalemate: boolean,
 	draw: boolean,
 	
-	getScore: ((color?: Color) => number) & ((color: Colorish) => number|undefined),
-	score: number,
-	
-	getKingPosition: ((color?: Color) => Piece) & ((color: Colorish) => Piece|undefined),
-	
-	toASCII: ((color?: Color) => string) & ((color: Colorish) => string|undefined),
-	
 	Move: (move: Moveish) => Move|undefined,
-	
 	play: (...moves: Moveish[]) => Board|undefined,
-	
 	moves: Move[],
+	
+	passing: Position|undefined,
+	castling: Castling
+	
+	storage: Storage,
 }
 
 // --- // --- //
@@ -185,7 +179,6 @@ export let pieces: PieceObject
 
 export let Position: (...args: PositionArguments) => Position|undefined
 
+export let Board: (storage: Storageish, options?: {turn?: Color, width?: number, height?: number, castling?: Castlingish, passing?: Position) => Board|undefined
 export let standardBoard: Board
-export let emptyBoard: Board
-export let EmptyBoard: (width?: number, height?: number) => Board|undefined
 export let Board960: (() => Board) & ((n: number) => Board|undefined)

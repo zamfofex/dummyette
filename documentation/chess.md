@@ -20,7 +20,6 @@ table of contents
   - `piece.color`
   - `piece.type`
   - `piece.name`
-  - `getPieceName(piece)`
   - `pieceList`
   - `pieces`
 - positions
@@ -29,30 +28,22 @@ table of contents
   - `position.x`, `position.y`
   - `position.name`
 - boards
+  - `Board(storage, {width, height, turn, castling, passing})`
   - `standardBoard`
-  - `emptyBoard`
-  - `EmptyBoard(width, height)`
   - `Board960(n)`
   - `sameBoard(boardA, boardB)`
   - `board.width`
   - `board.height`
   - `board.turn`
   - `board.at(x, y)`, `board.at(position)`
-  - `board.atName(x, y)`, `board.atName(position)`
   - `board.contains(x, y)`, `board.contains(position)`
   - `board.Position(x, y)`, `board.Position(position)`
   - `board.positions`
-  - `board.get(x, y)`, `board.get(position)`
-  - `board.set(x, y, meta)`, `board.put(x, y, piece, meta)`, `board.set(position, meta)`, `board.put(position, piece, meta)`
-  - `board.flip(color)`
-  - `board.delete(x, y)`, `board.delete(position)`
   - `board.check`
   - `board.checkmate`
   - `board.stalemate`, `board.draw`
-  - `board.getScore(color)`
-  - `board.score`
-  - `board.getKingPosition(color)`
-  - `board.toASCII(color)`
+  - `board.castling`
+  - `board.passing`
 - moves
   - `board.Move(move)`
   - `move.play()`
@@ -152,11 +143,6 @@ This will be the type of the `piece` object. (E.g. `"pawn"`, `"king"`, etc.)
 
 This property will be the piece’s name, e.g. `"white pawn"`, `"black pawn"`, etc. `piece.name === piece.color + " " + piece.type`
 
-`getPieceName(piece)`
----
-
-Deprecated alias for `piece.name`. If the given argument does not represent a piece, this will return `undefined`.
-
 `pieceList`
 ---
 
@@ -191,20 +177,31 @@ These represent the coordinates of the position as strings. `position.file` will
 
 This property represent the name of the position. `position.name === position.file + position.rank`
 
+`Board(storage, {width, height, turn, castling, passing})`
+---
+
+Creates a new board. Each argument except `storage` may be missing altogether.
+
+`storage` should be an iterable of pieces. Its first `width * height` values will be iterated, and they will be the pieces of the board.
+
+The first values will compose rank 1 of the board, and the following values will compose the following ranks until the last rank.
+
+If one of the following constraints is not abided, this function will return `undefined`.
+
+Each of `width` and `height` must be positive integers. If either is missing, it will default to `8`.
+
+`turn` must be a color (i.e. either `"white"` or `"black"`), and if missing will default to `"white"`. It represents the side that is to play on the created board.
+
+If present, `castling` may contain `white` and `black` fields, which each should be iterables of positions of rooks with which the king of that color may castle. If missing, no castling will be allowed.
+
+`passing` should be the position of a pawn that may be captured en passant. The pawn must be besides a pawn of a different color, and its color must not be the side to play. If this is elided, capturing en passant is not possible.
+
+The given `storage` must have two kings, one of each color, and the king adversary to the side to play must not be attacked.
+
 `standardBoard`
 ---
 
 A board with the inital position of a standard game of chess. Since boards are immutable, this can be used as the starting point to perform operations to create different positions.
-
-`emptyBoard`
----
-
-A board with no pieces in it. This can be used to more easily set up games with custom initial positions.
-
-`EmptyBoard(width, height)`
----
-
-Creates an empty board with a nonstandard size. If `height` is omited, it’ll be the same as `width`. If `width` is omited, it’ll be `8` by default.
 
 `Board960(n)`
 ---
@@ -240,11 +237,6 @@ This will return the piece at the given coordinates in the board. If the square 
 
 Likewise, e.g. `board.at({x: 2, y: 3}) === board.at("c4")`
 
-`board.atName(x, y)`, `board.atName(position)`
----
-
-Deprecated alias to `board.at(...)`.
-
 `board.contains(x, y)`, `board.contains(position)`
 ---
 
@@ -259,36 +251,6 @@ Similar to `Position(...)`, but this will return `undefined` if the board does n
 ---
 
 This is an array containing all of the positions in the board.
-
-`board.get(x, y)`, `board.get(position)`
----
-
-This will return the metadata for a piece in that position in the board. The metadata is a string, but only pawns, kings and rooks can have metadata, and what it means will depend on which it is. For other pieces, this will return `null`. If the position does not represent a square in the board (because it is out of bounds), this will return `undefined`.
-
-For pawns, the metadata can be either `"initial"`, `"passing"` or `null`. `null` means the pawn can only move one square forwards, `"initial"` means the pawn might be able to move two squares forward, and `"passing"` means that pawn is subject to be captured via *en passant*.
-
-For kings and rooks, the metadata can be either `"initial"`, or `null`, and together they represent the castling rights of the king.
-
-`board.set(x, y, meta)`, `board.put(x, y, piece, meta)`, `board.set(position, meta)`, `board.put(position, piece, meta)`
----
-
-These functions will return a new (immutable) board with the squares at the given coodinates having their pieces or metadata changed. For `board.put(...)`, the metadata given is optional. If `piece` is `null`, it’ll be removed from the board.
-
-These functions are not yet completely ready to be used generally, and might behave strangely or inconsistently in some circumstances. The recommended way to interact with the board at the moment is by using `board.play(...)`, `board.Move(...)`, and `board.moves`.
-
-If the change could not be performed, these functions will return `undefined`.
-
-`board.flip(color)`
----
-
-Returns a new board with the given side as the current to play. If `color` is not given, it’ll be the opposite color of the current side to play. Like the two functions above (`board.set(...)` and `board.put(...)`), this might behave strangely if not used carefully.
-
-If `color` does not represent a valid color, this function will return `undefined`.
-
-`board.delete(x, y)`
----
-
-Shortcut for `board.set(x, y, null)`. If the position does not represent a square in the board (because it is out of bounds), this will return `undefined`.
 
 `board.check`
 ---
@@ -305,27 +267,14 @@ This will be true if the game has ended due to a checkmate.
 
 These will be true if the game has ended due to a stalemate.
 
-`board.getScore(color)`
+`board.castling`
 ---
 
-Returns the material points of the given side or `undefined` if `color` is not a valid color. If `color` is not given, it’ll be the color of the current side to play.
+This will be an object with two properties, `white` and `black`, each an array containing the position of a rook with which the king may castle.
 
-`board.score`
----
+`board.passing`
 
-This is the material points of white.
-
-`board.getKingPosition(color)`
----
-
-This will return the position of the king of the given color. If no color is specified, it’ll be the color of the current side to play.
-
-If `color` does not represent a color, this will return `undefined`.
-
-`board.toASCII(color)`
----
-
-Returns an ASCII art representation of the board, with the given color at the bottom. This will return `undefined` if `color` does not represent a valid color.
+If capturing en passant is possible, this will be the position of the pawn that may be captured that way.
 
 `board.Move(move)`
 ---

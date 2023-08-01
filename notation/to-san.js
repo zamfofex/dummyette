@@ -36,16 +36,15 @@ export let fromMove = move =>
 	{
 		for (let other of board.moves)
 		{
-			if (other !== move)
-			if (other.to.name === move.to.name)
-			if (other.piece === piece)
-			{
-				ambiguity = true
-				if (other.from.file === move.from.file)
-					fileAmbiguity = true
-				if (other.from.rank === move.from.rank)
-					rankAmbiguity = true
-			}
+			if (other === move) continue
+			if (other.to.name !== move.to.name) continue
+			if (other.piece !== piece) continue
+			
+			ambiguity = true
+			if (other.from.file === move.from.file)
+				fileAmbiguity = true
+			if (other.from.rank === move.from.rank)
+				rankAmbiguity = true
 		}
 	}
 	

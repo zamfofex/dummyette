@@ -4,7 +4,6 @@ import {fromFEN} from "../../notation.js"
 let perft = (n, board) =>
 {
 	if (n === 0) return 1
-	
 	let count = 0
 	for (let move of board.moves)
 		count += perft(n - 1, move.play())

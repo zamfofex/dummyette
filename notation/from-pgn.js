@@ -2,7 +2,7 @@
 /// <reference types="../types/notation/from-pgn.d.ts" />
 
 import {standardBoard} from "../chess.js"
-import {fromFEN, toSAN} from "../notation.js"
+import {fromFEN, fromSAN} from "../notation.js"
 import {LiveController, LiveStream} from "../streams.js"
 
 let eof = Symbol("EOF")
@@ -391,7 +391,7 @@ let toDelta = (node, board) =>
 	let annotation = node.value.annotation
 	Object.freeze(comments)
 	
-	let move = board.moves.find(move => toSAN(move) === node.value.name)
+	let move = fromSAN(board, node.value.name)
 	if (!move) return
 	
 	let delta = {before: board, move, after: move.play(), comments, annotation, variations: []}

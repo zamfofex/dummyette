@@ -1,7 +1,7 @@
 /// <reference path="../types/notation/from-fen.d.ts" />
 /// <reference types="../types/notation/from-fen.d.ts" />
 
-import {pieces, Position, EmptyBoard} from "../chess.js"
+import {pieces, Position, Board} from "../chess.js"
 
 let fromShortNames =
 {
@@ -93,7 +93,7 @@ export let toBoard = string =>
 		}
 	}
 	
-	let enPassant
+	let passing
 	
 	if (string[i++] !== " ") return
 	
@@ -110,37 +110,33 @@ export let toBoard = string =>
 			if (i >= string.length) break
 		}
 		
-		enPassant = Position(position)
-		if (!enPassant) return
-		if (enPassant.y === height - 3) enPassant = Position(enPassant.x, enPassant.y - 1)
-		else if (enPassant.y === 2) enPassant = Position(enPassant.x, enPassant.y + 1)
+		passing = Position(position)
+		if (!passing) return
+		if (passing.y === height - 3) passing = Position(passing.x, passing.y - 1)
+		else if (passing.y === 2) passing = Position(passing.x, passing.y + 1)
 	}
 	
-	let board = EmptyBoard(width, height)
-	board = board.flip(turn)
+	let storage = Array(width * height).fill()
+	let index = (x, y) => x + y * width
 	
 	for (let [y, rank] of ranks.entries())
 	for (let [x, piece] of rank.entries())
-		board = board.put(x, y, piece)
+		storage[index(x, y)] = piece
 	
-	if (enPassant)
+	let findKing = color =>
 	{
-		enPassant = board.Position(enPassant)
-		if (!enPassant) return
-		if (board.at(enPassant)?.type !== "pawn") return
-		board = board.set(enPassant, "passing")
+		for (let y = 0 ; y < height ; y++)
+		for (let x = 0 ; x < width ; x++)
+		{
+			let piece = storage[index(x, y)]
+			if (!piece) continue
+			if (piece.type === "king" && piece.color === color)
+				return {x, y}
+		}
 	}
 	
-	for (let x = 0 ; x < board.width ; x++)
-	{
-		if (board.at(x, 1)?.type === "pawn")
-			board = board.set(x, 1, "initial")
-		if (board.at(x, board.height - 2)?.type === "pawn")
-			board = board.set(x, board.height - 2, "initial")
-	}
-	
-	let whiteKing = board.getKingPosition("white")
-	let blackKing = board.getKingPosition("black")
+	let whiteKing = findKing("white")
+	let blackKing = findKing("black")
 	
 	if (!whiteKing) return
 	if (!blackKing) return
@@ -151,12 +147,12 @@ export let toBoard = string =>
 		[1, "k", pieces.blackRook, blackKing], [-1, "q", pieces.blackRook, blackKing],
 	]
 	
+	let boardCastling = {white: [], black: []}
+	
 	for (let [n, side, rook, position] of possibilities)
 	{
 		if (!castling.has(side)) continue
 		if (width > 8) continue
-		
-		board = board.set(position, "initial")
 		
 		let {x, y} = position
 		let rx
@@ -164,12 +160,13 @@ export let toBoard = string =>
 		{
 			x += n
 			if (x < 0) break
-			if (x >= board.width) break
-			if (board.at(x, y) === rook)
+			if (x >= width) break
+			if (storage[index(x, y)] === rook)
 				rx = x
 		}
 		if (rx === undefined) return
-		board = board.set(rx, y, "initial")
+		if (rook.color === "white") boardCastling.white.push({x: rx, y})
+		else boardCastling.black.push({x: rx, y})
 	}
 	
 	for (let file of castling)
@@ -194,13 +191,10 @@ export let toBoard = string =>
 			king = blackKing,
 			rook = pieces.blackRook
 		
-		board = board.set(king, "initial")
-		
-		let position = board.Position(file.codePointAt() - 0x61, king.y)
-		if (!position) return
-		if (board.at(position) !== rook) return
-		board = board.set(position, "initial")
+		let position = Position(file.codePointAt() - 0x61, king.y)
+		if (white) boardCastling.white.push(position)
+		else boardCastling.black.push(position)
 	}
 	
-	return board
+	return Board(storage, {turn, width, height, passing, castling: boardCastling})
 }
