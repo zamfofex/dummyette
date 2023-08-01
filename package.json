@@ -5,7 +5,7 @@
 	"keywords": ["bot", "chess-engine", "chess", "lichess-api", "lichess", "chess-ai", "chess-bot", "deno", "denoland", "lichess-bot"],
 	"homepage": "https://lichess.org/@/Dummyette",
 	"bugs": "https://github.com/zamfofex/dummyette/issues",
-	"license": "0BSD",
+	"license": "AGPL-3.0-or-later",
 	"repository": "https://github.com/zamfofex/dummyette",
 	"optionalDependencies": {"node-fetch": "*"},
 	"type": "module"
