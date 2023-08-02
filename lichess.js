@@ -260,7 +260,7 @@ let createGame = async ({origin, headers}, username, id) =>
 		{
 			if (typeof move === "string")
 			{
-				move = fromSAN(board, name)
+				move = fromSAN(board, move)
 				if (!move) break
 			}
 			if (!sameBoard(move.before, board)) break
