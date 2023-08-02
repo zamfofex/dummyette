@@ -181,7 +181,7 @@ let createGame = async ({origin, headers}, username, id) =>
 		for (let name of names.split(" ").slice(n))
 		{
 			let turn = board.turn
-			board = fromSAN(board, name).play()
+			board = fromSAN(board, name)?.play()
 			if (!board)
 			{
 				console.error(`Unexpected move in game: ${name}`)

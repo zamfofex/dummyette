@@ -336,20 +336,21 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 				if (attacked(board, x0, y1, piece.color)) return
 				
 				let other = board.at(x0, y1)
-				if (other === rook.piece) continue
-				if (other) return
+				if (other && other !== rook.piece) return
 			}
 			
 			let rdx = Math.sign(rook.to.x - rook.from.x)
 			for (let x1 = rook.from.x + rdx ; x1 !== rook.to.x ; x1 += rdx)
 			{
-				let other = board.at(x1, y)
-				if (other === piece) continue
-				if (other) return
+				let other = board.at(x1, y1)
+				if (other && other !== piece) continue
 			}
 			
-			let other = board.at(rook.to.x, y)
-			if (other && other !== piece) return
+			if (rook.from.x !== rook.to.x)
+			{
+				let other = board.at(rook.to.x, y1)
+				if (other && other !== piece) return
+			}
 			
 			if (board.width === 8)
 			if (rook.from.x === 0 || rook.from.x === board.width - 1)

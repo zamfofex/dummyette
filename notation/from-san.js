@@ -46,7 +46,7 @@ let promotesTo = type => move => move.play().at(move.to).type === type
 let fileFrom = file => move => move.from.file === file
 let rankFrom = rank => move => move.from.rank === rank
 let fileTo = file => move => move.to.file === file || move.rook?.from?.file === file
-let rankTo = rank => move => move.to.rank === rank || move.rook?.from?.rank === rank
+let rankTo = rank => move => move.to.rank === rank
 let pieceFrom = type => move => move.play().at(move.to).type === type
 let captures = move => Boolean(move.captured)
 let shortCastle = move => move.rook && move.rook.from.x > move.from.x
