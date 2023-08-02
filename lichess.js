@@ -1,10 +1,10 @@
 /// <reference path="./types/lichess.d.ts" />
 /// <reference types="./types/lichess.d.ts" />
 
-import {Color, standardBoard, other, King, Rook} from "./chess.js"
+import {Color, standardBoard, other, King, Rook, sameBoard} from "./chess.js"
 import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"
-import {fromFEN} from "./notation.js"
+import {fromFEN, toUCI, fromSAN} from "./notation.js"
 
 export let Lichess = async options =>
 {
@@ -163,19 +163,8 @@ export let Lichess = async options =>
 	return lichess
 }
 
-let castling =
-[
-	["e1c1", "e1a1", "white", "e1", "a1"],
-	["e1g1", "e1h1", "white", "e1", "h1"],
-	["e8c8", "e8a8", "black", "e8", "a8"],
-	["e8g8", "e8h8", "black", "e8", "h8"],
-]
-
 let createGame = async ({origin, headers}, username, id) =>
 {
-	let toLichessName = new Map()
-	let fromLichessName = new Map()
-	
 	let gameEvents = await streamURL(headers, `${origin}/api/bot/game/stream/${id}`)
 	if (!gameEvents) return
 	gameEvents = RewindJoinStream(gameEvents)
@@ -189,13 +178,10 @@ let createGame = async ({origin, headers}, username, id) =>
 	let n = 0
 	let handle = async function * (names)
 	{
-		names = names.split(" ").slice(n)
-		for (let name of names)
+		for (let name of names.split(" ").slice(n))
 		{
-			name = fromLichessName.get(name) ?? name
-			
 			let turn = board.turn
-			board = board.play(name)
+			board = fromSAN(board, name).play()
 			if (!board)
 			{
 				console.error(`Unexpected move in game: ${name}`)
@@ -227,18 +213,9 @@ let createGame = async ({origin, headers}, username, id) =>
 			await resign()
 			return
 		}
-		
-		for (let [name, lichessName, color, kingPosition, rookPosition] of castling)
-		{
-			if (board.at(kingPosition) !== King(color)) continue
-			if (board.at(rookPosition) !== Rook(color)) continue
-			if (board.get(kingPosition) !== "initial") continue
-			if (board.get(rookPosition) !== "initial") continue
-			
-			toLichessName.set(name, lichessName)
-			fromLichessName.set(lichessName, name)
-		}
 	}
+	
+	let chess960 = initialFen !== "startpos"
 	
 	let clock
 	let time = performance.now()
@@ -276,16 +253,21 @@ let createGame = async ({origin, headers}, username, id) =>
 	
 	if (full.state.moves) await boards.at(full.state.moves.split(" ").length)
 	
-	let play = async (...names) =>
+	let play = async (...moves) =>
 	{
 		let played = 0
-		for (let name of names)
+		for (let move of moves)
 		{
-			name = String(name)
-			if (!/^[a-z0-9]+$/.test(name)) break
-			name = toLichessName.get(name) ?? name
-			let response = await fetch(`${origin}/api/bot/game/${id}/move/${name}`, {method: "POST", headers})
+			if (typeof move === "string")
+			{
+				move = fromSAN(board, name)
+				if (!move) break
+			}
+			if (!sameBoard(move.before, board)) break
+			let promise = history.at(history.length)
+			let response = await fetch(`${origin}/api/bot/game/${id}/move/${toUCI(move, chess960)}`, {method: "POST", headers})
 			if (!response.ok) break
+			await promise
 			played++
 		}
 		return played

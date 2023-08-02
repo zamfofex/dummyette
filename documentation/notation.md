@@ -14,6 +14,8 @@ table of contents
 - PGN
   - `fromPGN(stream)`
   - `fromSinglePGN(stream)`, `await fromSinglePGN(stream)`
+- UCI
+  - `toUCI(move, {chess960})`
 
 introduction
 ---
@@ -49,3 +51,8 @@ Creates a PGN game array or stream from a FEN string or stream. This will return
 ---
 
 Ensures that there is a single PGN game in a string or stream and returns it or a promise that resolves to it (or to `undefined` if the game could not be parsed). This function is an alias to `toGame` from the [`notation/from-pgn.js`](notation/from-pgn.md) module.
+
+`toUCI(move, {chess960})`
+---
+
+Converts a move to UCI format, potentially following chess 960 notation for castling as indicated by the `chess960` argument. This function is an alias to `fromMove` from the [`notation/to-uci.js`](notation/to-uci.md) module.

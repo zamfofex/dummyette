@@ -5,7 +5,7 @@ table of contents
 ---
 
 - introduction
-- serializing
+- serialising
   - `fromMove(move)`
 
 introduction

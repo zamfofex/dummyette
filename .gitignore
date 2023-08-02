@@ -27,6 +27,7 @@
 !/notation/from-san.js
 !/notation/from-fen.js
 !/notation/from-pgn.js
+!/notation/to-uci.js
 
 !/types/main.d.ts
 !/types/dummyette.d.ts
@@ -43,6 +44,7 @@
 !/types/notation/from-san.d.ts
 !/types/notation/from-fen.d.ts
 !/types/notation/from-pgn.d.ts
+!/types/notation/to-uci.d.ts
 
 !/documentation/main.md
 !/documentation/dummyette.md
@@ -59,6 +61,7 @@
 !/documentation/notation/from-san.md
 !/documentation/notation/from-fen.md
 !/documentation/notation/from-pgn.md
+!/documentation/notation/to-uci.md
 
 !/examples/main.md
 !/examples/dummyette.md
