@@ -6,38 +6,154 @@ import {RewindJoinStream} from "./streams.js"
 import {splitBrowserStream} from "./streams-browser.js"
 import {fromFEN, toUCI, fromSAN} from "./notation.js"
 
-export let Lichess = async options =>
+let registry = new FinalizationRegistry(f => f())
+
+let FinalizationController = (...controllers) =>
 {
-	if (typeof options === "string") options = {token: options}
+	let abortController = new AbortController()
 	
-	if (options === undefined) options = {}
-	if (options === null) options = {}
+	let finished = false
+	let n = 0
 	
-	let {token, origin = "https://lichess.org"} = options
+	let validate = () => { if (finished) throw new Error("trying to use finished finalization controller") }
 	
+	let register = (...objects) =>
+	{
+		validate()
+		n += objects.length
+		for (let object of objects) registry.register(object, terminate)
+	}
+	
+	let extend = (...controllers) =>
+	{
+		validate()
+		n += controllers.length
+		for (let controller of controllers) controller.signal.addEventListener("abort", terminate)
+	}
+	
+	let check = () =>
+	{
+		if (n > 0) return
+		finished = true
+		abortController.abort()
+	}
+	
+	let terminate = () =>
+	{
+		n--
+		check()
+	}
+	
+	extend(...controllers)
+	return {register, extend, get finished() { return finished }, signal: abortController.signal, check}
+}
+
+let handleAbort = error =>
+{
+	if (error instanceof DOMException)
+	if (error.name === "AbortError")
+		return
+	throw error
+}
+
+let fetchJSON = async (...args) =>
+{
+	let response = await fetch(...args).catch(handleAbort)
+	if (!response) return
+	if (!response.ok) return
+	return response.json().catch(handleAbort)
+}
+
+let fetchTry = async (...args) =>
+{
+	let response = await fetch(...args).catch(handleAbort)
+	if (!response) return
+	fetch.arrayBuffer().catch(handleAbort)
+	return response.ok
+}
+
+let fetchAny = async (...args) =>
+{
+	let response = await fetch(...args).catch(handleAbort)
+	if (!response) return
+	if (!response.ok) throw new Error("fetch failed: response not ok")
+	response.arrayBuffer().catch(handleAbort)
+}
+
+let decoder = new TextDecoder()
+
+let fetchStream = async (url, opts) =>
+{
+	if (opts)
+	{
+		let headers = opts.headers
+		if (opts.body) opts = {...opts, headers: {...headers, "content-type": "application/json"}}
+	}
+	let response = await fetch(url, opts).catch(handleAbort)
+	if (!response.ok) return
+	return splitBrowserStream(response.body, [0x0A]).map(bytes => decoder.decode(bytes)).filter(Boolean).map(json => JSON.parse(json), handleAbort)
+}
+
+let Username = username =>
+{
+	username = String(username)
+	username = username.toLowerCase()
+	if (/[^a-z0-9_]/.test(username)) return
+	if (username === "") return
+	return username
+}
+
+let Origin = origin =>
+{
 	try { origin = new URL(origin) }
 	catch { return }
 	if (!origin.pathname.endsWith("/"))
 		origin.pathname += "/"
 	origin = new URL(".", origin).href.slice(0, -1)
+	return origin
+}
+
+export let AnonymousLichess = (options = {}) =>
+{
+	if (typeof options === "string") options = {origin: options}
+	let {origin = "https://lichess.org"} = options
+	origin = Origin(origin)
+	if (!origin) return
+	return createLichess({origin})
+}
+
+export let Lichess = async (options = {}) =>
+{
+	if (typeof options === "string") options = {token: options}
+	
+	let {token, origin = "https://lichess.org"} = options
+	
+	origin = Origin(origin)
+	if (!origin) return
+	
+	let controller = FinalizationController()
 	
 	token = String(token)
-	let headers = {authorization: token}
-	let args = {origin, headers}
+	let opts = {headers: {authorization: token}, signal: controller.signal}
+	let args = {origin, opts}
 	
-	let response = await fetch(`${origin}/api/account`, {headers})
-	if (!response.ok) return
-	
-	let info = await response.json()
+	let info = await fetchJSON(`${origin}/api/account`, opts)
 	if (!info) return
 	if (!info.id) return
 	
 	let username = info.id
 	
-	let events = await streamURL(headers, `${origin}/api/stream/event`)
+	let events = await fetchStream(`${origin}/api/stream/event`, opts)
 	if (!events) return
 	
-	events.last.then(() => { throw new Error("The Lichess event stream was broken.") })
+	events.last.then(() => { if (!controller.finished) throw new Error("The Lichess event stream was broken.") })
+	
+	return createLichess(args, username, events, controller)
+}
+
+let createLichess = (args, username, events, controller) =>
+{
+	let {origin, opts} = args
 	
 	let StockfishGame = async (level = 1, color = "random") =>
 	{
@@ -51,25 +167,17 @@ export let Lichess = async options =>
 			color = Color(color)
 		if (!color) return
 		
-		let response = await fetch(`${origin}/api/challenge/ai`, {method: "POST", headers, body: new URLSearchParams({level, color})})
-		if (!response.ok) return
-		
-		let {id} = await response.json()
+		let info = await fetchJSON(`${origin}/api/challenge/ai`, {...opts, method: "POST", body: new URLSearchParams({level, color})})
+		if (!info) return
+		let {id} = info
 		return createGame(args, username, id)
 	}
 	
-	let challenges = events
-		.filter(event => event.type === "challenge")
-		.map(event => event.challenge)
-		.filter(challenge => challenge.challenger?.id !== username)
-		.filter(challenge => validateChallenge(args, challenge))
-		.map(challenge => createChallenge(args, username, events, challenge))
-	
 	let getGameIDs = async () =>
 	{
-		let response = await fetch(`${origin}/api/account/playing`, {headers})
-		if (!response.ok) return
-		let {nowPlaying} = await response.json()
+		let info = await fetchJSON(`${origin}/api/account/playing`, opts)
+		if (!info) return
+		let {nowPlaying} = info
 		let ids = nowPlaying.map(({gameId}) => gameId)
 		Object.freeze(ids)
 		return ids
@@ -97,11 +205,12 @@ export let Lichess = async options =>
 	
 	let challenge = async (otherUsername, {rated = false, time = "unlimited", color = "random"} = {}) =>
 	{
-		otherUsername = String(otherUsername)
-		rated = Boolean(rated)
-		if (color !== "random")
-			color = Color(color)
+		otherUsername = Username(otherUsername)
+		if (!username) return
 		
+		rated = Boolean(rated)
+		
+		if (color !== "random") color = Color(color)
 		if (!color) return
 		
 		if (typeof time === "string")
@@ -111,7 +220,7 @@ export let Lichess = async options =>
 		
 		if (!time) return
 		
-		let stream = await streamURL(headers, `${origin}/api/challenge/${otherUsername}`, JSON.stringify({...time, rated, color, keepAliveStream: true}))
+		let stream = await fetchStream(`${origin}/api/challenge/${otherUsername}`, {...opts, method: "POST", body: JSON.stringify({...time, rated, color, keepAliveStream: true})})
 		if (!stream) return
 		
 		let info = await stream.first
@@ -128,7 +237,7 @@ export let Lichess = async options =>
 	let getBotUsernames = async () =>
 	{
 		let usernames = []
-		for await (let {username} of await streamURL(headers, `${origin}/api/bot/online`))
+		for await (let {username} of await fetchStream(`${origin}/api/bot/online`, opts))
 			usernames.push(username)
 		Object.freeze(usernames)
 		return usernames
@@ -136,10 +245,10 @@ export let Lichess = async options =>
 	
 	let getUsernameGameIDs = async username =>
 	{
-		username = String(username)
-		if (!/^[a-z0-9_]+$/i.test(username)) return
+		username = Username(username)
+		if (!username) return
 		
-		let games = await streamURL(headers, `${origin}/api/games/user/${username}?ongoing=true`)
+		let games = await fetchStream(`${origin}/api/games/user/${username}?ongoing=true`, opts)
 		if (!games) return
 		
 		let ids = []
@@ -149,30 +258,65 @@ export let Lichess = async options =>
 		return ids
 	}
 	
+	let getUser = otherUsername => createUser(args, username, otherUsername)
+	
+	let getBots = async () =>
+	{
+		let users = []
+		for (let username of await getBotUsernames())
+			users.push(await getUser(username))
+		Object.freeze(users)
+		return users
+	}
+	
 	let lichess =
 	{
 		origin,
-		StockfishGame, challenges, username, getGame,
-		getGames, getGameIDs,
-		declineChallenges, acceptChallenges,
-		challenge,
+		getGame,
 		getBotUsernames,
 		getUsernameGameIDs,
+		getUser, getBots,
 	}
+	
+	if (username)
+	{
+		let challenges = events
+			.filter(event => event.type === "challenge")
+			.map(event => event.challenge)
+			.filter(challenge => challenge.challenger?.id !== username)
+			.filter(challenge => validateChallenge(args, challenge))
+			.map(challenge => createChallenge(args, username, events, challenge))
+		
+		Object.assign(lichess,
+		{
+			StockfishGame, challenges, username,
+			getGames, getGameIDs,
+			declineChallenges, acceptChallenges,
+			challenge,
+		})
+		
+		controller.register(challenges, declineChallenges, acceptChallenges)
+	}
+	
 	Object.freeze(lichess)
 	return lichess
 }
 
-let createGame = async ({origin, headers}, username, id) =>
+export let lichess = AnonymousLichess()
+
+let createGame = async ({origin, opts: {...opts}}, username, id) =>
 {
-	let gameEvents = await streamURL(headers, `${origin}/api/bot/game/stream/${id}`)
+	let controller = FinalizationController()
+	opts.signal = controller.signal
+	
+	let gameEvents = await fetchStream(`${origin}/api/bot/game/stream/${id}`, opts)
 	if (!gameEvents) return
 	gameEvents = RewindJoinStream(gameEvents)
 	
-	let resign = async () =>
+	let resign = () =>
 	{
-		let response = await fetch(`${origin}/api/bot/game/${id}/resign`, {method: "POST", headers})
-		return response.ok
+		fetchAny(`${origin}/api/bot/game/${id}/resign`, {...opts, method: "POST"})
+		return Promise.resolve(true)
 	}
 	
 	let n = 0
@@ -265,8 +409,8 @@ let createGame = async ({origin, headers}, username, id) =>
 			}
 			if (!sameBoard(move.before, board)) break
 			let promise = history.at(history.length)
-			let response = await fetch(`${origin}/api/bot/game/${id}/move/${toUCI(move, chess960)}`, {method: "POST", headers})
-			if (!response.ok) break
+			let ok = await fetchTry(`${origin}/api/bot/game/${id}/move/${toUCI(move, chess960)}`, {...opts, method: "POST"})
+			if (!ok) break
 			await promise
 			played++
 		}
@@ -277,11 +421,7 @@ let createGame = async ({origin, headers}, username, id) =>
 	if (whiteUsername === username) color = "white"
 	if (blackUsername === username) color = "black"
 	
-	let send = async message =>
-	{
-		let response = await fetch(`${origin}/api/bot/game/${id}/chat`, {method: "POST", headers, body: new URLSearchParams({room: "player", text: message})})
-		return response.ok
-	}
+	let send = message => fetchTry(`${origin}/api/bot/game/${id}/chat`, {...opts, method: "POST", body: new URLSearchParams({room: "player", text: message})})
 	
 	let chat = {send}
 	Object.freeze(chat)
@@ -314,20 +454,22 @@ let createGame = async ({origin, headers}, username, id) =>
 		get blackTime() { return getTime("black") },
 	}
 	
+	controller.register(game, history[Symbol.asyncIterator], play, resign)
+	
 	Object.freeze(game)
 	return game
 }
 
 let createChallenge = async (args, username, events, {id, rated, color, variant: {key: variant}, timeControl: {type: timeControl}, speed}) =>
 {
-	let {origin, headers} = args
+	let {origin, opts} = args
 	
 	let accept = async () =>
 	{
 		let gamePromise = events.find(event => event.type === "gameStart" && event.game.id === id)
 		
-		let response = await fetch(`${origin}/api/challenge/${id}/accept`, {method: "POST", headers})
-		if (!response.ok) return
+		let ok = await fetchTry(`${origin}/api/challenge/${id}/accept`, {...opts, method: "POST"})
+		if (!ok) return
 		await gamePromise
 		return createGame(args, username, id)
 	}
@@ -336,8 +478,7 @@ let createChallenge = async (args, username, events, {id, rated, color, variant:
 	{
 		if (reason === undefined) reason = "generic"
 		reason = String(reason)
-		let response = await fetch(`${origin}/api/challenge/${id}/decline`, {method: "POST", headers, body: new URLSearchParams({reason})})
-		return response.ok
+		return fetchTry(`${origin}/api/challenge/${id}/decline`, {...opts, method: "POST", body: new URLSearchParams({reason})})
 	}
 	
 	let challenge = {id, variant, rated, timeControl, speed, accept, decline, color}
@@ -345,13 +486,13 @@ let createChallenge = async (args, username, events, {id, rated, color, variant:
 	return challenge
 }
 
-let validateChallenge = ({origin, headers}, {id, variant}) =>
+let validateChallenge = ({origin, opts}, {id, variant}) =>
 {
 	if (variant.key !== "standard")
 	if (variant.key !== "chess960")
 	if (variant.key !== "fromPosition")
 	{
-		fetch(`${origin}/api/challenge/${id}/decline`, {method: "POST", headers, body: new URLSearchParams({reason: "standard"})})
+		fetchAny(`${origin}/api/challenge/${id}/decline`, {...opts, method: "POST", body: new URLSearchParams({reason: "standard"})})
 		return false
 	}
 	return true
@@ -404,14 +545,107 @@ let normalizeTime = ({limit = Infinity, increment = 0}) =>
 	return {clock: {limit, increment}}
 }
 
-let streamURL = async (headers, url, body) =>
+let variantRatingNames = [["chess960"], ["atomicChess", "atomic"], ["horde"], ["racingKings"], ["kingOfTheHill"]]
+let ratingNames = [["correspondence"], ["classical"], ["rapid"], ["blitz"], ["bullet"], ["ultrabullet", "ultraBullet"]]
+
+export let variantNames = ["chess", ...variantRatingNames.map(([key]) => key)]
+export let timeControlTypes = ratingNames.map(([key]) => key)
+Object.freeze(variants, timeControlTypes)
+
+let setVariant = (variants, fs, info, [key, name = key]) =>
 {
-	let method = "GET"
-	if (body) method = "POST", headers = {"content-type": "application/json", ...headers}
-	let response = await fetch(url, {method, headers, body})
-	if (!response.ok) return
-	return ndjson(response.body)
+	let object
+	Object.defineProperty(variants, key, {enumerable: true, get: () => object})
+	let fn = info =>
+	{
+		let {perfs: {[name]: {games: count, rating, rd: deviation, prov: provisional = false} = {games: 0, rating: 1500, rd: Infinity, prov: true}} = {}} = info
+		object = {count, rating, provisional, deviation}
+		Object.freeze(object)
+	}
+	fn(info)
+	fs.push(fn)
 }
 
-let decoder = new TextDecoder()
-let ndjson = browserStream => splitBrowserStream(browserStream, [0x0A]).map(bytes => decoder.decode(bytes)).filter(Boolean).map(json => JSON.parse(json))
+let createUpdate = (fs, origin, username) =>
+{
+	let setInfo = value => fs.deref()?.forEach(fn => fn(value))
+	return async () => setInfo(await fetchJSON(`${origin}/api/user/${username}`, opts))
+}
+
+let createClearInterval = interval => () => clearInterval(interval)
+
+let createUser = async (args, username, otherUsername) =>
+{
+	let {origin, opts} = args
+	let controller = FinalizationController()
+	if (opts) opts = {...opts, signal: controller.signal}
+	
+	otherUsername = Username(otherUsername)
+	if (!otherUsername) return
+	let info = await fetchJSON(`${origin}/api/user/${otherUsername}`, opts)
+	if (!info) return
+	if (info.disabled) return
+	
+	let getChessCount = () =>
+	{
+		let count = 0
+		for (let [name] of ratingNames)
+			count += variants.chess[ratingNames].count
+		return count
+	}
+	
+	let fs = []
+	let variants = {chess: {get count() { return getChessCount() }}}
+	
+	for (let name of ratingNames)
+		setVariant(variants.chess, fs, info, name)
+	Object.freeze(variants.chess)
+	
+	for (let name of variantRatingNames)
+		setVariant(variants, fs, info, name)
+	Object.freeze(variants)
+	
+	let getGameIDs = async () =>
+	{
+		let games = await fetchStream(`${origin}/api/games/user/${otherUsername}?ongoing=true`, opts)
+		if (!games) return
+		
+		let ids = []
+		for await (let {id} of games)
+			ids.push(id)
+		Object.freeze(ids)
+		return ids
+	}
+	
+	let getGames = async () =>
+	{
+		let games = []
+		for (let id of await getGameIDs())
+			games.push(await createGame(args, username, id))
+		Object.freeze(games)
+		return games
+	}
+	
+	let hours = 1
+	let minutes = hours * 60
+	let seconds = minutes * 60
+	let milliseconds = minutes * 1000
+	let interval = setInterval(createUpdate(new WeakRef(fs), origin, otherUsername), milliseconds)
+	
+	controller.register(variants, variants.chess, getGameIDs)
+	controller.signal.addEventListener("abort", createClearInterval(interval))
+	
+	let user =
+	{
+		username: info.id,
+		title: info.title,
+		displayName: info.username,
+		variants,
+		violator: Boolean(info.tosViolation),
+		getOngoingGameIDs() { return getGameIDs() },
+		getOngoingGames() { return getGames() },
+	}
+	
+	Object.freeze(user)
+	return user
+}

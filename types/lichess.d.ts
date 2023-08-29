@@ -8,20 +8,26 @@ export type Color = ChessColor|"random"
 
 export type Status = "ongoing"|"checkmate"|"draw"|"aborted"
 
-export type Lichess =
+export type AnonymousLichess =
 {
 	origin: string,
+	getGame: (id: ID) => Promise<Game|undefined>,
+	getBotUsernames: () => Promise<string[]>,
+	getUsernameGameIDs: (username: string) => Promise<ID[]>,
+	getUser: (username: string) => Promise<User|undefined>,
+	getBots: () => Promise<User[]>,
+}
+
+export type Lichess = AnonymousLichess &
+{
 	username: string,
 	challenges: LiveStream<Challenge>,
 	acceptChallenges: () => LiveStream<Game>,
 	declineChallenges: (reason?: string) => undefined,
-	getGame: (id: ID) => Promise<Game|undefined>,
 	getGameIDs: () => Promise<ID[]>,
 	getGames: () => Promise<Game[]>,
 	StockfishGame: (level: Level, color: Color) => Promise<Game|undefined>,
 	challenge: (username: string, options?: {rated?: boolean, time?: TimeControl|string, color?: Color}) => Promise<Game|undefined>,
-	getUsernameGameIDs: (username: string) => Promise<ID[]>,
-	getBotUsernames: () => Promise<string[]>,
 }
 
 export type TimeControl =
@@ -74,6 +80,52 @@ export type Chat =
 	send: (message: string) => Promise<boolean>,
 }
 
+type Info =
+{
+	count: number,
+	rating: number,
+	provisional: boolean,
+	deviation: number,
+}
+
+type ChessInfo =
+{
+	count: number,
+	correspondence: Info,
+	classical: Info,
+	rapid: Info,
+	blitz: Info,
+	bullet: Info,
+	ultrabullet: Info,
+}
+
+type VariantInfos =
+{
+	chess: ChessInfo,
+	chess960: Info,
+	atomicChess: Info,
+	horde: Info,
+	racingKings: Info,
+	kingOfTheHill: Info,
+}
+
+export type User =
+{
+	username: string,
+	title: string,
+	displayName: string,
+	variants: VariantInfos,
+	violator: boolean,
+	getOngoingGameIDs: () => Promise<string[]>,
+	getOngoingGames: () => Promise<Game[]>,
+}
+
 // --- // --- //
 
+export let variantNames: ["chess", "chess960", "atomicChess", "horde", "racingKings", "kingOfTheHill"]
+export let timeControlTypes: ["correspondence", "classical", "rapid", "blitz", "bullet", "ultrabullet"]
+
+export let lichess: AnonymousLichess
+
 export let Lichess: (options: string|{token: string, origin?: string|URL}) => Promise<Lichess|undefined>
+export let AnonymousLichess: (options: string|URL|{origin?: string|URL}) => Promise<AnonymousLichess|undefined>

@@ -7,8 +7,10 @@ table of contents
 - introduction
 - Lichess connections
   - `await Lichess(token)`, `await Lichess({origin, token})`
+  - `await AnonymousLichess(origin)`, `await AnonymousLichess({origin})`
   - `lichess.username`
   - `lichess.origin`
+  - `lichess`
 - challenges
   - `lichess.challenges`
   - `challenge.id`
@@ -44,9 +46,23 @@ table of contents
   - `historyEntry.turn`
 - users
   - `await lichess.getBotUsernames()`
+  - `await lichess.getUser(username)`
+  - `await lichess.getBots()`
+  - `user.username`
+  - `user.title`
+  - `user.displayName`
+  - `user.violator`
+  - `user.getOngoingGameIDs`
+  - `user.getOngoingGames`
+  - `user.variants`
+  - `user.variants.chess.count`
+  - `user.variants.chess[timeControlType]`, `user.variants[variantName]`
 - chat
   - `game.chat`
   - `await chat.send(message)`
+- other
+  - `variantNames`
+  - `timeControlTypes`
 
 introduction
 ---
@@ -161,9 +177,9 @@ Starts a game against Stockfish and returns a promise that resolves to it. `leve
 
 Sends a challenges to the player with the given username.
 
-`rated` is a boolean indicating whether the game will be rated, `time` is either a string or an object indicating the game’s time cotnrol, and `color` shoudl be either `"white"`, `"black"` or `"random"`, indicating the color the bot will play as.
+`rated` is a boolean indicating whether the game will be rated, `time` is either a string or an object indicating the game’s time cotnrol, and `color` should be either `"white"`, `"black"` or `"random"`, indicating the color the bot will play as. `color` defaults to `"random"` when not given.
 
-As a string, `time` can either be a in the form `"{n}d"` where `{n}` idicates the maximum number of days to make a move in a correspondence game, the string `"unlimited"`, representing a game without a time limit or `{limit}+{increment}` where `{limit}` is the starting time limit in minutes and `{increment}` is the increment in minutes. `limit` can additionally be given in the form `{minutes}:{seconds}` indicating the starting time will be the sum of `{minutes}` and `{seconds}` in their respective time measure. `{seconds}` does not need to be under 60.
+As a string, `time` can either be a in the form `"{n}d"` where `{n}` idicates the maximum number of days to make a move in a correspondence game, the string `"unlimited"`, representing a game without a time limit or `{limit}+{increment}` where `{limit}` is the starting time limit in minutes and `{increment}` is the increment in seconds. `limit` can additionally be given in the form `{minutes}:{seconds}` indicating the starting time will be the sum of `{minutes}` and `{seconds}` in their respective time measure. `{seconds}` does not need to be under 60.
 
 As an object, `time` can contain a `time.limit` property and a `time.increment` property given in seconds. If neither property is specified, the game will have unlimited time control. Correspondence games besides unlimited games cannot be specified in this form.
 
@@ -248,6 +264,74 @@ Which side played the move on this entry. Either `"white"` or `"black"`.
 ---
 
 This function will return a promise that resolves to an array with the usernames of bots currently online.
+
+`await lichess.getUser(username)`
+---
+
+This will return a promise that resolves to a user object representing the user with the given username, or `undefined` if there is no such user.
+
+`await lichess.getBots()`
+---
+
+This will return a promise that resolves to an array of user objects for every currently online bot.
+
+`user.username`
+---
+
+This will be the username of this user (which is the same as the display name lowercased).
+
+`user.title`
+---
+
+This will be the title of the user, e.g. `"LM"`, `"GM"`, `"BOT"`.
+
+`user.displayName`
+---
+
+This will be the display name of this user.
+
+`user.violator`
+---
+
+This is a boolean, `true` if the user has a TOS violation mark, and `false` otherwise.
+
+`user.getOngoingGameIDs`
+---
+
+This will return a promise that resolves to an array containing the IDs of the games this user is currently playing.
+
+`user.getOngoingGames`
+---
+
+This will return a promise that resolves to an array with the games this user is currently playing.
+
+`user.variants`
+---
+
+This will be an object that contains information about the games the user has played. (See the below documentation for more detail.)
+
+`user.variants.chess.count`
+---
+
+This will be the number of standard chess games the user has played.
+
+`user.variants.chess[timeControlType]`, `user.variants[variantName]`
+---
+
+These will each contain information about the games the user has played in the given variant or time control type.
+
+Each of these properties will be objects containing the following properties:
+
+- `count`: The number of games the user played of the given variant or time control type.
+- `rating`: The user’s rating on that variant or time control type.
+- `provisional`: A boolean representing whether the rating is provisional.
+- `deviation`: The rating’s standard deviation.
+
+Note that:
+
+- `variantName` must be one of `"chess960"`, `"atomicChess"`, `"horde"`, `"racingKings"`, `"kingOfTheHill"`
+- `timeControlType` must be one of `correspondence"`, `"classical"`, `"rapid"`, `"blitz"`, `"bullet"`, `"ultrabullet`
+- `user.variants.chess[timeControlType]` refers exclusively to standard chess, not to other variants.
 
 `game.chat`
 ---

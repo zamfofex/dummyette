@@ -3,7 +3,7 @@
 
 import {LiveController} from "./streams.js"
 
-export let splitBrowserStream = (browserStream, [...separator]) =>
+export let splitBrowserStream = (browserStream, [...separator], handle = Promise.reject) =>
 {
 	separator = new Uint8Array(separator)
 	
@@ -20,7 +20,7 @@ export let splitBrowserStream = (browserStream, [...separator]) =>
 		let buffers = []
 		while (true)
 		{
-			let {done, value} = await reader.read()
+			let {done, value} = await reader.read().catch(handle)
 			if (done) value = [separator]
 			
 			if (isFinished()) { reader.cancel() ; return }
