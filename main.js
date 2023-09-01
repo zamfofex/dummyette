@@ -13,7 +13,7 @@ else if (typeof Bun !== "undefined")
 	let fsp = await import("fs/promises")
 	runtime =
 	{
-		args: Bun.argv.slice(3),
+		args: Bun.argv.slice(2),
 		env: {get: name => Bun.env[name]},
 		exit: process.exit,
 		readFile: fsp.readFile,
@@ -62,8 +62,10 @@ let play = async game =>
 	
 	let color = game.color
 	if (!color)
-		console.error("The game could not be played because the bot is not partaking in it."),
+	{
+		console.error("The game could not be played because the bot is not partaking in it.")
 		exit(1)
+	}
 	
 	if (game.finished)
 	{

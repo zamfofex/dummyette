@@ -68,7 +68,6 @@ let fetchTry = async (...args) =>
 {
 	let response = await fetch(...args).catch(handleAbort)
 	if (!response) return
-	fetch.arrayBuffer().catch(handleAbort)
 	return response.ok
 }
 
@@ -550,7 +549,7 @@ let ratingNames = [["correspondence"], ["classical"], ["rapid"], ["blitz"], ["bu
 
 export let variantNames = ["chess", ...variantRatingNames.map(([key]) => key)]
 export let timeControlTypes = ratingNames.map(([key]) => key)
-Object.freeze(variants, timeControlTypes)
+Object.freeze(variantNames, timeControlTypes)
 
 let setVariant = (variants, fs, info, [key, name = key]) =>
 {

@@ -331,12 +331,12 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 			
 			let dx = Math.sign(move.to.x - move.from.x)
 			
+			if (Position(x1, y1).name !== rook.from.name && board.at(x1, y1)) return
+			
 			for (let x0 = x + dx ; x0 !== x1 ; x0 += dx)
 			{
 				if (attacked(board, x0, y1, piece.color)) return
-				
-				let other = board.at(x0, y1)
-				if (other && other !== rook.piece) return
+				if (Position(x0, y1).name !== rook.from.name && board.at(x0, y1)) return
 			}
 			
 			let rdx = Math.sign(rook.to.x - rook.from.x)
