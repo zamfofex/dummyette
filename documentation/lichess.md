@@ -32,18 +32,13 @@ table of contents
   - `await lichess.challenge(username, {rated, time, color})`
   - `game.id`
   - `game.rated`
-  - `game.moveNames`, `game.moves`
   - `game.turn`
   - `game.status`, `game.ongoing`, `game.finished`
   - `game.color`
   - `await game.play(...names)`
   - `await game.resign()`
   - `game.boards`
-  - `game.history`
-  - `historyEntry.moveName`, `historyEntry.move`
-  - `historyEntry.moveNumber`
-  - `historyEntry.board`
-  - `historyEntry.turn`
+  - `game.moves`
 - users
   - `await lichess.getBotUsernames()`
   - `await lichess.getUser(username)`
@@ -193,13 +188,6 @@ This will be the id of the game, it is what appears on the URL of the game.
 
 This is a boolean representing whether the game is rated or not.
 
-`game.moveNames`, `game.moves`
----
-
-These will be a `RewindStream` of the names of all the moves that have occured in the game insofar, in UCI format.
-
-These two properties are aliases, `game.moveNames` is the same as `game.moves`.
-
 `game.whiteTime`, `game.blackTime`
 ---
 
@@ -235,30 +223,10 @@ Tries to resign the game. Returns `true` if the game could be resigned successfu
 
 This will be a `RewindStream` of all the board postions that have occured in the game insofar.
 
-`game.history`
+`game.moves`
 ---
 
-This is a `RewindStream` containing information about the occurences of the game.
-
-`historyEntry.moveName`, `historyEntry.move`
----
-
-These two properties are aliases, they do the same. They are the name of the move that was played in this history entry.
-
-`historyEntry.moveNumber`
----
-
-The number of the move of this history entry.
-
-`historyEntry.board`
----
-
-The board position after the move of this entry was played.
-
-`historyEntry.turn`
----
-
-Which side played the move on this entry. Either `"white"` or `"black"`.
+This will be a `RewindStream` of all the moves that have occured in the game insofar.
 
 `await lichess.getBotUsernames()`
 ---

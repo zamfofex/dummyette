@@ -324,19 +324,17 @@ let createGame = async ({origin, opts: {...opts}}, username, id) =>
 		for (let name of names.split(" ").slice(n))
 		{
 			let turn = board.turn
-			board = fromSAN(board, name)?.play()
+			let move = fromSAN(board, name)
+			board = move?.play()
 			if (!board)
 			{
 				console.error(`Unexpected move in game: ${name}`)
 				await resign()
 				return
 			}
-			
-			let result = {moveName: name, move: name, board, turn, moveNumber: Math.floor(n / 2)}
-			Object.freeze(result)
-			n++
-			yield result
+			yield move
 		}
+		n++
 	}
 	
 	let board = standardBoard
@@ -363,7 +361,7 @@ let createGame = async ({origin, opts: {...opts}}, username, id) =>
 	let clock
 	let time = performance.now()
 	
-	let history = RewindJoinStream([full.state], gameEvents)
+	let moves = RewindJoinStream([full.state], gameEvents)
 		.filter(event => event.type === "gameState")
 		.flatMap(event =>
 		{
@@ -380,8 +378,7 @@ let createGame = async ({origin, opts: {...opts}}, username, id) =>
 		.filter(Boolean)
 		.flatMap(moves => handle(moves))
 	
-	let moveNames = history.map(({moveName}) => moveName)
-	let boards = RewindJoinStream([board], history.map(({board}) => board))
+	let boards = RewindJoinStream([board], moves.map(move => move.play()))
 	
 	boards.last.then(board =>
 	{
@@ -407,7 +404,7 @@ let createGame = async ({origin, opts: {...opts}}, username, id) =>
 				if (!move) break
 			}
 			if (!sameBoard(move.before, board)) break
-			let promise = history.at(history.length)
+			let promise = moves.at(moves.length)
 			let ok = await fetchTry(`${origin}/api/bot/game/${id}/move/${toUCI(move, chess960)}`, {...opts, method: "POST"})
 			if (!ok) break
 			await promise
@@ -439,8 +436,8 @@ let createGame = async ({origin, opts: {...opts}}, username, id) =>
 	let game =
 	{
 		id,
-		moveNames, moves: moveNames,
-		history, boards, chat,
+		moves, boards,
+		chat,
 		play, resign,
 		blackUsername, whiteUsername,
 		color, rated,
@@ -453,7 +450,7 @@ let createGame = async ({origin, opts: {...opts}}, username, id) =>
 		get blackTime() { return getTime("black") },
 	}
 	
-	controller.register(game, history[Symbol.asyncIterator], play, resign)
+	controller.register(game, moves[Symbol.asyncIterator], play, resign)
 	
 	Object.freeze(game)
 	return game

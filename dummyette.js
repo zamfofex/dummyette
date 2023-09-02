@@ -4,31 +4,17 @@
 import {MutableBoard} from "./internal/fast-chess.js"
 import {toGames} from "./notation/from-pgn.js"
 import {sameBoard} from "./chess.js"
+import {confidence} from "./internal/analysis.js"
 
 let registry = new FinalizationRegistry(f => f())
 
-let pgn = await fetch(new URL("openings.pgn", import.meta.url))
-let openingGames
+let nextMessage = worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))
 
-if (pgn.ok)
+let terminate = workers => () =>
 {
-	openingGames = toGames(await pgn.text())
-	if (!openingGames)
-	{
-		console.warn("Openings could not be parsed.")
-		openingGames = []
-	}
+	for (let worker of workers)
+		worker.terminate()
 }
-else
-{
-	console.warn("Openings could not be fetched.")
-	openingGames = []
-}
-
-if (!openingGames.every(Boolean))
-	console.warn("Some openings could not be parsed.")
-
-openingGames = openingGames.filter(Boolean)
 
 export let AsyncAnalyser = ({workers: workerCount = navigator.hardwareConcurrency} = {}) =>
 {
@@ -37,123 +23,149 @@ export let AsyncAnalyser = ({workers: workerCount = navigator.hardwareConcurrenc
 	if (workerCount <= 0) return
 	
 	let workers = Array(workerCount).fill().map(() => new Worker(new URL("internal/worker.js", import.meta.url), {type: "module"}))
+	let promise = Promise.all(workers.map(nextMessage)).then(() => promise = Promise.resolve())
 	
 	let promises = new Set()
-	let terminate = async () =>
-	{
-		await Promise.all(promises)
-		for (let worker of workers)
-			worker.terminate()
-	}
 	
-	// note: these declarations need to be in their own scope.
-	// note: this is to avoid them being added to the closure of 'terminate'.
+	let createAnalysis = (board, nodes = []) =>
 	{
-		let ready = Promise.all(workers.map(worker => new Promise(resolve => worker.addEventListener("message", resolve, {once: true}))))
+		if (board.width !== 8) return
+		if (board.height !== 8) return
 		
-		let analyse = (board, options = {}) => evaluate(board).then(evaluations => Object.freeze(evaluations?.map(({move}) => move)))
-		let evaluate = (board, {time = 60} = {}) =>
+		let moves = shuffle(board.moves)
+		
+		let infos = new Map(moves.map(({name}) => [name, {score: -Infinity}]))
+		for (let node of nodes)
 		{
-			let promise = ready.then(() =>
-			{
-				let openingEvaluations = prioritizeOpenings(board)
-				if (openingEvaluations) return openingEvaluations
-				return evaluateAsync(board, workers, time)
-			})
-			
-			promise.finally(() => promises.delete(promise))
-			promises.add(promise)
-			
-			return promise
+			let info = infos.get(node.name)
+			if (info) info.node = node
 		}
 		
-		registry.register(evaluate, terminate)
+		let confidenceX = move =>
+		{
+			let {node} = infos.get(move.name)
+			if (!node) return Infinity
+			return confidence(node)
+		}
 		
-		let result = {analyse, evaluate}
-		Object.freeze(result)
-		return result
+		let resultingMoves
+		let evaluations
+		let setEvaluations = () =>
+		{
+			evaluations = moves.slice().map(move => ({move, score: infos.get(move.name).score}))
+			evaluations.sort((a, b) => (b.score - a.score) || 0)
+			resultingMoves = evaluations.map(({move}) => move)
+			Object.freeze(resultingMoves, evaluations)
+		}
+		
+		setEvaluations()
+		
+		let status = "paused"
+		let pausing
+		let paused
+		
+		let startAsync = async () =>
+		{
+			while (status === "running")
+			{
+				let promises = []
+				let parent = {visits: 0}
+				let result = await distribute(board, workers, infos, moves.slice(0, workerCount))
+				for (let {move, node, score} of result)
+				{
+					parent.visits += node.visits
+					node.parent = parent
+					Object.assign(infos.get(move), {node, score})
+				}
+				moves.sort((a, b) => (confidenceX(b) - confidenceX(a)) || 0)
+				setEvaluations()
+			}
+			status = "paused"
+			paused()
+		}
+		
+		let start = () =>
+		{
+			if (status === "running") return
+			status = "running"
+			return promise.then(startAsync)
+		}
+		
+		let pause = () =>
+		{
+			if (status === "paused") return
+			if (status === "pausing") return pausing
+			status = "pausing"
+			pausing = new Promise(f => paused = f)
+			return pausing
+		}
+		
+		let playSync = move =>
+		{
+			move = board.Move(move)
+			if (!move) return
+			let {node} = infos.get(move.name)
+			if (!node) return createAnalysis(move.play())
+			for (let child of node.children)
+				child.parent = node
+			return createAnalysis(move.play(), node.children)
+		}
+		
+		let play = move =>
+		{
+			if (status === "paused") return playSync(move)
+			return pause().then(() => playSync(move))
+		}
+		
+		let analysis = {board, start, pause, play, get moves() { return resultingMoves }, get evaluations() { return evaluations }}
+		Object.freeze(analysis)
+		return analysis
 	}
+	
+	let Analysis = board => createAnalysis(board)
+	
+	let analyse = (board, options = {}) => evaluate(board, options).then(evaluations => Object.freeze(evaluations?.map(({move}) => move)))
+	let evaluate = (board, {time = 60} = {}) =>
+	{
+		time = Number(time)
+		if (!Number.isFinite(time)) return
+		if (time < 0) return
+		
+		let analysis = Analysis(board)
+		if (!analysis) return
+		analysis.start()
+		return new Promise(resolve => setTimeout(resolve, time * 1000))
+			.then(() => analysis.pause())
+			.then(() => analysis.evaluations)
+	}
+	
+	// todo: improve termination handling
+	registry.register(createAnalysis, terminate(workers))
+	
+	let result = {analyse, evaluate, Analysis}
+	Object.freeze(result)
+	return result
 }
 
 export let analyse = (board, options = {}) => evaluate(board, options).then(evaluations => Object.freeze(evaluations?.map(({move}) => move)))
 export let evaluate = (board, {workers = navigator.hardwareConcurrency, time = 60} = {}) => AsyncAnalyser({workers}).evaluate(board, {time})
 
-let prioritizeOpenings = board =>
-{
-	let moves = new Set()
-	
-	for (let {deltas} of openingGames)
-	for (let {before, move} of deltas)
-	{
-		if (!sameBoard(board, before)) continue
-		moves.add(board.Move(move))
-	}
-	
-	if (moves.size === 0) return
-	
-	let otherMoves = new Set(board.moves)
-	for (let move of moves) otherMoves.delete(move)
-	
-	let evaluations = [...shuffle([...moves]), ...shuffle([...otherMoves])].map(move => ({move, score: 0}))
-	Object.freeze(evaluations)
-	return evaluations
-}
+let maxConfidence = {score: 1, visits: Infinity, parent: {visits: 0}}
 
-let evaluateAsync = async (board, workers, time) =>
-{
-	if (board.width !== 8) return
-	if (board.height !== 8) return
-	
-	time = Number(time)
-	if (!Number.isFinite(time)) return
-	if (time < 0) return
-	time *= 1000
-	time += performance.now()
-	
-	if (board.moves.length <= 1)
-		return evaluate0(board, workers, 0)
-	
-	let moves = shuffle(board.moves)
-	let i = 0
-	let previousTime = performance.now()
-	while (true)
-	{
-		let start = performance.now()
-		let evaluations = await evaluate0(board, workers, i++, moves)
-		let now = performance.now()
-		let ellapsed = now - start
-		
-		if (now > time) return evaluations
-		if (evaluations[0].score > 900) return evaluations
-		
-		moves = evaluations.map(({move}) => move)
-		if (ellapsed * 32 > time - now) return evaluations
-	}
-}
-
-let i = 0
-
-let evaluate0 = (board, workers, depth, moves = shuffle(board.moves)) => new Promise(resolve =>
+let i = 0n
+let distribute = (board, workers, infos, moves) => new Promise(resolve =>
 {
 	let id = i++
 	
-	let receive = ({data: state}) =>
+	let receive = ({data: {move, node, score}}) =>
 	{
-		if (state.move[0] !== id) return
+		if (move[0] !== id) return
 		
-		evaluations.push(state)
-		
-		if (evaluations.length === length)
-		{
-			evaluations.sort((a, b) => b.score - a.score)
-			evaluations = evaluations.map(({move: [id, name], score}) => ({score, move: board.Move(name)}))
-			
-			Object.freeze(evaluations)
-			resolve(evaluations)
-			
-			for (let worker of workers)
-				worker.removeEventListener("message", receive)
-		}
+		evaluations.push({move: move[1], node, score})
+		if (evaluations.length !== length) return
+		resolve(evaluations)
+		for (let worker of workers)
+			worker.removeEventListener("message", receive)
 	}
 	
 	let length = moves.length
@@ -174,26 +186,26 @@ let evaluate0 = (board, workers, depth, moves = shuffle(board.moves)) => new Pro
 		let board = move.play()
 		if (board.draw)
 		{
-			evaluations.push({move: [id, move], score: 0})
+			evaluations.push({move: move.name, score: 0, node: maxConfidence})
 			continue
 		}
 		if (board.checkmate)
 		{
-			evaluations.push({move: [id, move], score: 5000000})
+			evaluations.push({move: move.name, score: Infinity, node: maxConfidence})
 			continue
 		}
 		
 		let worker = workers[i % workers.length]
-		worker.postMessage([[id, move.name], MutableBoard(board).serialize(), depth])
+		worker.postMessage([[id, move.name], MutableBoard(board).serialise(), infos.get(move.name).node])
 		worker.addEventListener("message", receive)
 	}
 })
 
-let shuffle = moves =>
+let shuffle = values =>
 {
-	moves = moves.slice()
+	values = values.slice()
 	let result = []
-	while (moves.length !== 0)
-		result.push(moves.splice([Math.floor(Math.random() * moves.length)], 1)[0])
+	while (values.length !== 0)
+		result.push(values.splice([Math.floor(Math.random() * values.length)], 1)[0])
 	return result
 }

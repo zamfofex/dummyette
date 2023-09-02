@@ -31,11 +31,11 @@ await game.play("f7f6")
 await game.play("d7d6")
 ~~~
 
-We’ll also probably want to react to opponent moves instead of making moves in the dark. One way to do that is by using the `game.board`, which will be a board with the current game position. The problem is that we don’t have a good way to actually know when the board changes (e.g. because the opponent made a move). A better way is to use the `game.history`, `game.moveNames`, and `game.boards` properties, which are `RewindStream` objects of information about the state of the game as it changes.
+We’ll also probably want to react to opponent moves instead of making moves in the dark. One way to do that is by using the `game.board`, which will be a board with the current game position. The problem is that we don’t have a good way to actually know when the board changes (e.g. because the opponent made a move). A better way is to use the `game.moves`, and `game.boards` properties, which are `RewindStream` objects of information about the state of the game as it changes.
 
-`game.history` will contain complete history entries, including the name of the move played, the resultant board, the color of the player who made the move, etc. Note that the initial board position will *not* appear in the history, as no move has been performed by that point.
+`game.moves` will contain the moves played in the game. Note that the initial board position will *not* appear in the history, as no move has been performed by that point.
 
-`game.moveNames` is just a shortcut for extracting move names from the entries in `game.history`. `game.boards` is also a similar shortcut, but note that it will additionally contain the initial board position at the start!
+`game.boards` will contain all of the boards that happened in the game, including the initial board.
 
 We can easily make our bot play random moves until the game ends.
 
@@ -53,18 +53,12 @@ What that means is that our bot is going to spend time finding random moves for 
 
 We can move ahead to the current position by using the `stream.slice(...)` function to skip the past moves.
 
-Also, in addition, If we don’t know which color our bot is playing as, we can figure it out through the `game.whiteUsername`, `game.blackUsername` and `lichess.username` properties.
+Also, in addition, we can figure out the color our bot is playing as through the `game.color` property.
 
 ~~~ JavaScript
-let ourColor
-if (lichess.username === game.whiteUsername)
-	ourColor = "white"
-else
-	ourColor = "black"
-
 for await (let board of game.boards.skip(game.boards.length - 1))
 {
-	if (board.turn !== ourColor) continue
+	if (board.turn !== game.color) continue
 	await game.play(board.moves[Math.floor(Math.random() * board.moves.length)].name)
 }
 ~~~

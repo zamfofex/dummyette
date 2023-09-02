@@ -80,8 +80,13 @@ let play = async game =>
 	let messageIndex = 0
 	let status
 	
-	for await (let board of game.boards.slice(game.boards.length - 1))
+	let analysis = analyser.Analysis(await game.boards.at(game.boards.length - 1))
+	analysis.start()
+	
+	for await (let move of game.moves.reset())
 	{
+		let board = move.play()
+		
 		if (board.moves.length === 0)
 		{
 			if (board.checkmate)
@@ -97,28 +102,27 @@ let play = async game =>
 		
 		if (board.turn !== color) continue
 		
-		let count = 0
-		for (let y = 0 ; y < board.width ; y++)
-		for (let x = 0 ; x < board.height ; x++)
-			if (board.at(x, y)) count++
+		analysis = await analysis.play(move)
+		analysis.start()
 		
-		let options = {}
+		let delay = 60
 		
 		if (game.whiteTime !== undefined)
 		{
-			let min
-			if (color === "white") min = game.whiteTime / 4
-			if (color === "black") min = game.blackTime / 4
-			
-			let time = Math.log(min + 1) * 240 / count
-			time = Math.min(time, 90)
-			time = Math.max(time, Math.min(min * 0.75, 6))
-			
-			options.time = time
+			let time = game.whiteTime
+			let other = game.blackTime
+			if (color === "black") [time, other] = [other, time]
+			delay = Math.min(30, Math.max(0, time - other) / 4 + time / 16)
 		}
 		
-		let evaluations = await analyser.evaluate(board, options)
-		let {score, move} = evaluations[0]
+		await new Promise(resolve => setTimeout(resolve, delay * 1000))
+		await analysis.pause()
+		
+		let evaluations = await analysis.evaluations
+		let {score, move: chosen} = evaluations[0]
+		
+		analysis = await analysis.play(chosen)
+		analysis.start()
 		
 		if (score < average && (messageIndex >= 6 || status === "winning"))
 		{
@@ -128,7 +132,7 @@ let play = async game =>
 		}
 		if (score > average && (messageIndex >= 6 || status === "losing"))
 		{
-			messageIndex = 
+			messageIndex = 0
 			status = "winning"
 			await chat(messages.winning)
 		}
@@ -138,9 +142,9 @@ let play = async game =>
 			average *= 2 / 3,
 			average += score / 3
 		
-		if (!await game.play(move.name))
+		if (!await game.play(chosen))
 		{
-			console.error(`Move ${move.name} was not played successfully.`)
+			console.error(`Move ${chosen.name} was not played successfully.`)
 			await game.resign()
 			break
 		}
@@ -323,7 +327,7 @@ else if (action === "wait")
 		if (games.length > 8)
 		{
 			console.log("Too many ongoing games, waiting for their completion...")
-			await Promise.all(games.map(game => game.history.last))
+			await Promise.all(games.map(game => game.boards.last))
 		}
 		
 		console.log("Starting games...")

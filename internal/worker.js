@@ -1,6 +1,6 @@
 import {traverse} from "./analysis.js"
-import {deserialize} from "./fast-chess.js"
+import {deserialise} from "./fast-chess.js"
 
-addEventListener("message", ({data: [move, board, depth]}) => postMessage({move, score: traverse(deserialize(board), depth)}))
+addEventListener("message", ({data: [move, board, node]}) => postMessage({...traverse(deserialise(board), node), move}))
 
 postMessage("ready")

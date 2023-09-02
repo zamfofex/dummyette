@@ -1,3 +1,38 @@
+export let Node = (board, parent, play) => ({board, parent, play, score: 0, visits: 0, children: []})
+
+export let confidence = node =>
+{
+	if (node.visits === 0) return Infinity
+	return node.score / node.visits + 1.4 * Math.sqrt(Math.log(node.parent.visits) / node.visits)
+}
+
+let select = node =>
+{
+	while (node.children.length !== 0)
+	{
+		let max
+		let maxConfidence = -Infinity
+		for (let child of node.children)
+		{
+			let c = confidence(child)
+			if (c > maxConfidence)
+			{
+				max = child
+				maxConfidence = c
+			}
+		}
+		node = max
+		node.unplay = node.play()
+	}
+	return node
+}
+
+let expand = node =>
+{
+	for (let play of node.board.getMoves())
+		node.children.push(Node(node.board, node, play))
+}
+
 let table = (i, n) =>
 {
 	if (n === 0) return 0
@@ -5,61 +40,74 @@ let table = (i, n) =>
 	return table[i]
 }
 
-export let traverse = (board, depth) =>
+let evaluate = node =>
 {
-	let qdepth = 3
-	
-	let evaluate = i =>
+	let score = 0
+	for (let i = 0 ; i < 64 ; i++)
+		score += table(i, node.board.array[i])
+	if (node.board.turn[0]) score *= -1
+	if (Math.abs(score) > 5000) score *= Infinity
+	if (!Number.isFinite(score)) node.children = []
+	return 1 / (1 + 10 ** (-score / 4))
+}
+
+let backpropagate = (node, score) =>
+{
+	while (node)
 	{
-		let score = 0
-		for (let i = 0 ; i < 64 ; i++)
-			score += table(i, board.array[i])
-		
-		if (!board.turn[0]) score *= -1
-		if (score < -5000) return -10000 * (depth - i + 1)
-		return score
+		node.unplay?.()
+		node.visits++
+		node.score += score
+		node = node.parent
+		score = 1 - score
+	}
+}
+
+let toName = ({from, to, promotion = ""}) =>
+{
+	let x0 = from % 8
+	let x1 = to % 8
+	let y0 = Math.floor(from / 8)
+	let y1 = Math.floor(to / 8)
+	return String.fromCodePoint(x0 + 0x61, y0 + 0x31, x1 + 0x61, y1 + 0x31) + promotion
+}
+
+export let serialise = (node, root = true) =>
+{
+	let {score, visits, children} = node
+	let result = {score, visits, children: children.map(node => serialise(node, false))}
+	if (root)
+	{
+		for (let [i, {play}] of children.entries())
+			result.children[i].name = toName(play)
+	}
+	return result
+}
+
+export let deserialise = (serialised, board, parent, play) =>
+{
+	let {score, visits, children} = serialised
+	let node = {board, parent, play, score, visits}
+	node.unplay = play?.()
+	let moves = children.length !== 0 && board.getMoves()
+	node.children = children.map((child, i) => deserialise(child, board, node, moves[i]))
+	node.unplay?.()
+	return node
+}
+
+export let traverse = (board, node) =>
+{
+	if (node) node = deserialise(node, board)
+	else node = Node(board)
+	
+	for (let i = 0 ; i < 2048 ; i++)
+	{
+		let leaf = select(node)
+		expand(leaf)
+		backpropagate(leaf, evaluate(leaf))
 	}
 	
-	let quiesce = (i, alpha, beta) =>
-	{
-		let score = evaluate(i)
-		if (score < -5000) return score
-		if (i === 0) return score
-		
-		if (score >= beta) return beta
-		if (alpha < score) alpha = score
-		
-		for (let play of board.getCaptures())
-		{
-			let unplay = play()
-			let score = -quiesce(i - 1, -beta, -alpha)
-			unplay()
-			
-			if (score >= beta) return beta
-			if (score > alpha) alpha = score
-		}
-		
-		return alpha
-	}
-	
-	let search = (i, alpha, beta) =>
-	{
-		if (i === 0) return quiesce(qdepth, alpha, beta)
-		
-		for (let play of board.getMoves())
-		{
-			let unplay = play()
-			let score = -search(i - 1, -beta, -alpha)
-			unplay()
-			
-			if (score >= beta) return beta
-			if (score > alpha) alpha = score
-		}
-		
-		return alpha
-	}
-	
-	return -search(depth, -Infinity, Infinity)
+	return {node: serialise(node), score: node.visits}
 }
 
 // tables from: <https://www.chessprogramming.org/Simplified_Evaluation_Function>
