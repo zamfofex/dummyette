@@ -286,11 +286,7 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 	{
 		let storage = board.storage.slice()
 		
-		if (rook)
-		{
-			storage[index(rook.from)] = undefined
-			storage[index(rook.to)] = rook.piece
-		}
+		if (rook) storage[index(rook.from)] = undefined
 		
 		let from = Position(x, y)
 		let to = Position(x1, y1)
@@ -321,6 +317,8 @@ let createMoves = (board, moves, x, y, x1, y1, rook, capturedPosition) =>
 		
 		if (rook)
 		{
+			storage[index(rook.to)] = rook.piece
+			
 			move.name = from.name + rook.from.name
 			move.rook = rook
 			
