@@ -41,26 +41,17 @@ export let fromBoard = board =>
 	if (board.turn === "white") result += "w "
 	if (board.turn === "black") result += "b "
 	
-	let castling = color => board.positions.filter(position =>
-	{
-		let piece = board.at(position)
-		if (!piece) return
-		if (piece.color !== color) return
-		if (piece.type !== "rook") return
-		return true
-	}).map(({x, y}) => x)
-	
-	let whiteCastling = castling("white")
-	let blackCastling = castling("black")
-	let standardCastling = castling => castling.every(x => x === 0 || x === 7)
+	let whiteCastling = board.castling?.white?.map(({x}) => x) ?? []
+	let blackCastling = board.castling?.black?.map(({x}) => x) ?? []
+	let standardCastling = castling => castling.every(x => x === 2 || x === 6)
 	
 	if (board.width === 8 && standardCastling(whiteCastling) && standardCastling(blackCastling))
 	{
 		let castling = ""
-		if (whiteCastling.includes(7)) castling += "K"
-		if (whiteCastling.includes(0)) castling += "Q"
-		if (blackCastling.includes(7)) castling += "k"
-		if (blackCastling.includes(0)) castling += "q"
+		if (whiteCastling.includes(6)) castling += "K"
+		if (whiteCastling.includes(2)) castling += "Q"
+		if (blackCastling.includes(6)) castling += "k"
+		if (blackCastling.includes(2)) castling += "q"
 		if (!castling) castling = "-"
 		result += castling + " "
 	}
@@ -90,7 +81,7 @@ export let fromBoard = board =>
 		result += castling + " "
 	}
 	
-	let passingPosition = board.positions.find(position => board.get(position) === "passing")
+	let passingPosition = board.passing
 	if (passingPosition === undefined)
 	{
 		result += "-"
